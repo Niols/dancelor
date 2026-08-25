@@ -117,6 +117,11 @@ FROM "tune";
 
 ---------------------------------- [ Tunes ] -----------------------------------
 
+-- @get_tune_ids_for_dances | include: reuse
+SELECT DISTINCT "tune_id"
+FROM "recommended_tunes"
+WHERE @dance_ids { One_of { "dance_id" IN @dance_ids } | All { TRUE } };
+
 -- @get_version_rows | include: reuse
 SELECT
     "id",

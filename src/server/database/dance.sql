@@ -161,12 +161,9 @@ JOIN "tune" ON "recommended_tunes"."tune_id" = "tune"."id"
 WHERE @dance_ids { One_of { "recommended_tunes"."dance_id" IN @dance_ids } | All { TRUE } };
 
 -- @get_composers_for_tunes_for
-SELECT
-    "tune_composers"."tune_id",
-    "person"."id",
-    "person"."name"
-FROM "recommended_tunes"
-JOIN "tune_composers" ON "recommended_tunes"."tune_id" = "tune_composers"."tune_id"
+WITH "tunes" AS &get_tune_ids_for_dances
+SELECT "tunes"."tune_id", "person"."id", "person"."name"
+FROM "tune_composers"
 JOIN "person" ON "tune_composers"."composer_id" = "person"."id"
-WHERE @dance_ids { One_of { "recommended_tunes"."dance_id" IN @dance_ids } | All { TRUE } }
+JOIN "tunes" ON "tune_composers"."tune_id" = "tunes"."tune_id"
 ORDER BY "index";

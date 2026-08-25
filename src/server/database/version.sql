@@ -247,27 +247,29 @@ WHERE
     AND @tune_composer { Some { EXISTS (SELECT 1 FROM "tune_composers" WHERE "tune_id" = "version"."tune_id" AND "composer_id" IN @tune_composer) } | None { TRUE } }
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
+-- @get_tune_ids_for_versions | include: reuse
+SELECT DISTINCT "tune_id"
+FROM "version"
+WHERE @version_ids { One_of { "id" IN @version_ids } | All { TRUE } };
+
 -- @get_tune_composers_for
-WITH "persons" AS &get_person_rows
+WITH "tunes" AS &get_tune_ids_for_versions,
+     "persons" AS &get_person_rows
 SELECT
-    "version"."tune_id",
+    "tunes"."tune_id",
     "persons".*
 FROM "tune_composers"
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
-JOIN "version" ON "tune_composers"."tune_id" = "version"."tune_id"
-WHERE @version_ids { One_of { "version"."id" IN @version_ids } | All { TRUE } }
+JOIN "tunes" ON "tune_composers"."tune_id" = "tunes"."tune_id"
 ORDER BY "index";
 
 -- @get_tune_composers_with_details_for
-WITH "persons" AS &get_person_rows
-SELECT
-    "tune_composers"."tune_id",
-    "persons".*,
-    "details"
+WITH "tunes" AS &get_tune_ids_for_versions,
+     "persons" AS &get_person_rows
+SELECT "tunes"."tune_id", "persons".*, "details"
 FROM "tune_composers"
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
-JOIN "version" ON "tune_composers"."tune_id" = "version"."tune_id"
-WHERE @version_ids { One_of { "version"."id" IN @version_ids } | All { TRUE } }
+JOIN "tunes" ON "tune_composers"."tune_id" = "tunes"."tune_id"
 ORDER BY "index";
 
 -- @get_arrangers_for
@@ -300,34 +302,28 @@ JOIN "sources" ON "version_sources"."source_id" = "sources"."id"
 WHERE @version_ids { One_of { "version_id" IN @version_ids } | All { TRUE } };
 
 -- @get_tune_extra_names_for
-SELECT
-    "version"."tune_id",
-    "extra_name"
+WITH "tunes" AS &get_tune_ids_for_versions
+SELECT "tunes"."tune_id", "extra_name"
 FROM "tune_extra_names"
-JOIN "version" ON "tune_extra_names"."tune_id" = "version"."tune_id"
-WHERE @version_ids { One_of { "version"."id" IN @version_ids } | All { TRUE } }
+JOIN "tunes" ON "tune_extra_names"."tune_id" = "tunes"."tune_id"
 ORDER BY "extra_name";
 
 -- @get_devisers_for_dances_of
-WITH "persons" AS &get_person_rows
-SELECT
-    "recommended_tunes"."dance_id",
-    "persons".*
+WITH "tunes" AS &get_tune_ids_for_versions,
+     "persons" AS &get_person_rows
+SELECT "recommended_tunes"."dance_id", "persons".*
 FROM "recommended_tunes"
-JOIN "version" ON "recommended_tunes"."tune_id" = "version"."tune_id"
+JOIN "tunes" ON "recommended_tunes"."tune_id" = "tunes"."tune_id"
 JOIN "dance_devisers" ON "recommended_tunes"."dance_id" = "dance_devisers"."dance_id"
-JOIN "persons" ON "dance_devisers"."deviser_id" = "persons"."id"
-WHERE @version_ids { One_of { "version"."id" IN @ids } | All { TRUE } };
+JOIN "persons" ON "dance_devisers"."deviser_id" = "persons"."id";
 
 -- @get_dances_for
-WITH "dances" AS &get_dance_rows
-SELECT
-    "recommended_tunes"."tune_id",
-    "dances".*
+WITH "tunes" AS &get_tune_ids_for_versions,
+     "dances" AS &get_dance_rows
+SELECT "recommended_tunes"."tune_id", "dances".*
 FROM "recommended_tunes"
-JOIN "version" ON "recommended_tunes"."tune_id" = "version"."tune_id"
-JOIN "dances" ON "recommended_tunes"."dance_id" = "dances"."id"
-WHERE @version_ids { One_of { "version"."id" IN @version_ids } | All { TRUE } };
+JOIN "tunes" ON "recommended_tunes"."tune_id" = "tunes"."tune_id"
+JOIN "dances" ON "recommended_tunes"."dance_id" = "dances"."id";
 
 -- @get_other_versions_for
 WITH "versions" AS &get_version_rows
@@ -372,5 +368,3 @@ WHERE EXISTS (
 	"this_version"."tune_id" = "version"."tune_id"
 	AND @version_ids { One_of { "this_version"."id" IN @version_ids } | All { TRUE } }
 );
-
-
