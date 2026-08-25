@@ -179,10 +179,10 @@ ORDER BY "index";
 -- @get_composers_for_tunes_of_dances
 WITH "tunes" AS &get_tune_ids_for_dances,
      "persons" AS &get_person_rows
-SELECT "tunes"."tune_id", "persons".*
+SELECT "tune_id", "persons".*
 FROM "tune_composers"
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
-JOIN "tunes" ON "tune_composers"."tune_id" = "tunes"."tune_id"
+JOIN "tunes" USING ("tune_id")
 ORDER BY "index";
 
 -- @get_composers_with_details_for
@@ -208,10 +208,10 @@ WHERE @tune_ids { One_of { "tune_id" IN @tune_ids } | All { TRUE } };
 -- @get_devisers_for_dances_of
 WITH "dances" AS &get_dance_ids_for_tunes,
      "persons" AS &get_person_rows
-SELECT "dances"."dance_id", "persons".*
+SELECT "dance_id", "persons".*
 FROM "dance_devisers"
 JOIN "persons" ON "dance_devisers"."deviser_id" = "persons"."id"
-JOIN "dances" ON "dance_devisers"."dance_id" = "dances"."dance_id";
+JOIN "dances" USING ("dance_id");
 
 -- @get_versions_for
 WITH "versions" AS &get_version_rows

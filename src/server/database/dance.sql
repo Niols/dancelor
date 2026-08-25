@@ -162,8 +162,8 @@ WHERE @dance_ids { One_of { "recommended_tunes"."dance_id" IN @dance_ids } | All
 
 -- @get_composers_for_tunes_for
 WITH "tunes" AS &get_tune_ids_for_dances
-SELECT "tunes"."tune_id", "person"."id", "person"."name"
+SELECT "tune_id", "person"."id", "person"."name"
 FROM "tune_composers"
 JOIN "person" ON "tune_composers"."composer_id" = "person"."id"
-JOIN "tunes" ON "tune_composers"."tune_id" = "tunes"."tune_id"
+JOIN "tunes" USING ("tune_id")
 ORDER BY "index";

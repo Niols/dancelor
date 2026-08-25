@@ -260,11 +260,11 @@ WHERE
     (@terms = '' OR @terms <% "book"."name" OR make_name_search(@terms) <% "name_search")
     AND @author { Some { EXISTS (SELECT 1 FROM "book_authors" WHERE "book_id" = "book"."id" AND "author_id" IN @author) } | None { TRUE } }
     AND @contains_version { Some {
-	    EXISTS (SELECT 1 FROM "book_content" JOIN "set_content" ON "book_content"."set_id" = "set_content"."set_id" WHERE "book_content"."book_id" = "book"."id" AND "set_content"."version_id" IN @contains_version )
+	    EXISTS (SELECT 1 FROM "book_content" JOIN "set_content" USING ("set_id") WHERE "book_content"."book_id" = "book"."id" AND "set_content"."version_id" IN @contains_version )
 	    OR EXISTS (SELECT 1 FROM "book_content_versions" WHERE "book_id" = "book"."id" AND "version_id" IN @contains_version)
 	} | None { TRUE } }
     AND @contains_tune { Some {
-	    EXISTS (SELECT 1 FROM "book_content" JOIN "set_content" ON "book_content"."set_id" = "set_content"."set_id" JOIN "version" ON "set_content"."version_id" = "version"."id" WHERE "book_content"."book_id" = "book"."id" AND "version"."tune_id" IN @contains_tune )
+	    EXISTS (SELECT 1 FROM "book_content" JOIN "set_content" USING ("set_id") JOIN "version" ON "set_content"."version_id" = "version"."id" WHERE "book_content"."book_id" = "book"."id" AND "version"."tune_id" IN @contains_tune )
 	    OR EXISTS (SELECT 1 FROM "book_content_versions" JOIN "version" ON "book_content_versions"."version_id" = "version"."id" WHERE "book_content_versions"."book_id" = "book"."id" AND "version"."tune_id" IN @contains_tune)
 	} | None { TRUE } }
     AND @contains_set { Some { EXISTS (SELECT 1 FROM "book_content" WHERE "book_id" = "book"."id" AND "set_id" IN @contains_set ) } | None { TRUE } }
@@ -374,50 +374,50 @@ WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 -- @get_tune_composers_for
 WITH "tunes" AS &get_tune_ids_in_book,
      "persons" AS &get_person_rows
-SELECT "tunes"."tune_id", "persons".*
+SELECT "tune_id", "persons".*
 FROM "tunes"
-JOIN "tune_composers" ON "tunes"."tune_id" = "tune_composers"."tune_id"
+JOIN "tune_composers" USING ("tune_id")
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
 ORDER BY "tune_composers"."index";
 
 -- @get_version_sources_for
 WITH "versions" AS &get_version_ids_in_book,
      "sources" AS &get_source_short_names
-SELECT "versions"."version_id", "sources".*
+SELECT "version_id", "sources".*
 FROM "versions"
-JOIN "version_sources" ON "versions"."version_id" = "version_sources"."version_id"
+JOIN "version_sources" USING ("version_id")
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id";
 
 -- @get_version_arrangers_for
 WITH "versions" AS &get_version_ids_in_book,
      "persons" AS &get_person_rows
-SELECT "versions"."version_id", "persons".*
+SELECT "version_id", "persons".*
 FROM "versions"
-JOIN "version_arrangers" ON "versions"."version_id" = "version_arrangers"."version_id"
+JOIN "version_arrangers" USING ("version_id")
 JOIN "persons" ON "version_arrangers"."arranger_id" = "persons"."id";
 
 -- @get_set_conceptors_for
 WITH "sets" AS &get_set_ids_in_book,
      "persons" AS &get_person_rows
-SELECT "set_conceptors"."set_id", "persons".*
+SELECT "set_id", "persons".*
 FROM "set_conceptors"
 JOIN "persons" ON "set_conceptors"."conceptor_id" = "persons"."id"
-JOIN "sets" ON "set_conceptors"."set_id" = "sets"."set_id";
+JOIN "sets" USING ("set_id");
 
 -- @get_set_tunes_for
 WITH "sets" AS &get_set_ids_in_book,
      "versions" AS &get_version_names
-SELECT "set_content"."set_id", "versions".*
+SELECT "set_id", "versions".*
 FROM "set_content"
-JOIN "sets" ON "set_content"."set_id" = "sets"."set_id"
+JOIN "sets" USING ("set_id")
 JOIN "versions" ON "set_content"."version_id" = "versions"."id"
 ORDER BY "set_content"."index";
 
 -- @get_dance_devisers_for
 WITH "dances" AS &get_dance_ids_in_book,
      "persons" AS &get_person_rows
-SELECT "dance_devisers"."dance_id", "persons".*
+SELECT "dance_id", "persons".*
 FROM "dance_devisers"
 JOIN "persons" ON "dance_devisers"."deviser_id" = "persons"."id"
-JOIN "dances" ON "dance_devisers"."dance_id" = "dances"."dance_id"
+JOIN "dances" USING ("dance_id")
 ORDER BY "dance_devisers"."index";

@@ -191,24 +191,24 @@ WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } };
 -- @get_tune_composers_for
 WITH "tunes" AS &get_tune_ids_in_set,
      "persons" AS &get_person_rows
-SELECT "tunes"."tune_id", "persons".*
+SELECT "tune_id", "persons".*
 FROM "tunes"
-JOIN "tune_composers" ON "tunes"."tune_id" = "tune_composers"."tune_id"
+JOIN "tune_composers" USING ("tune_id")
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
 ORDER BY "tune_composers"."index";
 
 -- @get_version_sources_for
 WITH "versions" AS &get_version_ids_in_set,
      "sources" AS &get_source_short_names
-SELECT "versions"."version_id", "sources".*
+SELECT "version_id", "sources".*
 FROM "versions"
-JOIN "version_sources" ON "versions"."version_id" = "version_sources"."version_id"
+JOIN "version_sources" USING ("version_id")
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id";
 
 -- @get_version_arrangers_for
 WITH "versions" AS &get_version_ids_in_set,
      "persons" AS &get_person_rows
-SELECT "versions"."version_id", "persons".*
+SELECT "version_id", "persons".*
 FROM "versions"
-JOIN "version_arrangers" ON "versions"."version_id" = "version_arrangers"."version_id"
+JOIN "version_arrangers" USING ("version_id")
 JOIN "persons" ON "version_arrangers"."arranger_id" = "persons"."id";
