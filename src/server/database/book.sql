@@ -268,7 +268,13 @@ WHERE
 	    OR EXISTS (SELECT 1 FROM "book_content_versions" JOIN "version" ON "book_content_versions"."version_id" = "version"."id" WHERE "book_content_versions"."book_id" = "book"."id" AND "version"."tune_id" IN @contains_tune)
 	} | None { TRUE } }
     AND @contains_set { Some { EXISTS (SELECT 1 FROM "book_content" WHERE "book_id" = "book"."id" AND "set_id" IN @contains_set ) } | None { TRUE } }
-ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
+ORDER BY
+    "score" DESC,
+    ("book_rows"."date" IS NULL), -- FIXME: just use "date" DESC NULLS LAST, but sqlgg doesn't support that
+    "book_rows"."date" DESC,
+    "name_search" ASC,
+    "name" ASC,
+    "id" ASC;
 
 -- @get_authors_for
 WITH "persons" AS &get_person_rows
