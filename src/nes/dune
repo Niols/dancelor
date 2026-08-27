@@ -2,15 +2,7 @@
  (name nes)
  (public_name nes)
  (wrapped false)
- (libraries
-  yojson
-  ppx_deriving_yojson.runtime
-  unix
-  lwt
-  slug
-  dates_calc
-  ISO8601
-  uri)
+ (libraries yojson ppx_deriving_yojson unix lwt slug dates_calc ISO8601 uri)
  (preprocess
   (staged_pps
    ppx_import
