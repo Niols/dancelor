@@ -156,18 +156,31 @@ let update_reponse_headers response f =
     ~headers: (f @@ Response.headers response)
     ()
 
-let to_response env (response, body) = (
+type session_cookie_action =
+  | Add_session_cookie
+  | Skip_session_cookie
+
+let to_response sca env (response, body) = (
   (
     update_reponse_headers response @@ fun headers ->
-    let headers = add_cookie ~path: "/" ~secure: true ~httpOnly: true "session" env.session_id headers in
+    let headers =
+      match sca with
+      | Add_session_cookie -> add_cookie ~path: "/" ~secure: true ~httpOnly: true "session" env.session_id headers
+      | Skip_session_cookie -> headers
+    in
     List.fold_left (fun headers response_cookie -> response_cookie headers) headers !(env.response_cookies)
   ),
   body
 )
 
-let with_ request f =
+let with_ sca request f =
   let%lwt env = from_request request in
-  to_response env <$> f env
+  to_response sca env <$> f env
+
+let with_' request f =
+  let%lwt env = from_request request in
+  let%lwt (sca, resp) = f env in
+  lwt @@ to_response sca env resp
 
 let sign_in env user ~remember_me =
   set_user env user;

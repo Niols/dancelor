@@ -8,6 +8,10 @@ type t
 
 (** {2 Interface for the main server} *)
 
+type session_cookie_action =
+  | Add_session_cookie
+  | Skip_session_cookie
+
 (** Processes a request to set the environment accordingly, then passes it to
     the given function, get the response that it creates, and processes that
     response.
@@ -18,8 +22,14 @@ type t
     “remember me” cookie. At the end, this will add the session cookie to the
     response, and possibly add or delete a “remember me” cookie as well. *)
 val with_ :
+  session_cookie_action ->
   Cohttp.Request.t ->
   (t -> (Cohttp.Response.t * 'body) Lwt.t) ->
+  (Cohttp.Response.t * 'body) Lwt.t
+
+val with_' :
+  Cohttp.Request.t ->
+  (t -> (session_cookie_action * (Cohttp.Response.t * 'body)) Lwt.t) ->
   (Cohttp.Response.t * 'body) Lwt.t
 
 (** {2 Interface for controllers} *)
