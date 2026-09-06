@@ -51,13 +51,13 @@ let callback _ request body =
       let uri = Request.uri request in
       let path = Uri.path uri in
       Log.debug (fun m -> m "%s %s" (Madge.Request.meth_to_string meth) path);
-      Environment.with_ request @@ fun env ->
+      Environment.with_' request @@ fun env ->
       if String.starts_with ~needle: "/api/" path then
         (
           Metrics.increment_http_requests_count `API;
           Log.debug (fun m -> m "Looking for an API controller for %s." path);
           let%lwt body = Cohttp_lwt.Body.to_string body in
-          apply_controller env (Madge.Request.make ~meth ~uri ~body)
+          Pair.cons Environment.Add_session_cookie <$> apply_controller env (Madge.Request.make ~meth ~uri ~body)
         )
       else
         Static.serve env path (Uri.query uri)

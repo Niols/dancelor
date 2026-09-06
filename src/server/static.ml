@@ -15,7 +15,7 @@ let serve_static_file path =
     Some (fun () ->
       (* Keep static files in cache for 30 days. *)
       let headers = Cohttp.Header.init_with "Cache-Control" "max-age=2592000" in
-      Cohttp_lwt_unix.Server.respond_file ~headers ~fname: full_path ()
+      Pair.cons Environment.Skip_session_cookie <$> Cohttp_lwt_unix.Server.respond_file ~headers ~fname: full_path ()
     )
   else
     None
@@ -110,7 +110,8 @@ let serve_sitemap env =
       ("Cache-Control", "max-age=3600");
     ]
   in
-  Cohttp_lwt_unix.Server.respond_string ~headers ~status: `OK ~body: sitemap ()
+  Pair.cons Environment.Skip_session_cookie
+  <$> Cohttp_lwt_unix.Server.respond_string ~headers ~status: `OK ~body: sitemap ()
 
 let serve_robots_txt () =
   let robots_txt = spf "Sitemap: %s/sitemap.xml\nUser-agent: *\nAllow: /\n" (Uri.to_string base_url) in
@@ -120,7 +121,8 @@ let serve_robots_txt () =
       ("Cache-Control", "max-age=3600");
     ]
   in
-  Cohttp_lwt_unix.Server.respond_string ~headers ~status: `OK ~body: robots_txt ()
+  Pair.cons Environment.Skip_session_cookie
+  <$> Cohttp_lwt_unix.Server.respond_string ~headers ~status: `OK ~body: robots_txt ()
 
 let serve env path query =
   Log.debug (fun m -> m "Looking to serve %S" path);
@@ -149,5 +151,5 @@ let serve env path query =
       (
         Metrics.increment_http_requests_count `Main_file;
         Log.debug (fun m -> m "Serving main file.");
-        serve_index path query
+        Pair.cons Environment.Add_session_cookie <$> serve_index path query
       )
