@@ -250,7 +250,29 @@ let to_row (set : Model.Set.entry) : Set_row.t Lwt.t =
   let conceptors = List.map Person_editor.to_name conceptors in
   let%lwt tunes = Lwt_list.map_s (Option.get <%> Model.Version.get % fst) @@ Model.Set.contents' set in
   let%lwt tunes = Lwt_list.map_s version_to_name tunes in
-  let%lwt permission = Option.get <$> Permission.can_get_private set in
+  let%lwt permission =
+    let access = Entry.access set in
+    let visibility = Entry.Access.Private.visibility access in
+    let is_public = match visibility with Everyone -> true | _ -> false in
+    let%lwt actor_role, user_is_omniscient_administrator =
+      match%lwt Environment.user with
+      | None -> lwt (None, false)
+      | Some user ->
+        lwt (
+          (
+            if NEList.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then
+              Some (Owner : Permission_new.actor_role)
+            else
+              match visibility with
+              | Select_viewers viewers when NEList.exists (Entry.Id.equal' (Entry.id user)) viewers ->
+                Some (Viewer : Permission_new.actor_role)
+              | _ -> None
+          ),
+          Model.User.is_omniscient_administrator' user
+        )
+    in
+    lwt @@ Permission_new.make ~is_public ~actor_role ~user_is_omniscient_administrator
+  in
   lwt {
     Set_row.id = Entry.id set;
     name = NEString.to_string @@ Model.Set.name' set;

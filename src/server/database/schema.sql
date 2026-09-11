@@ -1,5 +1,4 @@
 CREATE TYPE "type" AS ENUM ('Person', 'User', 'Dance', 'Source', 'Tune', 'Version', 'Set', 'Book');
-CREATE TYPE "visibility" AS ENUM ('Owners_only', 'Everyone', 'Select_viewers');
 
 CREATE TABLE "entry" (
     -- [sqlgg] module=Sql_types.Entry_id_conv
@@ -7,7 +6,7 @@ CREATE TABLE "entry" (
     "type" "type" NOT NULL,
     "created_at" TIMESTAMP NOT NULL,
     "modified_at" TIMESTAMP NOT NULL,
-    "visibility" "visibility",
+    "is_public" BOOLEAN NOT NULL,
     CONSTRAINT "pk_entry" PRIMARY KEY ("id")
 );
 

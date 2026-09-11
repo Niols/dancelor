@@ -1,22 +1,26 @@
 --------------------------------- [ Entries ] ----------------------------------
 
 -- @get_entry_permissions | include: reuse
-SELECT * FROM (
+SELECT *
+FROM (
     SELECT
         "entry"."id",
+        "entry"."is_public",
         CASE
-            WHEN "entry"."visibility" = 'Everyone' THEN 'Everyone'
             WHEN "entry_owners"."owner_id" IS NOT NULL THEN 'Owner'
-            WHEN "entry"."visibility" = 'Select_viewers' AND "entry_viewers"."viewer_id" IS NOT NULL THEN 'Viewer'
-            WHEN "user"."role" = 'Administrator' AND "user"."omniscience" THEN 'Omniscient_administrator'
+            WHEN "entry_viewers"."viewer_id" IS NOT NULL THEN 'Viewer'
             ELSE NULL
-        END AS "permission"
+        END AS "actor_role",
+        COALESCE(("user"."role" = 'Administrator' AND "user"."omniscience"), FALSE) AS "user_is_omniscient_administrator"
     FROM "entry"
     LEFT JOIN "entry_owners" ON "entry_owners"."entry_id" = "entry"."id" AND "entry_owners"."owner_id" = (@user_id :: TEXT NULL)
     LEFT JOIN "entry_viewers" ON "entry_viewers"."entry_id" = "entry"."id" AND "entry_viewers"."viewer_id" = (@user_id :: TEXT NULL)
     LEFT JOIN "user" ON "user"."id" = (@user_id :: TEXT NULL)
-) AS "entry+"
-WHERE "entry+"."permission" IS NOT NULL;
+) AS "sub"
+WHERE
+    "sub"."is_public"
+    OR "sub"."actor_role" IS NOT NULL
+    OR "sub"."user_is_omniscient_administrator";
 
 --------------------------------- [ Persons ] ----------------------------------
 
@@ -171,25 +175,19 @@ JOIN "tune" ON "tune"."id" = "version"."tune_id";
 
 -- @get_set_rows | include: reuse
 WITH entries AS &get_entry_permissions
-SELECT
-    "set"."id",
-    "name",
-    "kind",
-    "permission"
-FROM "set"
-JOIN "entries" ON "entries"."id" = "set"."id";
+SELECT "entries".*, "name", "kind"
+FROM "set" JOIN "entries" USING ("id");
 
 -- @get_set_views | include: reuse
 WITH entries AS &get_entry_permissions
 SELECT
-    "set"."id",
+    "entries".*,
     "name",
     "kind",
     "order",
-    "remark",
-    "permission"
+    "remark"
 FROM "set"
-JOIN "entries" ON "entries"."id" = "set"."id";
+JOIN "entries" USING ("id");
 
 -- @get_set_contents | include: reuse
 SELECT
@@ -222,21 +220,19 @@ ORDER BY "index";
 -- @get_book_rows | include: reuse
 WITH "entries" AS &get_entry_permissions
 SELECT
-    "book"."id",
+    "entries".*,
     "name",
-    "date",
-    "permission"
+    "date"
 FROM "book"
-JOIN "entries" ON "entries"."id" = "book"."id";
+JOIN "entries" USING ("id");
 
 -- @get_book_views | include: reuse
 WITH "entries" AS &get_entry_permissions
 SELECT
-    "book"."id",
+    "entries".*,
     "name",
     "date",
     "remark",
-    "scddb_id",
-    "permission"
+    "scddb_id"
 FROM "book"
-JOIN "entries" ON "entries"."id" = "book"."id";
+JOIN "entries" USING ("id");

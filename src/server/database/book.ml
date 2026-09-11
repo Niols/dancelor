@@ -106,7 +106,9 @@ let get_content_for ~user_id db book_ids =
         ~set_id
         ~set_name
         ~set_kind
-        ~set_permission
+        ~set_is_public
+        ~set_actor_role
+        ~set_user_is_omniscient_administrator
         ~set_parameter_display_name
         ~set_parameter_display_conceptor
         ~set_parameter_display_kind
@@ -152,19 +154,22 @@ let get_content_for ~user_id db book_ids =
       let set =
         Option.map
           (fun set_id ->
-            match set_permission with
-            | None -> Forbidden
-            | Some set_permission ->
+            match set_is_public, (* set_actor_role, *) set_user_is_omniscient_administrator with
+            | None, (* None, *) None -> Forbidden
+            | Some set_is_public, (* Some set_actor_role, *) Some set_user_is_omniscient_administrator ->
               Allowed (
                 set_sql_to_row
                   ~id: set_id
+                  ~is_public: set_is_public
+                  ~actor_role: set_actor_role
+                  ~user_is_omniscient_administrator: set_user_is_omniscient_administrator
                   ~name: (Option.get set_name)
                   ~kind: (Option.get set_kind)
-                  ~permission: set_permission
                   ~conceptors: (set_conceptors_for set_id)
                   ~tunes: (tunes_for set_id)
                   ~k: Fun.id
               )
+            | _ -> assert false
           )
           set_id
       in
@@ -230,7 +235,7 @@ let sql_to_book
     ~scddb_id
     ~created_at
     ~modified_at
-    ~visibility
+    ~is_public
     ~authors
     ~sources
     ~content
@@ -238,16 +243,16 @@ let sql_to_book
     ~viewers
   =
   let visibility : Entry.Access.Private.visibility =
-    match (visibility, viewers) with
-    | (Some `Owners_only, []) -> Owners_only
-    | (Some `Everyone, []) -> Everyone
-    | (Some `Select_viewers, _) ->
+    match (is_public, viewers) with
+    | (true, []) -> Everyone
+    | (true, _) -> assert false
+    | (false, []) -> Owners_only
+    | (false, _) ->
       (
         match viewers with
         | [] -> assert false
         | _ -> Select_viewers (NEList.of_list_exn viewers)
       )
-    | _ -> assert false
   in
   Entry.make
     ~id

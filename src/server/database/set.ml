@@ -133,23 +133,23 @@ let sql_to_set
     ~remark
     ~created_at
     ~modified_at
-    ~visibility
+    ~is_public
     ~conceptors
     ~content
     ~owners
     ~viewers
   =
   let visibility : Entry.Access.Private.visibility =
-    match (visibility, viewers) with
-    | (Some `Owners_only, []) -> Owners_only
-    | (Some `Everyone, []) -> Everyone
-    | (Some `Select_viewers, _) ->
+    match (is_public, viewers) with
+    | (true, []) -> Everyone
+    | (true, _) -> assert false
+    | (false, []) -> Owners_only
+    | (false, _) ->
       (
         match viewers with
         | [] -> assert false
         | _ -> Select_viewers (NEList.of_list_exn viewers)
       )
-    | _ -> assert false
   in
   Entry.make
     ~id: id

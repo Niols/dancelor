@@ -59,21 +59,42 @@ let version_sql_to_row
     content;
   }
 
-let set_sql_to_row ~id ~name ~kind ~conceptors ~tunes ~permission ~(k : Set_row.t -> 'w) : 'w =
+let set_sql_to_row
+    ~id
+    ~is_public
+    ~actor_role
+    ~user_is_omniscient_administrator
+    ~name
+    ~kind
+    ~conceptors
+    ~tunes
+    ~(k : Set_row.t -> 'w)
+    : 'w
+  =
   k {
     id;
     name;
     kind = Kind_dance.of_string kind;
     conceptors;
     tunes;
-    permission = (match permission with `Everyone -> Everyone | `Owner -> Owner | `Viewer -> Viewer | `Omniscient_administrator -> Omniscient_administrator);
+    permission = Permission_new.make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator;
   }
 
-let book_sql_to_row ~id ~name ~date ~authors ~permission ~(k : Book_row.t -> 'w) : 'w =
+let book_sql_to_row
+    ~id
+    ~is_public
+    ~actor_role
+    ~user_is_omniscient_administrator
+    ~name
+    ~date
+    ~authors
+    ~(k : Book_row.t -> 'w)
+    : 'w
+  =
   k {
     id;
     name;
     date = Option.map (Option.get % PartialDate.from_string) date;
     authors;
-    permission = (match permission with `Everyone -> Everyone | `Owner -> Owner | `Viewer -> Viewer | `Omniscient_administrator -> Omniscient_administrator);
+    permission = Permission_new.make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator;
   }

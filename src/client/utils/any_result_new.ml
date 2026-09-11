@@ -264,10 +264,10 @@ let make_result ?classes ?in_search (any : Any_row.t) =
         in
         match permission with
         | None -> Icon.html Icon.(Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"]
-        | Some reason ->
+        | Some permission ->
           let (icon, tooltip, classes) =
-            match reason with
-            | Everyone -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
+            match Permission_new.view_reason permission with
+            | Public -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
             | Viewer -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
             | Owner -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
             | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])

@@ -33,12 +33,12 @@ let get_type db id =
 (** Handles only the insertion into the ["entry"] table. In
     particular, this function does not handle the ["entry_viewers"]
     and ["entry_owners"] tables; see {!insert_or_update_private}. *)
-let insert_to_entry_table db ~visibility type_ =
+let insert_to_entry_table db ~is_public type_ =
   let rec make () =
     let id = Entry.Id.make () in
     match%lwt get_type db id with
     | None ->
-      let%lwt _ = Entry_sql.register db ~id ~type_ ~visibility in
+      let%lwt _ = Entry_sql.register db ~id ~type_ ~is_public in
       lwt @@ Entry.Id.unsafe_coerce id
     | Some _ ->
       make () (* extremely unlikely *)
@@ -48,13 +48,13 @@ let insert_to_entry_table db ~visibility type_ =
     ["entry"] table and handles everything else that has to do with
     private access. *)
 let insert_or_update_private db access f =
-  let (visibility, viewers) =
+  let (is_public, viewers) =
     match Entry.Access.Private.visibility access with
-    | Owners_only -> (`Owners_only, [])
-    | Everyone -> (`Everyone, [])
-    | Select_viewers viewers -> (`Select_viewers, NEList.to_list viewers)
+    | Everyone -> (true, [])
+    | Owners_only -> (false, [])
+    | Select_viewers viewers -> (false, NEList.to_list viewers)
   in
-  let%lwt id = f visibility in
+  let%lwt id = f ~is_public in
   ignore <$> Entry_sql.delete_all_viewers db ~entry_id: id;%lwt
   Lwt_list.iter_s
     (fun viewer ->
@@ -81,17 +81,17 @@ let make_public db type_ =
   assert (classify_type type_ = `Public);
   (* Public objects only need the ["entry"] table in which they have
      no visibility field. *)
-  insert_to_entry_table db type_ ~visibility: None
+  insert_to_entry_table db type_ ~is_public: true
 
 let make_private db type_ access =
   assert (classify_type type_ = `Private);
-  insert_or_update_private db access @@ fun visibility ->
-  insert_to_entry_table db type_ ~visibility: (Some visibility)
+  insert_or_update_private db access @@ fun ~is_public ->
+  insert_to_entry_table db type_ ~is_public
 
 let update_private_access db id access =
   ignore
-  <$> insert_or_update_private db access @@ fun visibility ->
-    ignore <$> Entry_sql.update_visibility db ~id ~visibility: (Some visibility);%lwt
+  <$> insert_or_update_private db access @@ fun ~is_public ->
+    ignore <$> Entry_sql.update_is_public db ~id ~is_public;%lwt
     lwt id
 
 let touch db id =

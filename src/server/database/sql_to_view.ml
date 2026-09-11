@@ -145,7 +145,20 @@ let version_sql_to_view
     content;
   }
 
-let set_sql_to_view ~id ~name ~kind ~conceptors ~content ~order ~remark ~permission ~(k : Set_view.t -> 'w) : 'w =
+let set_sql_to_view
+    ~id
+    ~is_public
+    ~actor_role
+    ~user_is_omniscient_administrator
+    ~name
+    ~kind
+    ~conceptors
+    ~content
+    ~order
+    ~remark
+    ~(k : Set_view.t -> 'w)
+    : 'w
+  =
   k {
     id;
     name;
@@ -154,10 +167,24 @@ let set_sql_to_view ~id ~name ~kind ~conceptors ~content ~order ~remark ~permiss
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
     order = Model_builder.Core.Set_order.of_string order;
     remark;
-    permission = (match permission with `Everyone -> Everyone | `Owner -> Owner | `Viewer -> Viewer | `Omniscient_administrator -> Omniscient_administrator);
+    permission = Permission_new.make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator;
   }
 
-let book_sql_to_view ~id ~name ~date ~authors ~content ~remark ~sources ~scddb_id ~permission ~(k : Book_view.t -> 'w) : 'w =
+let book_sql_to_view
+    ~id
+    ~is_public
+    ~actor_role
+    ~user_is_omniscient_administrator
+    ~name
+    ~date
+    ~authors
+    ~content
+    ~remark
+    ~sources
+    ~scddb_id
+    ~(k : Book_view.t -> 'w)
+    : 'w
+  =
   k {
     id;
     name;
@@ -168,5 +195,5 @@ let book_sql_to_view ~id ~name ~date ~authors ~content ~remark ~sources ~scddb_i
     sources; (* Source_name.t list *)
     scddb_id = Option.map Int64.to_int scddb_id;
     warnings = []; (* a bit ugly *)
-    permission = (match permission with `Everyone -> Everyone | `Owner -> Owner | `Viewer -> Viewer | `Omniscient_administrator -> Omniscient_administrator);
+    permission = Permission_new.make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator;
   }
