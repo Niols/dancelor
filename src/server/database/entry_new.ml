@@ -48,13 +48,7 @@ let insert_to_entry_table db ~is_public type_ =
     ["entry"] table and handles everything else that has to do with
     private access. *)
 let insert_or_update_private db access f =
-  let (is_public, viewers) =
-    match Entry.Access.Private.visibility access with
-    | Everyone -> (true, [])
-    | Owners_only -> (false, [])
-    | Select_viewers viewers -> (false, NEList.to_list viewers)
-  in
-  let%lwt id = f ~is_public in
+  let%lwt id = f ~is_public: (Entry.Access.Private.is_public access) in
   ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
   Lwt_list.iter_s
     (fun viewer ->
@@ -65,7 +59,7 @@ let insert_or_update_private db access f =
           ~user_id: viewer
           ~role: `Viewer
     )
-    viewers;%lwt
+    (Entry.Access.Private.viewers access);%lwt
   Lwt_list.iter_s
     (fun owner ->
       ignore
@@ -75,7 +69,7 @@ let insert_or_update_private db access f =
           ~user_id: owner
           ~role: `Owner
     )
-    (NEList.to_list @@ Entry.Access.Private.owners access);%lwt
+    (Entry.Access.Private.owners access);%lwt
   lwt id
 
 let make_public db type_ =

@@ -139,22 +139,10 @@ let sql_to_set
     ~owners
     ~viewers
   =
-  let visibility : Entry.Access.Private.visibility =
-    match (is_public, viewers) with
-    | (true, []) -> Everyone
-    | (true, _) -> assert false
-    | (false, []) -> Owners_only
-    | (false, _) ->
-      (
-        match viewers with
-        | [] -> assert false
-        | _ -> Select_viewers (NEList.of_list_exn viewers)
-      )
-  in
   Entry.make
     ~id: id
     ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: (Entry.Access.Private.make ~owners: (NEList.of_list_exn owners) ~visibility ())
+    ~access: (Entry.Access.Private.make ~owners ~viewers ~is_public ())
     (
       Model_builder.Core.Set.make
         ~name: (NEString.of_string_exn name)

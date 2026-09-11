@@ -112,11 +112,11 @@ module Make (User : Model_builder.Signature.User) : S = struct
 
   let can_get_private user entry : can_get_private option =
     let access = Entry.access entry in
-    let visibility = Entry.Access.Private.visibility access in
-    (match visibility with Everyone -> Some Everyone | _ -> None)
+    let is_public = Entry.Access.Private.is_public access in
+    (if is_public then Some Everyone else None)
     <|> Option.bind user (fun user ->
-        (if NEList.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then Some (Owner : can_get_private) else None)
-        <|> (match visibility with Select_viewers viewers when NEList.exists (Entry.Id.equal' (Entry.id user)) viewers -> Some Viewer | _ -> None)
+        (if List.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then Some (Owner : can_get_private) else None)
+        <|> (if List.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.viewers access) then Some (Viewer : can_get_private) else None)
         <|> (if User.is_omniscient_administrator' user then Some Omniscient_administrator else None)
       )
 
@@ -125,7 +125,7 @@ module Make (User : Model_builder.Signature.User) : S = struct
   let can_update_private user entry : can_update_private option =
     let access = Entry.access entry in
     Option.bind user (fun user ->
-      (if NEList.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then Some Owner else None)
+      (if List.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then Some Owner else None)
       <|> (if User.is_omniscient_administrator' user then Some Omniscient_administrator else None)
     )
 
