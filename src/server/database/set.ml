@@ -207,8 +207,10 @@ let set_to_sql ~create_or_update db id set =
 let get id : Model_builder.Core.Set.entry option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt conceptors = Set_sql.List.get_conceptors db ~set_id: id (fun ~conceptor_id -> conceptor_id) in
-  let%lwt owners = Entry_sql.List.get_owners db ~entry_id: id (fun ~owner_id -> owner_id) in
-  let%lwt viewers = Entry_sql.List.get_viewers db ~entry_id: id (fun ~viewer_id -> viewer_id) in
+  let%lwt (owners, viewers) =
+    List.partition_map (function (`Owner, user_id) -> Left user_id | (`Viewer, user_id) -> Right user_id)
+    <$> Entry_sql.List.get_actors db ~entry_id: id (fun ~user_id ~role -> (role, user_id))
+  in
   let%lwt content =
     Set_sql.List.get_content db ~set_id: id (fun
         ~version_id

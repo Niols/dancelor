@@ -1558,3 +1558,58 @@ ALTER TABLE "entry" ALTER COLUMN "is_public" SET NOT NULL, DROP COLUMN "visibili
 
 -- @m074_2026_09_entry_replace_visibility_by_is_public__drop_type
 DROP TYPE "visibility";
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__create_actor_role_type
+CREATE TYPE "actor_role" AS ENUM ('Owner', 'Viewer');
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__create_actors_table
+CREATE TABLE "entry_actors" (
+    "entry_id" VARCHAR(14) NOT NULL,
+    "user_id" VARCHAR(14) NOT NULL,
+    "role" "actor_role" NOT NULL
+);
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__add_constraint_entry_id
+ALTER TABLE "entry_actors"
+ADD CONSTRAINT "fk_entry_actors_entry_id"
+FOREIGN KEY ("entry_id") REFERENCES "entry" ("id");
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__add_constraint_user_id
+ALTER TABLE "entry_actors"
+ADD CONSTRAINT "fk_entry_actors_user_id"
+FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__add_constraint_entry_id_user_id
+ALTER TABLE "entry_actors"
+ADD CONSTRAINT "uq_entry_actors_entry_id_user_id"
+UNIQUE ("entry_id", "user_id");
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__copy_owners
+INSERT INTO "entry_actors"
+SELECT
+    "entry_id",
+    "owner_id" AS "user_id",
+    'Owner' AS "role"
+FROM "entry_owners";
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__copy_viewers
+INSERT INTO "entry_actors"
+SELECT
+    "entry_viewers"."entry_id",
+    "viewer_id" AS "user_id",
+    'Viewer' AS "role"
+FROM "entry_viewers"
+LEFT JOIN "entry_owners"
+    ON "entry_owners"."entry_id" = "entry_viewers"."entry_id"
+    AND "entry_owners"."owner_id" = "entry_viewers"."viewer_id"
+WHERE "entry_owners"."entry_id" IS NULL;
+-- NOTE: This LEFT JOIN is a bit peculiar. Basically, we want to add
+-- all the viewers except if they are already present as owners. The
+-- clean way would be to ON CONFLICT DO NOTHING, but this does not
+-- seem to work well in sqlgg as of September 2026.
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__drop_owners_table
+DROP TABLE "entry_owners";
+
+-- @m075_2026_09_entry_merge_owners_viewers_into_actors__drop_viewers_table
+DROP TABLE "entry_viewers";

@@ -426,8 +426,10 @@ let get id : Model_builder.Core.Book.entry option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt authors = Book_sql.List.get_authors db ~book_id: id (fun ~author_id -> author_id) in
   let%lwt sources = Book_sql.List.get_sources db ~book_id: id (fun ~source_id -> source_id) in
-  let%lwt owners = Entry_sql.List.get_owners db ~entry_id: id (fun ~owner_id -> owner_id) in
-  let%lwt viewers = Entry_sql.List.get_viewers db ~entry_id: id (fun ~viewer_id -> viewer_id) in
+  let%lwt (owners, viewers) =
+    List.partition_map (function (`Owner, user_id) -> Left user_id | (`Viewer, user_id) -> Right user_id)
+    <$> Entry_sql.List.get_actors db ~entry_id: id (fun ~user_id ~role -> (role, user_id))
+  in
   let content_versions = Hashtbl.create 8 in
   Book_sql.Fold.get_content_versions db ~book_id: id (fun ~content_index -> sql_to_content_version ~k: (fun v () -> Hashtbl.add content_versions content_index v)) ();%lwt
   let%lwt content = Book_sql.List.get_content db ~book_id: id (fun ~index -> sql_to_content_item ~versions_and_params: (List.rev @@ Hashtbl.find_all content_versions index) ~k: Fun.id) in

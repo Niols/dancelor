@@ -41,6 +41,16 @@ CREATE EXTENSION IF NOT EXISTS "unaccent" WITH SCHEMA "public";
 
 
 --
+-- Name: actor_role; Type: TYPE; Schema: dancelor; Owner: -
+--
+
+CREATE TYPE "dancelor"."actor_role" AS ENUM (
+    'Owner',
+    'Viewer'
+);
+
+
+--
 -- Name: globally_unique_id_type; Type: TYPE; Schema: dancelor; Owner: -
 --
 
@@ -261,22 +271,13 @@ CREATE TABLE "dancelor"."entry" (
 
 
 --
--- Name: entry_owners; Type: TABLE; Schema: dancelor; Owner: -
+-- Name: entry_actors; Type: TABLE; Schema: dancelor; Owner: -
 --
 
-CREATE TABLE "dancelor"."entry_owners" (
+CREATE TABLE "dancelor"."entry_actors" (
     "entry_id" character varying(14) NOT NULL,
-    "owner_id" character varying(14) NOT NULL
-);
-
-
---
--- Name: entry_viewers; Type: TABLE; Schema: dancelor; Owner: -
---
-
-CREATE TABLE "dancelor"."entry_viewers" (
-    "entry_id" character varying(14) NOT NULL,
-    "viewer_id" character varying(14) NOT NULL
+    "user_id" character varying(14) NOT NULL,
+    "role" "dancelor"."actor_role" NOT NULL
 );
 
 
@@ -617,18 +618,12 @@ INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_p
 
 
 --
--- Data for Name: entry_owners; Type: TABLE DATA; Schema: dancelor; Owner: -
+-- Data for Name: entry_actors; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."entry_owners" ("entry_id", "owner_id") VALUES ('ului-yd9x-o35w', 'lt3h-edgt-ac97');
-INSERT INTO "dancelor"."entry_owners" ("entry_id", "owner_id") VALUES ('wrwk-cz9g-g3wi', 'lt3h-edgt-ac97');
-INSERT INTO "dancelor"."entry_owners" ("entry_id", "owner_id") VALUES ('0fi3-1iot-6tbq', '8x83-e8ky-bhea');
-
-
---
--- Data for Name: entry_viewers; Type: TABLE DATA; Schema: dancelor; Owner: -
---
-
+INSERT INTO "dancelor"."entry_actors" ("entry_id", "user_id", "role") VALUES ('ului-yd9x-o35w', 'lt3h-edgt-ac97', 'Owner');
+INSERT INTO "dancelor"."entry_actors" ("entry_id", "user_id", "role") VALUES ('wrwk-cz9g-g3wi', 'lt3h-edgt-ac97', 'Owner');
+INSERT INTO "dancelor"."entry_actors" ("entry_id", "user_id", "role") VALUES ('0fi3-1iot-6tbq', '8x83-e8ky-bhea', 'Owner');
 
 
 --
@@ -709,6 +704,7 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m071_2026_07
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m072_2026_07_gin_indices', '2026-07-06 00:45:28.19765+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m073_2026_08_user_github_handle', '2026-08-11 10:25:47.000453+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m074_2026_09_entry_replace_visibility_by_is_public', '2026-09-11 15:57:26.490582+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m075_2026_09_entry_merge_owners_viewers_into_actors', '2026-09-11 21:35:29.47458+00');
 
 
 --
@@ -1081,19 +1077,11 @@ ALTER TABLE ONLY "dancelor"."dance_devisers"
 
 
 --
--- Name: entry_owners uq_entry_owners_entry_id_owner_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: entry_actors uq_entry_actors_entry_id_user_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
-ALTER TABLE ONLY "dancelor"."entry_owners"
-    ADD CONSTRAINT "uq_entry_owners_entry_id_owner_id" UNIQUE ("entry_id", "owner_id");
-
-
---
--- Name: entry_viewers uq_entry_viewers_entry_id_viewer_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."entry_viewers"
-    ADD CONSTRAINT "uq_entry_viewers_entry_id_viewer_id" UNIQUE ("entry_id", "viewer_id");
+ALTER TABLE ONLY "dancelor"."entry_actors"
+    ADD CONSTRAINT "uq_entry_actors_entry_id_user_id" UNIQUE ("entry_id", "user_id");
 
 
 --
@@ -1431,35 +1419,19 @@ ALTER TABLE ONLY "dancelor"."dance"
 
 
 --
--- Name: entry_owners fk_entry_owners_entry_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: entry_actors fk_entry_actors_entry_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
 --
 
-ALTER TABLE ONLY "dancelor"."entry_owners"
-    ADD CONSTRAINT "fk_entry_owners_entry_id" FOREIGN KEY ("entry_id") REFERENCES "dancelor"."entry"("id");
-
-
---
--- Name: entry_owners fk_entry_owners_owner_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."entry_owners"
-    ADD CONSTRAINT "fk_entry_owners_owner_id" FOREIGN KEY ("owner_id") REFERENCES "dancelor"."user"("id");
+ALTER TABLE ONLY "dancelor"."entry_actors"
+    ADD CONSTRAINT "fk_entry_actors_entry_id" FOREIGN KEY ("entry_id") REFERENCES "dancelor"."entry"("id");
 
 
 --
--- Name: entry_viewers fk_entry_viewers_entry_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: entry_actors fk_entry_actors_user_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
 --
 
-ALTER TABLE ONLY "dancelor"."entry_viewers"
-    ADD CONSTRAINT "fk_entry_viewers_entry_id" FOREIGN KEY ("entry_id") REFERENCES "dancelor"."entry"("id");
-
-
---
--- Name: entry_viewers fk_entry_viewers_viewer_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."entry_viewers"
-    ADD CONSTRAINT "fk_entry_viewers_viewer_id" FOREIGN KEY ("viewer_id") REFERENCES "dancelor"."user"("id");
+ALTER TABLE ONLY "dancelor"."entry_actors"
+    ADD CONSTRAINT "fk_entry_actors_user_id" FOREIGN KEY ("user_id") REFERENCES "dancelor"."user"("id");
 
 
 --

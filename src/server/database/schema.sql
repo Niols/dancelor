@@ -40,24 +40,17 @@ CREATE TABLE "user" (
     CONSTRAINT "fk_user_person_id" FOREIGN KEY ("person_id") REFERENCES "person" ("id")
 );
 
-CREATE TABLE "entry_viewers" (
-    -- [sqlgg] module=Sql_types.Entry_id_conv
-    "entry_id" VARCHAR(14) NOT NULL,
-    -- [sqlgg] module=Sql_types.User_id_conv
-    "viewer_id" VARCHAR(14) NOT NULL,
-    CONSTRAINT "fk_entry_viewers_entry_id" FOREIGN KEY ("entry_id") REFERENCES "entry" ("id"),
-    CONSTRAINT "fk_entry_viewers_viewer_id" FOREIGN KEY ("viewer_id") REFERENCES "user" ("id"),
-    CONSTRAINT "uq_entry_viewers_entry_id_viewer_id" UNIQUE ("entry_id", "viewer_id")
-);
+CREATE TYPE "actor_role" AS ENUM ('Owner', 'Viewer');
 
-CREATE TABLE "entry_owners" (
+CREATE TABLE "entry_actors" (
     -- [sqlgg] module=Sql_types.Entry_id_conv
     "entry_id" VARCHAR(14) NOT NULL,
     -- [sqlgg] module=Sql_types.User_id_conv
-    "owner_id" VARCHAR(14) NOT NULL,
-    CONSTRAINT "fk_entry_owners_entry_id" FOREIGN KEY ("entry_id") REFERENCES "entry" ("id"),
-    CONSTRAINT "fk_entry_owners_owner_id" FOREIGN KEY ("owner_id") REFERENCES "user" ("id"),
-    CONSTRAINT "uq_entry_owners_entry_id_owner_id" UNIQUE ("entry_id", "owner_id")
+    "user_id" VARCHAR(14) NOT NULL,
+    "role" "actor_role" NOT NULL,
+    CONSTRAINT "fk_entry_actors_entry_id" FOREIGN KEY ("entry_id") REFERENCES "entry" ("id"),
+    CONSTRAINT "fk_entry_actors_user_id" FOREIGN KEY ("user_id") REFERENCES "user" ("id"),
+    CONSTRAINT "uq_entry_actors_entry_id_user_id" UNIQUE ("entry_id", "user_id")
 );
 
 CREATE TABLE "remember_me_tokens" (

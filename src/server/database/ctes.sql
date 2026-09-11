@@ -6,15 +6,13 @@ FROM (
     SELECT
         "entry"."id",
         "entry"."is_public",
-        CASE
-            WHEN "entry_owners"."owner_id" IS NOT NULL THEN 'Owner'
-            WHEN "entry_viewers"."viewer_id" IS NOT NULL THEN 'Viewer'
-            ELSE NULL
-        END AS "actor_role",
-        COALESCE(("user"."role" = 'Administrator' AND "user"."omniscience"), FALSE) AS "user_is_omniscient_administrator"
+        "entry_actors"."role" AS "actor_role",
+        COALESCE(
+            ("user"."role" = 'Administrator' AND "user"."omniscience"),
+            FALSE
+        ) AS "user_is_omniscient_administrator"
     FROM "entry"
-    LEFT JOIN "entry_owners" ON "entry_owners"."entry_id" = "entry"."id" AND "entry_owners"."owner_id" = (@user_id :: TEXT NULL)
-    LEFT JOIN "entry_viewers" ON "entry_viewers"."entry_id" = "entry"."id" AND "entry_viewers"."viewer_id" = (@user_id :: TEXT NULL)
+    LEFT JOIN "entry_actors" ON "entry_actors"."entry_id" = "entry"."id" AND "entry_actors"."user_id" = (@user_id :: TEXT NULL)
     LEFT JOIN "user" ON "user"."id" = (@user_id :: TEXT NULL)
 ) AS "sub"
 WHERE

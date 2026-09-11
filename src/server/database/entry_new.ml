@@ -55,24 +55,25 @@ let insert_or_update_private db access f =
     | Select_viewers viewers -> (false, NEList.to_list viewers)
   in
   let%lwt id = f ~is_public in
-  ignore <$> Entry_sql.delete_all_viewers db ~entry_id: id;%lwt
+  ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
   Lwt_list.iter_s
     (fun viewer ->
       ignore
-      <$> Entry_sql.add_one_viewer
+      <$> Entry_sql.add_one_actor
           db
           ~entry_id: id
-          ~viewer_id: viewer
+          ~user_id: viewer
+          ~role: `Viewer
     )
     viewers;%lwt
-  ignore <$> Entry_sql.delete_all_owners db ~entry_id: id;%lwt
   Lwt_list.iter_s
     (fun owner ->
       ignore
-      <$> Entry_sql.add_one_owner
+      <$> Entry_sql.add_one_actor
           db
           ~entry_id: id
-          ~owner_id: owner
+          ~user_id: owner
+          ~role: `Owner
     )
     (NEList.to_list @@ Entry.Access.Private.owners access);%lwt
   lwt id
@@ -98,8 +99,7 @@ let touch db id =
   ignore <$> Entry_sql.touch db ~id
 
 let delete db id =
-  ignore <$> Entry_sql.delete_all_owners db ~entry_id: id;%lwt
-  ignore <$> Entry_sql.delete_all_viewers db ~entry_id: id;%lwt
+  ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
   ignore <$> Entry_sql.delete db ~id
 
 let get_newest ~user_id ~limit =
