@@ -1039,6 +1039,12 @@ let migrations : migration list = [
     bypass {| CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "tune_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops") |};
   ];
   make_ddl "m073_2026_08_user_github_handle" Migrations_sql.m073_2026_08_user_github_handle;
+  make_ddls "m074_2026_09_entry_replace_visibility_by_is_public" [
+    Migrations_sql.m074_2026_09_entry_replace_visibility_by_is_public__add_column;
+    Migrations_sql.m074_2026_09_entry_replace_visibility_by_is_public__migrate;
+    Migrations_sql.m074_2026_09_entry_replace_visibility_by_is_public__cleanup_columns;
+    Migrations_sql.m074_2026_09_entry_replace_visibility_by_is_public__drop_type;
+  ];
 ]
 
 exception Migration_failed of string * exn

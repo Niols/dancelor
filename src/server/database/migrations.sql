@@ -1546,3 +1546,15 @@ ALTER TABLE "tune_extra_names"
 
 -- @m073_2026_08_user_github_handle
 ALTER TABLE "user" ADD COLUMN "github_handle" VARCHAR(64);
+
+-- @m074_2026_09_entry_replace_visibility_by_is_public__add_column
+ALTER TABLE "entry" ADD COLUMN "is_public" BOOLEAN;
+
+-- @m074_2026_09_entry_replace_visibility_by_is_public__migrate
+UPDATE "entry" SET "is_public" = ("visibility" IS NULL OR "visibility" = 'Everyone');
+
+-- @m074_2026_09_entry_replace_visibility_by_is_public__cleanup_columns
+ALTER TABLE "entry" ALTER COLUMN "is_public" SET NOT NULL, DROP COLUMN "visibility";
+
+-- @m074_2026_09_entry_replace_visibility_by_is_public__drop_type
+DROP TYPE "visibility";
