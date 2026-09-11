@@ -131,7 +131,7 @@ module Set_view = struct
     content: (Version_row.t * Model_builder.Core.Version_parameters.t) list; [@default []] (** FIXME: more compact content *)
     order: Model_builder.Core.Set_order.t;
     remark: string option; [@default None]
-    permission: Permission_builder.can_get_private;
+    permission: Permission_new.t;
   }
   [@@deriving yojson, fields]
 
@@ -174,7 +174,7 @@ module Book_view = struct
     sources: Source_name.t list; [@default []]
     scddb_id: int option; [@default None]
     warnings: warning list; [@default []]
-    permission: Permission_builder.can_get_private;
+    permission: Permission_new.t;
   }
   [@@deriving yojson, fields]
 end

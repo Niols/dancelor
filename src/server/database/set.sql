@@ -6,7 +6,7 @@ SELECT
     "remark",
     "created_at",
     "modified_at",
-    "visibility"
+    "is_public"
 FROM "set"
 JOIN "entry" ON "set"."id" = "entry"."id"
 WHERE "set"."id" = @id

@@ -106,7 +106,9 @@ let get_content_for ~user_id db book_ids =
         ~set_id
         ~set_name
         ~set_kind
-        ~set_permission
+        ~set_is_public
+        ~set_actor_role
+        ~set_user_is_omniscient_administrator
         ~set_parameter_display_name
         ~set_parameter_display_conceptor
         ~set_parameter_display_kind
@@ -152,19 +154,22 @@ let get_content_for ~user_id db book_ids =
       let set =
         Option.map
           (fun set_id ->
-            match set_permission with
-            | None -> Forbidden
-            | Some set_permission ->
+            match set_is_public, (* set_actor_role, *) set_user_is_omniscient_administrator with
+            | None, (* None, *) None -> Forbidden
+            | Some set_is_public, (* Some set_actor_role, *) Some set_user_is_omniscient_administrator ->
               Allowed (
                 set_sql_to_row
                   ~id: set_id
+                  ~is_public: set_is_public
+                  ~actor_role: set_actor_role
+                  ~user_is_omniscient_administrator: set_user_is_omniscient_administrator
                   ~name: (Option.get set_name)
                   ~kind: (Option.get set_kind)
-                  ~permission: set_permission
                   ~conceptors: (set_conceptors_for set_id)
                   ~tunes: (tunes_for set_id)
                   ~k: Fun.id
               )
+            | _ -> assert false
           )
           set_id
       in
@@ -230,29 +235,17 @@ let sql_to_book
     ~scddb_id
     ~created_at
     ~modified_at
-    ~visibility
+    ~is_public
     ~authors
     ~sources
     ~content
     ~owners
     ~viewers
   =
-  let visibility : Entry.Access.Private.visibility =
-    match (visibility, viewers) with
-    | (Some `Owners_only, []) -> Owners_only
-    | (Some `Everyone, []) -> Everyone
-    | (Some `Select_viewers, _) ->
-      (
-        match viewers with
-        | [] -> assert false
-        | _ -> Select_viewers (NEList.of_list_exn viewers)
-      )
-    | _ -> assert false
-  in
   Entry.make
     ~id
     ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: (Entry.Access.Private.make ~owners: (NEList.of_list_exn owners) ~visibility ())
+    ~access: (Entry.Access.Private.make ~owners ~viewers ~is_public ())
     (
       Model_builder.Core.Book.make
         ~name: (NEString.of_string_exn name)
@@ -421,8 +414,10 @@ let get id : Model_builder.Core.Book.entry option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt authors = Book_sql.List.get_authors db ~book_id: id (fun ~author_id -> author_id) in
   let%lwt sources = Book_sql.List.get_sources db ~book_id: id (fun ~source_id -> source_id) in
-  let%lwt owners = Entry_sql.List.get_owners db ~entry_id: id (fun ~owner_id -> owner_id) in
-  let%lwt viewers = Entry_sql.List.get_viewers db ~entry_id: id (fun ~viewer_id -> viewer_id) in
+  let%lwt (owners, viewers) =
+    List.partition_map (function (`Owner, user_id) -> Left user_id | (`Viewer, user_id) -> Right user_id)
+    <$> Entry_sql.List.get_actors db ~entry_id: id (fun ~user_id ~role -> (role, user_id))
+  in
   let content_versions = Hashtbl.create 8 in
   Book_sql.Fold.get_content_versions db ~book_id: id (fun ~content_index -> sql_to_content_version ~k: (fun v () -> Hashtbl.add content_versions content_index v)) ();%lwt
   let%lwt content = Book_sql.List.get_content db ~book_id: id (fun ~index -> sql_to_content_item ~versions_and_params: (List.rev @@ Hashtbl.find_all content_versions index) ~k: Fun.id) in

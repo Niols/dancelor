@@ -1039,6 +1039,23 @@ let migrations : migration list = [
     bypass {| CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "tune_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops") |};
   ];
   make_ddl "m073_2026_08_user_github_handle" Migrations_sql.m073_2026_08_user_github_handle;
+  make_ddls "m074_2026_09_entry_replace_visibility_by_is_public" [
+    Migrations_sql.m074_2026_09_entry_replace_visibility_by_is_public__add_column;
+    Migrations_sql.m074_2026_09_entry_replace_visibility_by_is_public__migrate;
+    Migrations_sql.m074_2026_09_entry_replace_visibility_by_is_public__cleanup_columns;
+    Migrations_sql.m074_2026_09_entry_replace_visibility_by_is_public__drop_type;
+  ];
+  make_ddls "m075_2026_09_entry_merge_owners_viewers_into_actors" [
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__create_actor_role_type;
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__create_actors_table;
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__add_constraint_entry_id;
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__add_constraint_user_id;
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__add_constraint_entry_id_user_id;
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__copy_owners;
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__copy_viewers;
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__drop_owners_table;
+    Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__drop_viewers_table;
+  ];
 ]
 
 exception Migration_failed of string * exn

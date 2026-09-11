@@ -50,6 +50,10 @@ val make_page :
   format: ('result -> Html_types.div_content_fun Html.elt) ->
   href: ('result -> Uri.t) ->
   mode: ('result, 'state) mode ->
+  ?after_save: (unit -> unit Lwt.t) ->
+  ?title_suffix: string ->
+  ?pre_body: Html_types.div_content_fun elt list ->
+  ?post_body: Html_types.div_content_fun elt list ->
   ('value, 'state) bundle ->
   Page.t Lwt.t
 (** Make a fully-featured editor that takes a whole page.
@@ -125,6 +129,8 @@ val initialise :
 val page :
   ?after_save: (unit -> unit Lwt.t) ->
   ?title_suffix: string ->
+  ?pre_body: Html_types.div_content_fun elt list ->
+  ?post_body: Html_types.div_content_fun elt list ->
   ('result, 'product, 'value, 'state) t ->
   Page.t Lwt.t
 (** Render an initialised editor as a full page, ready for use. The additional

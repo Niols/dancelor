@@ -82,7 +82,7 @@ module Set_row = struct
     kind: Kind_dance.t;
     conceptors: Person_name.t list; [@default []]
     tunes: Version_name.t list; [@default []]
-    permission: Permission_builder.can_get_private;
+    permission: Permission_new.t;
   }
   [@@deriving yojson, fields]
 
@@ -95,7 +95,7 @@ module Book_row = struct
     name: string;
     date: PartialDate.t option; [@default None]
     authors: Person_name.t list; [@default []]
-    permission: Permission_builder.can_get_private;
+    permission: Permission_new.t;
   }
   [@@deriving yojson, fields]
 end

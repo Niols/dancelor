@@ -9,23 +9,6 @@ open Utils
 let (show_preview, set_show_preview) = S.create false
 let flip_show_preview () = set_show_preview (not (S.value show_preview))
 
-type visibility' =
-  | Owners_only
-  | Everyone
-  | Select_viewers of User_row.t NEList.t
-
-let visibility'_to_visibility : visibility' -> Entry.Access.Private.visibility = function
-  | Owners_only -> Owners_only
-  | Everyone -> Everyone
-  | Select_viewers users -> Select_viewers (NEList.map User_row.id users)
-
-let visibility_to_visibility' : Entry.Access.Private.visibility -> visibility' Lwt.t = function
-  | Owners_only -> lwt Owners_only
-  | Everyone -> lwt Everyone
-  | Select_viewers users ->
-    let%lwt users = Monadise_lwt.lift_1_1 NEList.map (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) users in
-    lwt (Select_viewers users)
-
 let model_content_to_content =
   Lwt_list.map_p @@ function
     | Model.Book.Part title ->
@@ -120,18 +103,6 @@ let set_and_parameters ?(label = "Set") () =
         ()
     )
     Set_parameters_editor.e
-
-(* ~cast: (function *)
-(*   | Zero() -> Model.Book.Dance_only *)
-(*   | Succ Zero versions_and_params -> Model.Book.Dance_versions versions_and_params *)
-(*   | Succ Succ Zero (set, params) -> Model.Book.Dance_set (set, params) *)
-(*   | _ -> assert false (\* types guarantee this is not reachable *\) *)
-(* ) *)
-(* ~uncast: (function *)
-(*   | Model.Book.Dance_only -> Zero () *)
-(*   | Model.Book.Dance_versions versions_and_params -> one versions_and_params *)
-(*   | Model.Book.Dance_set (set, params) -> two (set, params) *)
-(* ) *)
 
 let dance_and_dance_page =
   let open Plus.Bundle in
@@ -308,7 +279,7 @@ let editor user =
         Option.of_string_nonempty
     )
     () ^::
-  Star.prepare_non_empty
+  Star.prepare
     ~label: "Owners"
     ~empty: [user]
     (
@@ -335,15 +306,15 @@ let editor user =
     Plus.prepare
       ~label: "Visibility"
       ~cast: (function
-        | Zero() -> Owners_only
-        | Succ Zero() -> Everyone
-        | Succ Succ Zero viewers -> Select_viewers viewers
+        | Zero() -> `Owners_only
+        | Succ Zero() -> `Everyone
+        | Succ Succ Zero viewers -> `Select_viewers viewers
         | _ -> assert false (* types guarantee this is not reachable *)
       )
       ~uncast: (function
-        | Owners_only -> Zero ()
-        | Everyone -> one ()
-        | Select_viewers viewers -> two viewers
+        | `Owners_only -> Zero ()
+        | `Everyone -> one ()
+        | `Select_viewers viewers -> two viewers
       )
       ~selected_when_empty: 0
       (
@@ -379,9 +350,15 @@ let assemble (name, (authors, (date, (contents, (remark, (sources, (scddb_id, (o
   let authors = List.map Person_row.id authors in
   let sources = List.map Source_row.id sources in
   let contents = content_to_model_content contents in
+  let (is_public, viewers) =
+    match visibility with
+    | `Everyone -> (true, [])
+    | `Owners_only -> (false, [])
+    | `Select_viewers viewers -> (false, NEList.to_list viewers)
+  in
   (
     Model.Book.make ~name ~authors ~date ~contents ~remark ~sources ~scddb_id (),
-    Entry.Access.Private.make ~owners: (NEList.map User_row.id owners) ~visibility: (visibility'_to_visibility visibility) ()
+    Entry.Access.Private.make ~owners: (List.map User_row.id owners) ~viewers: (List.map User_row.id viewers) ~is_public ()
   )
 
 let submit mode (book, access) =
@@ -405,26 +382,48 @@ let disassemble (book, access) =
   let remark = Model.Book.remark book in
   let%lwt sources = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Source Get_row)) (Model.Book.sources book) in
   let scddb_id = Model.Book.scddb_id book in
-  let%lwt owners = NEList.of_list_exn <$> Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (NEList.to_list @@ Entry.Access.Private.owners access) in
-  let%lwt visibility = visibility_to_visibility' @@ Entry.Access.Private.visibility access in
+  let%lwt owners = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (Entry.Access.Private.owners access) in
+  let%lwt viewers = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (Entry.Access.Private.viewers access) in
+  let visibility =
+    match Entry.Access.Private.is_public access, NEList.of_list viewers with
+    | true, _ -> `Everyone
+    | false, None -> `Owners_only
+    | false, Some viewers -> `Select_viewers viewers
+  in
   lwt (name, (authors, (date, (contents, (remark, (sources, (scddb_id, (owners, (visibility, ())))))))))
 
 let create mode =
   let%lwt user = Option.map Entry.id <$> Environment.user in
-  (* FIXME: if [mode] is an edition, then we should assert_can_update_private *)
-  Main_page.assert_can_create_private @@ fun () ->
-  Editor.make_page
-    ~key: "book"
-    ~icon: (Model Book)
-    (editor user)
-    ~mode
-    ~format: Formatters.Book.name'
-    ~href: (Endpoints.Page.href_book % Entry.id)
-    ~assemble
-    ~submit
-    ~unsubmit
-    ~disassemble
-    ~check_product: (fun (book1, access1) (book2, access2) -> Model.Book.equal book1 book2 && Entry.Access.Private.equal access1 access2)
+  let make_editor = fun ?pre_body () ->
+    Editor.make_page
+      ~key: "book"
+      ~icon: (Model Book)
+      (editor user)
+      ~mode
+      ~format: Formatters.Book.name'
+      ~href: (Endpoints.Page.href_book % Entry.id)
+      ~assemble
+      ~submit
+      ~unsubmit
+      ~disassemble
+      ~check_product: (fun (book1, access1) (book2, access2) -> Model.Book.equal book1 book2 && Entry.Access.Private.equal access1 access2)
+      ?pre_body
+  in
+  match mode with
+  | Create _ | Create_with_local_storage | Quick_create _ ->
+    Main_page.assert_can_create_private make_editor
+  | Quick_edit _ ->
+    (* FIXME: I guess we should be able to check permissions like for Edit. *)
+    Main_page.assert_can_create_private make_editor
+  | Edit book ->
+    let%lwt permission = Set_editor.entry_permission_new book in
+    Main_page.assert_can_update permission @@ fun edit_reason ->
+    let pre_body =
+      match edit_reason with
+      | Owner -> []
+      | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this book as an omniscient administrator."]]]
+    in
+    make_editor ~pre_body ()
 
 let add () =
   create Create_with_local_storage

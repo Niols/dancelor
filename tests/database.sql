@@ -41,6 +41,16 @@ CREATE EXTENSION IF NOT EXISTS "unaccent" WITH SCHEMA "public";
 
 
 --
+-- Name: actor_role; Type: TYPE; Schema: dancelor; Owner: -
+--
+
+CREATE TYPE "dancelor"."actor_role" AS ENUM (
+    'Owner',
+    'Viewer'
+);
+
+
+--
 -- Name: globally_unique_id_type; Type: TYPE; Schema: dancelor; Owner: -
 --
 
@@ -120,17 +130,6 @@ CREATE TYPE "dancelor"."type" AS ENUM (
     'Version',
     'Set',
     'Book'
-);
-
-
---
--- Name: visibility; Type: TYPE; Schema: dancelor; Owner: -
---
-
-CREATE TYPE "dancelor"."visibility" AS ENUM (
-    'Owners_only',
-    'Everyone',
-    'Select_viewers'
 );
 
 
@@ -267,27 +266,18 @@ CREATE TABLE "dancelor"."entry" (
     "type" "dancelor"."type" NOT NULL,
     "created_at" timestamp without time zone NOT NULL,
     "modified_at" timestamp without time zone NOT NULL,
-    "visibility" "dancelor"."visibility"
+    "is_public" boolean NOT NULL
 );
 
 
 --
--- Name: entry_owners; Type: TABLE; Schema: dancelor; Owner: -
+-- Name: entry_actors; Type: TABLE; Schema: dancelor; Owner: -
 --
 
-CREATE TABLE "dancelor"."entry_owners" (
+CREATE TABLE "dancelor"."entry_actors" (
     "entry_id" character varying(14) NOT NULL,
-    "owner_id" character varying(14) NOT NULL
-);
-
-
---
--- Name: entry_viewers; Type: TABLE; Schema: dancelor; Owner: -
---
-
-CREATE TABLE "dancelor"."entry_viewers" (
-    "entry_id" character varying(14) NOT NULL,
-    "viewer_id" character varying(14) NOT NULL
+    "user_id" character varying(14) NOT NULL,
+    "role" "dancelor"."actor_role" NOT NULL
 );
 
 
@@ -604,41 +594,36 @@ INSERT INTO "dancelor"."dance_extra_names" ("dance_id", "extra_name") VALUES ('c
 -- Data for Name: entry; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('4plf-srss-ihav', 'Person', '2018-12-07 00:18:53', '2023-06-25 14:51:15', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('8h62-3eis-xfem', 'Person', '2023-07-03 14:17:45', '2023-07-03 14:17:45', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('uwoe-u6ij-ikgp', 'Person', '2018-10-12 09:50:54', '2023-06-25 14:51:15', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('9fdg-glrm-0zoi', 'Person', '2026-05-09 13:11:10.200905', '2026-05-09 13:11:10.200905', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('lt3h-edgt-ac97', 'User', '2025-04-13 16:48:00', '2025-04-13 16:48:00', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('2f8s-90v8-33do', 'Source', '2026-05-05 20:27:49', '2026-05-05 20:27:49', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('2wrv-25yu-yc07', 'Source', '2026-05-10 11:47:17.753285', '2026-05-10 11:47:17.753285', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('l02q-i1j0-qpoi', 'Dance', '2023-12-21 18:11:33', '2023-12-21 18:11:33', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('cy5n-qvpl-k0yl', 'Dance', '2026-05-09 14:11:26', '2026-05-09 14:11:26', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('0xf7-xwz9-1fhj', 'Dance', '2026-05-10 11:36:21.52889', '2026-05-10 11:36:21.52889', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('qdod-ad7l-8gr2', 'Tune', '2018-12-07 01:18:53', '2023-06-25 15:51:15', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('rifw-ul36-3uq5', 'Tune', '2026-05-10 12:36:29', '2026-05-10 12:36:29', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('gm7o-khcu-8faz', 'Tune', '2026-05-12 12:07:47.893383', '2026-05-12 12:07:47.893383', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('xzzb-wasm-babe', 'Version', '2023-04-04 19:45:27', '2023-06-25 15:51:15', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('xsbz-vqy7-xj3s', 'Version', '2026-05-10 12:47:35', '2026-05-10 12:47:35', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('jyot-ypt9-caxu', 'Version', '2026-05-12 11:11:02', '2026-05-12 11:11:02', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('or5b-64lk-hlj5', 'Version', '2026-05-12 13:07:50', '2026-05-12 12:12:16.491412', NULL);
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('ului-yd9x-o35w', 'Set', '2023-05-02 12:16:55', '2023-06-25 15:51:15', 'Everyone');
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('wrwk-cz9g-g3wi', 'Set', '2023-05-02 12:16:55', '2023-06-25 15:51:15', 'Owners_only');
-INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "visibility") VALUES ('0fi3-1iot-6tbq', 'Book', '2026-05-14 14:40:42', '2026-08-11 17:03:01.941647', 'Everyone');
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('4plf-srss-ihav', 'Person', '2018-12-07 00:18:53', '2023-06-25 14:51:15', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('8h62-3eis-xfem', 'Person', '2023-07-03 14:17:45', '2023-07-03 14:17:45', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('uwoe-u6ij-ikgp', 'Person', '2018-10-12 09:50:54', '2023-06-25 14:51:15', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('9fdg-glrm-0zoi', 'Person', '2026-05-09 13:11:10.200905', '2026-05-09 13:11:10.200905', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('lt3h-edgt-ac97', 'User', '2025-04-13 16:48:00', '2025-04-13 16:48:00', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('2f8s-90v8-33do', 'Source', '2026-05-05 20:27:49', '2026-05-05 20:27:49', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('2wrv-25yu-yc07', 'Source', '2026-05-10 11:47:17.753285', '2026-05-10 11:47:17.753285', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('l02q-i1j0-qpoi', 'Dance', '2023-12-21 18:11:33', '2023-12-21 18:11:33', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('cy5n-qvpl-k0yl', 'Dance', '2026-05-09 14:11:26', '2026-05-09 14:11:26', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('0xf7-xwz9-1fhj', 'Dance', '2026-05-10 11:36:21.52889', '2026-05-10 11:36:21.52889', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('qdod-ad7l-8gr2', 'Tune', '2018-12-07 01:18:53', '2023-06-25 15:51:15', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('rifw-ul36-3uq5', 'Tune', '2026-05-10 12:36:29', '2026-05-10 12:36:29', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('gm7o-khcu-8faz', 'Tune', '2026-05-12 12:07:47.893383', '2026-05-12 12:07:47.893383', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('xzzb-wasm-babe', 'Version', '2023-04-04 19:45:27', '2023-06-25 15:51:15', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('xsbz-vqy7-xj3s', 'Version', '2026-05-10 12:47:35', '2026-05-10 12:47:35', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('jyot-ypt9-caxu', 'Version', '2026-05-12 11:11:02', '2026-05-12 11:11:02', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('or5b-64lk-hlj5', 'Version', '2026-05-12 13:07:50', '2026-05-12 12:12:16.491412', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('ului-yd9x-o35w', 'Set', '2023-05-02 12:16:55', '2023-06-25 15:51:15', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('wrwk-cz9g-g3wi', 'Set', '2023-05-02 12:16:55', '2023-06-25 15:51:15', false);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('8x83-e8ky-bhea', 'User', '2026-09-11 15:59:59.329756', '2026-09-11 15:59:59.329756', true);
+INSERT INTO "dancelor"."entry" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('0fi3-1iot-6tbq', 'Book', '2026-05-14 14:40:42', '2026-09-11 16:02:09.685942', true);
 
 
 --
--- Data for Name: entry_owners; Type: TABLE DATA; Schema: dancelor; Owner: -
+-- Data for Name: entry_actors; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."entry_owners" ("entry_id", "owner_id") VALUES ('ului-yd9x-o35w', 'lt3h-edgt-ac97');
-INSERT INTO "dancelor"."entry_owners" ("entry_id", "owner_id") VALUES ('wrwk-cz9g-g3wi', 'lt3h-edgt-ac97');
-INSERT INTO "dancelor"."entry_owners" ("entry_id", "owner_id") VALUES ('0fi3-1iot-6tbq', 'lt3h-edgt-ac97');
-
-
---
--- Data for Name: entry_viewers; Type: TABLE DATA; Schema: dancelor; Owner: -
---
-
+INSERT INTO "dancelor"."entry_actors" ("entry_id", "user_id", "role") VALUES ('ului-yd9x-o35w', 'lt3h-edgt-ac97', 'Owner');
+INSERT INTO "dancelor"."entry_actors" ("entry_id", "user_id", "role") VALUES ('wrwk-cz9g-g3wi', 'lt3h-edgt-ac97', 'Owner');
+INSERT INTO "dancelor"."entry_actors" ("entry_id", "user_id", "role") VALUES ('0fi3-1iot-6tbq', '8x83-e8ky-bhea', 'Owner');
 
 
 --
@@ -718,6 +703,8 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m070_2026_07
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m071_2026_07_move_pg_trgm_to_public', '2026-07-06 00:45:28.179447+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m072_2026_07_gin_indices', '2026-07-06 00:45:28.19765+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m073_2026_08_user_github_handle', '2026-08-11 10:25:47.000453+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m074_2026_09_entry_replace_visibility_by_is_public', '2026-09-11 15:57:26.490582+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m075_2026_09_entry_merge_owners_viewers_into_actors', '2026-09-11 21:35:29.47458+00');
 
 
 --
@@ -815,7 +802,8 @@ INSERT INTO "dancelor"."tune_composers" ("tune_id", "index", "composer_id", "det
 -- Data for Name: user; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols');
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols');
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, NULL, 'Normal_user', NULL);
 
 
 --
@@ -1089,19 +1077,11 @@ ALTER TABLE ONLY "dancelor"."dance_devisers"
 
 
 --
--- Name: entry_owners uq_entry_owners_entry_id_owner_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: entry_actors uq_entry_actors_entry_id_user_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
-ALTER TABLE ONLY "dancelor"."entry_owners"
-    ADD CONSTRAINT "uq_entry_owners_entry_id_owner_id" UNIQUE ("entry_id", "owner_id");
-
-
---
--- Name: entry_viewers uq_entry_viewers_entry_id_viewer_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."entry_viewers"
-    ADD CONSTRAINT "uq_entry_viewers_entry_id_viewer_id" UNIQUE ("entry_id", "viewer_id");
+ALTER TABLE ONLY "dancelor"."entry_actors"
+    ADD CONSTRAINT "uq_entry_actors_entry_id_user_id" UNIQUE ("entry_id", "user_id");
 
 
 --
@@ -1439,35 +1419,19 @@ ALTER TABLE ONLY "dancelor"."dance"
 
 
 --
--- Name: entry_owners fk_entry_owners_entry_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: entry_actors fk_entry_actors_entry_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
 --
 
-ALTER TABLE ONLY "dancelor"."entry_owners"
-    ADD CONSTRAINT "fk_entry_owners_entry_id" FOREIGN KEY ("entry_id") REFERENCES "dancelor"."entry"("id");
-
-
---
--- Name: entry_owners fk_entry_owners_owner_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."entry_owners"
-    ADD CONSTRAINT "fk_entry_owners_owner_id" FOREIGN KEY ("owner_id") REFERENCES "dancelor"."user"("id");
+ALTER TABLE ONLY "dancelor"."entry_actors"
+    ADD CONSTRAINT "fk_entry_actors_entry_id" FOREIGN KEY ("entry_id") REFERENCES "dancelor"."entry"("id");
 
 
 --
--- Name: entry_viewers fk_entry_viewers_entry_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: entry_actors fk_entry_actors_user_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
 --
 
-ALTER TABLE ONLY "dancelor"."entry_viewers"
-    ADD CONSTRAINT "fk_entry_viewers_entry_id" FOREIGN KEY ("entry_id") REFERENCES "dancelor"."entry"("id");
-
-
---
--- Name: entry_viewers fk_entry_viewers_viewer_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."entry_viewers"
-    ADD CONSTRAINT "fk_entry_viewers_viewer_id" FOREIGN KEY ("viewer_id") REFERENCES "dancelor"."user"("id");
+ALTER TABLE ONLY "dancelor"."entry_actors"
+    ADD CONSTRAINT "fk_entry_actors_user_id" FOREIGN KEY ("user_id") REFERENCES "dancelor"."user"("id");
 
 
 --

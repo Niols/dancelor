@@ -123,30 +123,22 @@ let view in_search id =
           ();
       ];
       (
-        (* FIXME: check permission to know whether to show this *)
-        (* match%lwt Permission.can_update_private book with *)
-        (* | None -> lwt_nil *)
-        (* | Some _ -> *)
-        lwt [
-          Button.make_a
-            ~label: "Edit"
-            ~icon: (Action Edit)
-            ~href: (S.const @@ Endpoints.Page.(href @@ Book Edit) id)
-            ~dropdown: true
-            ();
-        ]
-      );
-      (
-        (* FIXME: check permission to know whether to show this *)
-        (* match%lwt Permission.can_delete_private book with *)
-        (* | None -> lwt_nil *)
-        (* | Some _ -> *)
-        lwt [
-          Action.delete
-            ~model: "book"
-            ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Book Delete) id)
-            ();
-        ]
+        lwt @@
+          match Permission_new.edit_reason book.permission with
+          | None -> []
+          | Some _ ->
+            [
+              Button.make_a
+                ~label: "Edit"
+                ~icon: (Action Edit)
+                ~href: (S.const @@ Endpoints.Page.(href @@ Book Edit) id)
+                ~dropdown: true
+                ();
+              Action.delete
+                ~model: "book"
+                ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Book Delete) id)
+                ();
+            ]
       );
       (lwt @@ Option.map_to_list (Action.scddb Publication) book.scddb_id);
     ]

@@ -6,7 +6,7 @@ SELECT
     "scddb_id",
     "created_at",
     "modified_at",
-    "visibility"
+    "is_public"
 FROM "book"
 JOIN "entry" ON "book"."id" = "entry"."id"
 WHERE "book"."id" = @id
@@ -311,7 +311,9 @@ SELECT
     "set_id",
     "set"."name" AS "set_name",
     "set"."kind" AS "set_kind",
-    "set_permissions"."permission" AS "set_permission",
+    "set_permissions"."is_public" AS "set_is_public",
+    "set_permissions"."actor_role" AS "set_actor_role",
+    "set_permissions"."user_is_omniscient_administrator" AS "set_user_is_omniscient_administrator",
     -- set parameters
     "set_parameter_display_name",
     "set_parameter_display_conceptor",

@@ -9,23 +9,6 @@ open Utils
 let (show_preview, set_show_preview) = S.create false
 let flip_show_preview () = set_show_preview (not (S.value show_preview))
 
-type visibility' =
-  | Owners_only
-  | Everyone
-  | Select_viewers of User_row.t NEList.t
-
-let visibility'_to_visibility : visibility' -> Entry.Access.Private.visibility = function
-  | Owners_only -> Owners_only
-  | Everyone -> Everyone
-  | Select_viewers users -> Select_viewers (NEList.map (fun user -> user.User_row.id) users)
-
-let visibility_to_visibility' : Entry.Access.Private.visibility -> visibility' Lwt.t = function
-  | Owners_only -> lwt Owners_only
-  | Everyone -> lwt Everyone
-  | Select_viewers users ->
-    let%lwt users = Monadise_lwt.lift_1_1 NEList.map (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) users in
-    lwt (Select_viewers users)
-
 let editor user =
   let open Editor in
   Input.prepare_non_empty
@@ -121,7 +104,7 @@ let editor user =
         Model.Set_order.of_string_opt
     )
     () ^::
-  Star.prepare_non_empty
+  Star.prepare
     ~label: "Owners"
     ~empty: [user]
     (
@@ -148,15 +131,15 @@ let editor user =
     Plus.prepare
       ~label: "Visibility"
       ~cast: (function
-        | Zero() -> Owners_only
-        | Succ Zero() -> Everyone
-        | Succ Succ Zero viewers -> Select_viewers viewers
+        | Zero() -> `Owners_only
+        | Succ Zero() -> `Everyone
+        | Succ Succ Zero viewers -> `Select_viewers viewers
         | _ -> assert false (* types guarantee this is not reachable *)
       )
       ~uncast: (function
-        | Owners_only -> Zero ()
-        | Everyone -> one ()
-        | Select_viewers viewers -> two viewers
+        | `Owners_only -> Zero ()
+        | `Everyone -> one ()
+        | `Select_viewers viewers -> two viewers
       )
       ~selected_when_empty: 0
       (
@@ -191,11 +174,17 @@ let editor user =
 let assemble (name, (kind, (conceptors, (contents, (order, (owners, (visibility, ()))))))) =
   let conceptors = List.map Person_row.id conceptors in
   let contents = List.map (Pair.map_fst Version_row.id) contents in
+  let (is_public, viewers) =
+    match visibility with
+    | `Everyone -> (true, [])
+    | `Owners_only -> (false, [])
+    | `Select_viewers viewers -> (false, NEList.to_list viewers)
+  in
   (
     (* FIXME: This erases the existing remarks, or, most likely, tunes with
        remarks will get a Non_convertible exception when we check for the roundtrip. *)
     Model.Set.make ~name ~kind ~conceptors ~contents ~order ~remark: None (),
-    Entry.Access.Private.make ~owners: (NEList.map User_row.id owners) ~visibility: (visibility'_to_visibility visibility) ()
+    Entry.Access.Private.make ~owners: (List.map User_row.id owners) ~viewers: (List.map User_row.id viewers) ~is_public ()
   )
 
 let submit mode (set, access) =
@@ -217,26 +206,69 @@ let disassemble (set, access) =
   let%lwt conceptors = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Person Get_row)) (Model.Set.conceptors set) in
   let%lwt contents = Lwt_list.map_p (fun (version, params) -> let%lwt version = Madge_client.call_exn Endpoints.Api.(route @@ Version Get_row) version in lwt (version, params)) (Model.Set.contents set) in
   let order = Model.Set.order set in
-  let%lwt owners = NEList.of_list_exn <$> Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (NEList.to_list @@ Entry.Access.Private.owners access) in
-  let%lwt visibility = visibility_to_visibility' @@ Entry.Access.Private.visibility access in
+  let%lwt owners = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (Entry.Access.Private.owners access) in
+  let%lwt viewers = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (Entry.Access.Private.viewers access) in
+  let visibility =
+    match Entry.Access.Private.is_public access, NEList.of_list viewers with
+    | true, _ -> `Everyone
+    | false, None -> `Owners_only
+    | false, Some viewers -> `Select_viewers viewers
+  in
   lwt (name, (kind, (conceptors, (contents, (order, (owners, (visibility, ())))))))
+
+let entry_permission_new entry =
+  let access = Entry.access entry in
+  let is_public = Entry.Access.Private.is_public access in
+  let%lwt actor_role, user_is_omniscient_administrator =
+    match%lwt Environment.user with
+    | None -> lwt (None, false)
+    | Some user ->
+      lwt (
+        (
+          if List.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then
+            Some (Owner : Permission_new.actor_role)
+          else if List.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.viewers access) then
+            Some (Viewer : Permission_new.actor_role)
+          else
+            None
+        ),
+        Model.User.is_omniscient_administrator' user
+      )
+  in
+  lwt @@ Permission_new.make ~is_public ~actor_role ~user_is_omniscient_administrator
 
 let create mode =
   let%lwt user = Option.map Entry.id <$> Environment.user in
-  (* FIXME: if [mode] is an edition, then we should assert_can_update_private *)
-  Main_page.assert_can_create_private @@ fun () ->
-  Editor.make_page
-    ~key: "set"
-    ~icon: (Model Set)
-    ~mode
-    (editor user)
-    ~assemble
-    ~submit
-    ~unsubmit
-    ~disassemble
-    ~format: (Formatters.Set.name' ~link: true)
-    ~href: (Endpoints.Page.href_set % Entry.id)
-    ~check_product: (fun (set1, access1) (set2, access2) -> Model.Set.equal set1 set2 && Entry.Access.Private.equal access1 access2)
+  let make_editor = fun ?pre_body () ->
+    Editor.make_page
+      ~key: "set"
+      ~icon: (Model Set)
+      ~mode
+      (editor user)
+      ~assemble
+      ~submit
+      ~unsubmit
+      ~disassemble
+      ~format: (Formatters.Set.name' ~link: true)
+      ~href: (Endpoints.Page.href_set % Entry.id)
+      ~check_product: (fun (set1, access1) (set2, access2) -> Model.Set.equal set1 set2 && Entry.Access.Private.equal access1 access2)
+      ?pre_body
+  in
+  match mode with
+  | Create _ | Create_with_local_storage | Quick_create _ ->
+    Main_page.assert_can_create_private make_editor
+  | Quick_edit _ ->
+    (* FIXME: I guess we should be able to check permissions like for Edit. *)
+    Main_page.assert_can_create_private make_editor
+  | Edit set ->
+    let%lwt permission = entry_permission_new set in
+    Main_page.assert_can_update permission @@ fun edit_reason ->
+    let pre_body =
+      match edit_reason with
+      | Owner -> []
+      | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this set as an omniscient administrator."]]]
+    in
+    make_editor ~pre_body ()
 
 let version_to_name (version : Model.Version.entry) : Version_name.t Lwt.t =
   let%lwt tune = Model.Version.tune' version in
@@ -250,7 +282,7 @@ let to_row (set : Model.Set.entry) : Set_row.t Lwt.t =
   let conceptors = List.map Person_editor.to_name conceptors in
   let%lwt tunes = Lwt_list.map_s (Option.get <%> Model.Version.get % fst) @@ Model.Set.contents' set in
   let%lwt tunes = Lwt_list.map_s version_to_name tunes in
-  let%lwt permission = Option.get <$> Permission.can_get_private set in
+  let%lwt permission = entry_permission_new set in
   lwt {
     Set_row.id = Entry.id set;
     name = NEString.to_string @@ Model.Set.name' set;
