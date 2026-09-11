@@ -411,20 +411,36 @@ let disassemble (book, access) =
 
 let create mode =
   let%lwt user = Option.map Entry.id <$> Environment.user in
-  (* FIXME: if [mode] is an edition, then we should assert_can_update_private *)
-  Main_page.assert_can_create_private @@ fun () ->
-  Editor.make_page
-    ~key: "book"
-    ~icon: (Model Book)
-    (editor user)
-    ~mode
-    ~format: Formatters.Book.name'
-    ~href: (Endpoints.Page.href_book % Entry.id)
-    ~assemble
-    ~submit
-    ~unsubmit
-    ~disassemble
-    ~check_product: (fun (book1, access1) (book2, access2) -> Model.Book.equal book1 book2 && Entry.Access.Private.equal access1 access2)
+  let make_editor = fun ?pre_body () ->
+    Editor.make_page
+      ~key: "book"
+      ~icon: (Model Book)
+      (editor user)
+      ~mode
+      ~format: Formatters.Book.name'
+      ~href: (Endpoints.Page.href_book % Entry.id)
+      ~assemble
+      ~submit
+      ~unsubmit
+      ~disassemble
+      ~check_product: (fun (book1, access1) (book2, access2) -> Model.Book.equal book1 book2 && Entry.Access.Private.equal access1 access2)
+      ?pre_body
+  in
+  match mode with
+  | Create _ | Create_with_local_storage | Quick_create _ ->
+    Main_page.assert_can_create_private make_editor
+  | Quick_edit _ ->
+    (* FIXME: I guess we should be able to check permissions like for Edit. *)
+    Main_page.assert_can_create_private make_editor
+  | Edit book ->
+    let%lwt permission = Set_editor.entry_permission_new book in
+    Main_page.assert_can_update permission @@ fun edit_reason ->
+    let pre_body =
+      match edit_reason with
+      | Owner -> []
+      | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this book as an omniscient administrator."]]]
+    in
+    make_editor ~pre_body ()
 
 let add () =
   create Create_with_local_storage

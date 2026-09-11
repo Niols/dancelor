@@ -294,6 +294,11 @@ let assert_can_create_private f =
   | Some _ -> f ()
   | None -> Oooops_viewer.create `Forbidden
 
+let assert_can_update permission f =
+  match Model_new.Permission_new.edit_reason permission with
+  | Some edit_reason -> f edit_reason
+  | None -> Oooops_viewer.create `Forbidden
+
 let assert_can_admin f =
   match%lwt Permission.can_administrate () with
   | true -> f ()

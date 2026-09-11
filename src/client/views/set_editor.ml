@@ -221,22 +221,61 @@ let disassemble (set, access) =
   let%lwt visibility = visibility_to_visibility' @@ Entry.Access.Private.visibility access in
   lwt (name, (kind, (conceptors, (contents, (order, (owners, (visibility, ())))))))
 
+let entry_permission_new entry =
+  let access = Entry.access entry in
+  let visibility = Entry.Access.Private.visibility access in
+  let is_public = match visibility with Everyone -> true | _ -> false in
+  let%lwt actor_role, user_is_omniscient_administrator =
+    match%lwt Environment.user with
+    | None -> lwt (None, false)
+    | Some user ->
+      lwt (
+        (
+          if NEList.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then
+            Some (Owner : Permission_new.actor_role)
+          else
+            match visibility with
+            | Select_viewers viewers when NEList.exists (Entry.Id.equal' (Entry.id user)) viewers ->
+              Some (Viewer : Permission_new.actor_role)
+            | _ -> None
+        ),
+        Model.User.is_omniscient_administrator' user
+      )
+  in
+  lwt @@ Permission_new.make ~is_public ~actor_role ~user_is_omniscient_administrator
+
 let create mode =
   let%lwt user = Option.map Entry.id <$> Environment.user in
-  (* FIXME: if [mode] is an edition, then we should assert_can_update_private *)
-  Main_page.assert_can_create_private @@ fun () ->
-  Editor.make_page
-    ~key: "set"
-    ~icon: (Model Set)
-    ~mode
-    (editor user)
-    ~assemble
-    ~submit
-    ~unsubmit
-    ~disassemble
-    ~format: (Formatters.Set.name' ~link: true)
-    ~href: (Endpoints.Page.href_set % Entry.id)
-    ~check_product: (fun (set1, access1) (set2, access2) -> Model.Set.equal set1 set2 && Entry.Access.Private.equal access1 access2)
+  let make_editor = fun ?pre_body () ->
+    Editor.make_page
+      ~key: "set"
+      ~icon: (Model Set)
+      ~mode
+      (editor user)
+      ~assemble
+      ~submit
+      ~unsubmit
+      ~disassemble
+      ~format: (Formatters.Set.name' ~link: true)
+      ~href: (Endpoints.Page.href_set % Entry.id)
+      ~check_product: (fun (set1, access1) (set2, access2) -> Model.Set.equal set1 set2 && Entry.Access.Private.equal access1 access2)
+      ?pre_body
+  in
+  match mode with
+  | Create _ | Create_with_local_storage | Quick_create _ ->
+    Main_page.assert_can_create_private make_editor
+  | Quick_edit _ ->
+    (* FIXME: I guess we should be able to check permissions like for Edit. *)
+    Main_page.assert_can_create_private make_editor
+  | Edit set ->
+    let%lwt permission = entry_permission_new set in
+    Main_page.assert_can_update permission @@ fun edit_reason ->
+    let pre_body =
+      match edit_reason with
+      | Owner -> []
+      | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this set as an omniscient administrator."]]]
+    in
+    make_editor ~pre_body ()
 
 let version_to_name (version : Model.Version.entry) : Version_name.t Lwt.t =
   let%lwt tune = Model.Version.tune' version in
@@ -250,29 +289,7 @@ let to_row (set : Model.Set.entry) : Set_row.t Lwt.t =
   let conceptors = List.map Person_editor.to_name conceptors in
   let%lwt tunes = Lwt_list.map_s (Option.get <%> Model.Version.get % fst) @@ Model.Set.contents' set in
   let%lwt tunes = Lwt_list.map_s version_to_name tunes in
-  let%lwt permission =
-    let access = Entry.access set in
-    let visibility = Entry.Access.Private.visibility access in
-    let is_public = match visibility with Everyone -> true | _ -> false in
-    let%lwt actor_role, user_is_omniscient_administrator =
-      match%lwt Environment.user with
-      | None -> lwt (None, false)
-      | Some user ->
-        lwt (
-          (
-            if NEList.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then
-              Some (Owner : Permission_new.actor_role)
-            else
-              match visibility with
-              | Select_viewers viewers when NEList.exists (Entry.Id.equal' (Entry.id user)) viewers ->
-                Some (Viewer : Permission_new.actor_role)
-              | _ -> None
-          ),
-          Model.User.is_omniscient_administrator' user
-        )
-    in
-    lwt @@ Permission_new.make ~is_public ~actor_role ~user_is_omniscient_administrator
-  in
+  let%lwt permission = entry_permission_new set in
   lwt {
     Set_row.id = Entry.id set;
     name = NEString.to_string @@ Model.Set.name' set;
