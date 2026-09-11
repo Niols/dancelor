@@ -33,3 +33,13 @@ let view_reason {is_public; actor_role; user_is_omniscient_administrator} =
   | _, Some Viewer, _ -> Viewer
   | _, _, true -> Omniscient_administrator
   | _ -> failwith "Permission.view_reason"
+
+type edit_reason =
+  | Owner
+  | Omniscient_administrator
+
+let edit_reason {actor_role; user_is_omniscient_administrator; _} =
+  match actor_role, user_is_omniscient_administrator with
+  | Some Owner, _ -> Some Owner
+  | _, true -> Some Omniscient_administrator
+  | _ -> None

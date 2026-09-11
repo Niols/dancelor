@@ -42,30 +42,22 @@ let actions (set : Set_view.t) = [
   ];
   (Add_to.button_to_book ~source_type: "set" ~source_format: Formatters_new.Set.name (Set_view.to_name set) (Model.Book.Set (set.id, Model.Set_parameters.none)));
   (
-    (* FIXME: check permission to know whether to show this *)
-    (* match%lwt Permission.can_update_private_new set with *)
-    (* | None -> lwt_nil *)
-    (* | Some _ -> *)
-    lwt [
-      Button.make_a
-        ~label: "Edit"
-        ~icon: (Action Edit)
-        ~href: (S.const @@ Endpoints.Page.(href @@ Set Edit) set.id)
-        ~dropdown: true
-        ();
-    ]
-  );
-  (
-    (* FIXME: check permission to know whether to show this *)
-    (* match%lwt Permission.can_delete_private_new set with *)
-    (* | None -> lwt_nil *)
-    (* | Some _ -> *)
-    lwt [
-      Action.delete
-        ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Set Delete) set.id)
-        ~model: "set"
-        ();
-    ]
+    lwt @@
+      match Permission_new.edit_reason set.permission with
+      | None -> []
+      | Some _ ->
+        [
+          Button.make_a
+            ~label: "Edit"
+            ~icon: (Action Edit)
+            ~href: (S.const @@ Endpoints.Page.(href @@ Set Edit) set.id)
+            ~dropdown: true
+            ();
+          Action.delete
+            ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Set Delete) set.id)
+            ~model: "set"
+            ();
+        ]
   );
 ]
 
