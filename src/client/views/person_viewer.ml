@@ -11,7 +11,7 @@ let view in_search id =
     ~parent_title: "Person"
     ~before_title: [Components.Context_links.for_search in_search (Any_id.Person id)]
     ~title: (lwt person.name)
-    ~share_new: (Person id)
+    ~share: (Person id)
     ~actions: [
       (
         match%lwt Permission.can_update_public_new person with

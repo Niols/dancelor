@@ -112,7 +112,7 @@ let view in_search id =
     ~before_title: [Components.Context_links.for_search in_search (Any_id.Book id)]
     ~title: (lwt book.name)
     ~subtitles: [span (Formatters_new.Book.date_and_editors book)]
-    ~share_new: (Book id)
+    ~share: (Book id)
     ~actions: [
       lwt [
         Button.make

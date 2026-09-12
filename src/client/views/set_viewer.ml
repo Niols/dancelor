@@ -109,6 +109,6 @@ let view in_search id =
     ~before_title: [Components.Context_links.for_search in_search (Any_id.Set id)]
     ~title: (lwt set.name)
     ~subtitles: (subtitles set)
-    ~share_new: (Set id)
+    ~share: (Set id)
     ~actions: (actions set)
     (body set)

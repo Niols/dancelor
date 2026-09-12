@@ -379,7 +379,7 @@ let view in_search in_set tune_or_version_id =
     ]
     ~title: (lwt tune.name)
     ~subtitles: (subtitles tune)
-    ~share_new: (Option.fold version ~none: (Any_id.tune tune.id) ~some: (fun version -> Any_id.Version version.Version_view.id))
+    ~share: (Option.fold version ~none: (Any_id.tune tune.id) ~some: (fun version -> Any_id.Version version.Version_view.id))
     ~actions: (actions tune version)
     (body tune_or_version_id tune version)
 
