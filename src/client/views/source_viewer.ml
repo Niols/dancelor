@@ -14,7 +14,7 @@ let view in_search id =
     ~subtitles: [
       span (Formatters_new.Source.date_and_editors source);
     ]
-    ~share_new: (Source id)
+    ~share: (Source id)
     ~actions: [
       (
         match%lwt Permission.can_update_public_new source with
