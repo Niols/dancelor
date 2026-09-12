@@ -43,3 +43,19 @@ let edit_reason {actor_role; user_is_omniscient_administrator; _} =
   | Some Owner, _ -> Some Owner
   | _, true -> Some Omniscient_administrator
   | _ -> None
+
+type share_reason =
+  | Owner
+  | Omniscient_administrator
+
+let share_reason {actor_role; user_is_omniscient_administrator; _} =
+  match actor_role, user_is_omniscient_administrator with
+  | Some Owner, _ -> Some Owner
+  | _, true -> Some Omniscient_administrator
+  | _ -> None
+
+module Actors_list = struct
+  type t =
+  (Model_builder.Core.User.t Entry.id * actor_role) list
+  [@@deriving yojson]
+end

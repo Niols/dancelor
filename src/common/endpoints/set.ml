@@ -14,6 +14,8 @@ type (_, _, _) t =
   | Update : (Set_id.t -> Set.t -> Entry.Access.Private.t -> 'w, 'w, unit) t
   | Delete : (Set_id.t -> 'w, 'w, unit) t
   | Build_pdf : (Set_id.t -> Set_parameters.t -> Rendering_parameters.t -> 'w, 'w, Job_id.t Job.registration_response) t
+  | Get_permissions : (Set_id.t -> 'w, 'w, Permission_new.Actors_list.t) t
+  | Set_permissions : (Set_id.t -> Permission_new.Actors_list.t -> 'w, 'w, unit) t
 [@@deriving madge_wrapped_endpoints]
 
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
@@ -28,3 +30,5 @@ let route : type a w r. (a, w, r) t -> (a, w, r) route =
     | Update -> variable (module Set_id) @@ body "set" (module Set) @@ body "access" (module Entry.Access.Private) @@ put (module JUnit)
     | Delete -> variable (module Set_id) @@ delete (module JUnit)
     | Build_pdf -> literal "build-pdf" @@ variable (module Set_id) @@ query_json_def "parameters" (module Set_parameters) ~eq: Set_parameters.equal ~def: Set_parameters.none @@ query_json_def "rendering-parameters" (module Rendering_parameters) ~eq: Rendering_parameters.equal ~def: Rendering_parameters.none @@ post (module Job.Registration_response(Job_id))
+    | Get_permissions -> literal "get-permissions" @@ variable (module Set_id) @@ get (module Permission_new.Actors_list)
+    | Set_permissions -> literal "set-permissions" @@ variable (module Set_id) @@ query_json "actors-list" (module Permission_new.Actors_list) @@ post (module JUnit)
