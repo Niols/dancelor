@@ -74,6 +74,6 @@ let view in_search id =
     ~before_title: [Components.Context_links.for_search in_search (Any_id.Dance id)]
     ~title: (lwt dance.name)
     ~subtitles: (subtitles dance)
-    ~share: (Dance id)
+    ~share: (Sharing_dialog.copy_link_button @@ Dance id)
     ~actions: (actions dance)
     (body dance)
