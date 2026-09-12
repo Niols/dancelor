@@ -15,8 +15,7 @@ val make :
   ?before_title: Html_types.div_content_fun elt list ->
   title: string Lwt.t ->
   ?subtitles: Html_types.phrasing elt list ->
-  ?share: Model.Any.t ->
-  ?share_new: Any_id.t ->
+  ?share: Any_id.t ->
   ?actions: Html_types.li_content_fun elt list Lwt.t list ->
   ?buttons: Html_types.div_content_fun elt list ->
   ?on_load: (unit -> unit) ->
@@ -32,8 +31,7 @@ val make' :
   ?before_title: Html_types.div_content_fun elt list ->
   title: string Lwt.t ->
   ?subtitles: Html_types.phrasing elt list ->
-  ?share: Model.Any.t ->
-  ?share_new: Any_id.t ->
+  ?share: Any_id.t ->
   ?actions: Html_types.li_content_fun elt list Lwt.t list ->
   ?buttons: Html_types.div_content_fun elt list ->
   ?on_load: (unit -> unit) ->

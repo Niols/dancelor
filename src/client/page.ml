@@ -29,30 +29,22 @@ let full_title p =
     (S.from_lwt "" p.title)
 
 let make
-    ?(parent_title = "")
-    ?(before_title = [])
-    ~title
-    ?(subtitles = [])
-    ?share
-    ?share_new
-    ?(actions = [])
-    ?(buttons = [])
-    ?(on_load = Fun.id)
-    content
-  =
-  let share =
-    match share, share_new with
-    | None, None -> None
-    | Some _, Some _ -> assert false
-    | Some share, None -> Some (Utils.old_any_to_any_id share)
-    | None, Some share -> Some share
-  in
-    {parent_title; before_title; title; subtitles; content; share; actions; buttons; on_load}
+  ?(parent_title = "")
+  ?(before_title = [])
+  ~title
+  ?(subtitles = [])
+  ?share
+  ?(actions = [])
+  ?(buttons = [])
+  ?(on_load = Fun.id)
+  content
+=
+  {parent_title; before_title; title; subtitles; content; share; actions; buttons; on_load}
 
-let make' ?parent_title ?before_title ~title ?subtitles ?share ?share_new ?actions ?buttons ?on_load content =
+let make' ?parent_title ?before_title ~title ?subtitles ?share ?actions ?buttons ?on_load content =
   (* NOTE: In general, [lwt] for no reason should be avoided. However, this
      particular function is only ever used in an [Lwt] context. *)
-  lwt @@ make ?parent_title ?before_title ~title ?subtitles ?share ?share_new ?actions ?buttons ?on_load content
+  lwt @@ make ?parent_title ?before_title ~title ?subtitles ?share ?actions ?buttons ?on_load content
 
 let render p =
   (* Handling of actions. We could probably generate the <ul> elements gradually
