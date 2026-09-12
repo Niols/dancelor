@@ -1,5 +1,3 @@
-open Dancelor_common
-open Model_new
 open Js_of_ocaml
 open Nes
 open Html
@@ -11,7 +9,7 @@ type t = {
   title: string Lwt.t;
   subtitles: Html_types.phrasing elt list;
   content: Html_types.div_content_fun elt list;
-  share: Any_id.t option;
+  share: Html_types.div_content_fun elt option;
   actions: Html_types.li_content_fun elt list Lwt.t list;
   buttons: Html_types.div_content_fun elt list;
   on_load: unit -> unit;
@@ -60,18 +58,7 @@ let render p =
             S.const @@
               match p.share with
               | None -> []
-              | Some share ->
-                [
-                  Button.make
-                    ~icon: (Action Share)
-                    ~classes: ["btn-primary"]
-                    ~onclick: (fun _ ->
-                      write_to_clipboard @@ href_any_for_sharing_new share;
-                      Toast.open_ ~title: "Copied to clipboard" [txt "A short link to this page has been copied to your clipboard."];
-                      lwt_unit
-                    )
-                    ()
-                ]
+              | Some share_button -> [share_button]
           )
           (
             S.from_lwt [] @@
