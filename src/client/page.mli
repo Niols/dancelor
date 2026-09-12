@@ -3,8 +3,6 @@
     NOTE: This notion of page is different from the one in the PageRouter.
     FIXME: Rename one of the two! *)
 
-open Dancelor_common
-open Model_new
 open Html
 
 type t
@@ -15,7 +13,7 @@ val make :
   ?before_title: Html_types.div_content_fun elt list ->
   title: string Lwt.t ->
   ?subtitles: Html_types.phrasing elt list ->
-  ?share: Any_id.t ->
+  ?share: Html_types.div_content_fun elt ->
   ?actions: Html_types.li_content_fun elt list Lwt.t list ->
   ?buttons: Html_types.div_content_fun elt list ->
   ?on_load: (unit -> unit) ->
@@ -31,7 +29,7 @@ val make' :
   ?before_title: Html_types.div_content_fun elt list ->
   title: string Lwt.t ->
   ?subtitles: Html_types.phrasing elt list ->
-  ?share: Any_id.t ->
+  ?share: Html_types.div_content_fun elt ->
   ?actions: Html_types.li_content_fun elt list Lwt.t list ->
   ?buttons: Html_types.div_content_fun elt list ->
   ?on_load: (unit -> unit) ->
