@@ -11,6 +11,9 @@ include Shared.Make_private(struct
   include Database.Set
 end)
 
+let get_permissions _env _id = lwt_nil
+let set_permissions _env _id _permissions = lwt_unit
+
 (* Legacy *)
 
 let get env id =
@@ -52,3 +55,5 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Set.t -> a =
   | Update -> update env
   | Delete -> delete env
   | Build_pdf -> build_pdf env
+  | Get_permissions -> get_permissions env
+  | Set_permissions -> set_permissions env
