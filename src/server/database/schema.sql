@@ -121,7 +121,22 @@ CREATE TABLE "dance_extra_names" (
     CONSTRAINT "fk_dance_extra_names_dance_id" FOREIGN KEY ("dance_id") REFERENCES "dance" ("id")
 );
 
-CREATE TYPE "kind" AS ENUM ('Jig', 'Reel', 'Strathspey', 'Waltz', 'Polka', 'Jig_9_8', 'Other');
+CREATE TYPE "kind" AS ENUM (
+    'Jig',
+    'Reel',
+    'Strathspey',
+    'Waltz',
+    'Polka',
+    'Jig_9_8',
+    'Other',
+    'Air',
+    'Hornpipe',
+    'March_2_4',
+    'March_4_4',
+    'March_6_8',
+    'Schottische',
+    'Two_step'
+);
 
 CREATE TABLE "tune" (
     -- [sqlgg] module=Sql_types.Tune_id_conv
@@ -177,6 +192,7 @@ CREATE TABLE "version" (
     "monolithic_lilypond" TEXT,
     "monolithic_bars" INT,
     "monolithic_or_default_structure" VARCHAR(32),
+    "destructured_as_2_4" BOOLEAN NOT NULL,
     CONSTRAINT "fk_version_id" FOREIGN KEY ("id") REFERENCES "entry" ("id"),
     CONSTRAINT "fk_version_tune_id" FOREIGN KEY ("tune_id") REFERENCES "tune" ("id")
 );

@@ -24,4 +24,4 @@ class TestExplorerComplexFilter():
     self.driver.find_element(By.XPATH, "//*[contains(text(), 'Your search returned no result')]")
     self.wait.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, ".alert-warning"), "Your search returned no results."))
     assert self.driver.find_element(By.XPATH, "//div[@class = 'container-md']//input").get_attribute("value") \
-      == "type:tune kind:waltz,polka tam "
+      == "type:tune kind:polka,waltz tam "

@@ -4,6 +4,7 @@ type destructured = {
   parts: Voices.t NEList.t;
   transitions: (Part_name.opens * Part_name.opens * Voices.t) list;
   default_structure: Structure.t;
+  as_2_4: bool; (** only used for binary kinds *)
 }
 
 type t =

@@ -21,25 +21,54 @@ module Set_id_conv = Make_id_conv(Model_builder.Core.Set)
 module Book_id_conv = Make_id_conv(Model_builder.Core.Book)
 module User_id_conv = Make_id_conv(Model_builder.Core.User)
 
-type kind_base = [`Jig | `Reel | `Strathspey | `Waltz | `Polka | `Jig_9_8 | `Other]
+type kind_base = [
+  | `Air
+  | `Hornpipe
+  | `Jig
+  | `Jig_9_8
+  | `March_2_4
+  | `March_4_4
+  | `March_6_8
+  | `Other
+  | `Polka
+  | `Reel
+  | `Schottische
+  | `Strathspey
+  | `Two_step
+  | `Waltz
+]
 
 let kind_base_to_common : kind_base -> Kind_base.t = function
+  | `Air -> Air
+  | `Hornpipe -> Hornpipe
   | `Jig -> Jig
-  | `Reel -> Reel
-  | `Strathspey -> Strathspey
-  | `Waltz -> Waltz
-  | `Polka -> Polka
   | `Jig_9_8 -> Jig_9_8
+  | `March_2_4 -> March_2_4
+  | `March_4_4 -> March_4_4
+  | `March_6_8 -> March_6_8
   | `Other -> Other
+  | `Polka -> Polka
+  | `Reel -> Reel
+  | `Schottische -> Schottische
+  | `Strathspey -> Strathspey
+  | `Two_step -> Two_step
+  | `Waltz -> Waltz
 
 let kind_base_of_common : Kind_base.t -> kind_base = function
+  | Air -> `Air
+  | Hornpipe -> `Hornpipe
   | Jig -> `Jig
-  | Reel -> `Reel
-  | Strathspey -> `Strathspey
-  | Waltz -> `Waltz
-  | Polka -> `Polka
   | Jig_9_8 -> `Jig_9_8
+  | March_2_4 -> `March_2_4
+  | March_4_4 -> `March_4_4
+  | March_6_8 -> `March_6_8
   | Other -> `Other
+  | Polka -> `Polka
+  | Reel -> `Reel
+  | Schottische -> `Schottische
+  | Strathspey -> `Strathspey
+  | Two_step -> `Two_step
+  | Waltz -> `Waltz
 
 type two_chords = [`Dont_know | `One_chord | `Two_chords]
 

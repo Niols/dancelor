@@ -7,6 +7,7 @@ SELECT
     "monolithic_lilypond",
     "monolithic_bars",
     "monolithic_or_default_structure",
+    "destructured_as_2_4",
     "created_at",
     "modified_at"
 FROM "version"
@@ -24,6 +25,7 @@ SELECT
     "monolithic_lilypond",
     "monolithic_bars",
     "monolithic_or_default_structure",
+    "destructured_as_2_4",
     "created_at",
     "modified_at"
 FROM "version"
@@ -38,6 +40,7 @@ SELECT
     "monolithic_lilypond",
     "monolithic_bars",
     "monolithic_or_default_structure",
+    "destructured_as_2_4",
     "created_at",
     "modified_at"
 FROM "version"
@@ -53,7 +56,8 @@ INSERT INTO "version" (
     "disambiguation",
     "monolithic_lilypond",
     "monolithic_bars",
-    "monolithic_or_default_structure"
+    "monolithic_or_default_structure",
+    "destructured_as_2_4"
 ) VALUES (
     @id,
     @tune_id,
@@ -62,7 +66,8 @@ INSERT INTO "version" (
     @disambiguation,
     @monolithic_lilypond,
     @monolithic_bars,
-    @monolithic_or_default_structure
+    @monolithic_or_default_structure,
+    @destructured_as_2_4
 );
 
 -- @update
@@ -74,7 +79,8 @@ SET
     "disambiguation" = @disambiguation,
     "monolithic_lilypond" = @monolithic_lilypond,
     "monolithic_bars" = @monolithic_bars,
-    "monolithic_or_default_structure" = @monolithic_or_default_structure
+    "monolithic_or_default_structure" = @monolithic_or_default_structure,
+    "destructured_as_2_4" = @destructured_as_2_4
 WHERE "id" = @id;
 
 -- @delete

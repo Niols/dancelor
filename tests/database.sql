@@ -77,7 +77,14 @@ CREATE TYPE "dancelor"."kind" AS ENUM (
     'Waltz',
     'Polka',
     'Jig_9_8',
-    'Other'
+    'Other',
+    'Air',
+    'Hornpipe',
+    'March_2_4',
+    'March_4_4',
+    'March_6_8',
+    'Schottische',
+    'Two_step'
 );
 
 
@@ -463,7 +470,8 @@ CREATE TABLE "dancelor"."version" (
     "disambiguation" character varying,
     "monolithic_lilypond" "text",
     "monolithic_bars" integer,
-    "monolithic_or_default_structure" character varying(32)
+    "monolithic_or_default_structure" character varying(32),
+    "destructured_as_2_4" boolean NOT NULL
 );
 
 
@@ -705,6 +713,8 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m072_2026_07
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m073_2026_08_user_github_handle', '2026-08-11 10:25:47.000453+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m074_2026_09_entry_replace_visibility_by_is_public', '2026-09-11 15:57:26.490582+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m075_2026_09_entry_merge_owners_viewers_into_actors', '2026-09-11 21:35:29.47458+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m076_2026_09_version_add_destructured_as_2_4', '2026-09-15 17:05:03.672173+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m077_2026_09_add_new_kinds', '2026-09-15 17:35:34.126356+00');
 
 
 --
@@ -810,7 +820,7 @@ INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_tok
 -- Data for Name: version; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguation", "monolithic_lilypond", "monolithic_bars", "monolithic_or_default_structure") VALUES ('xzzb-wasm-babe', 'qdod-ad7l-8gr2', 'Dm', NULL, 'Niols''s Version', '\relative c'' <<
+INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguation", "monolithic_lilypond", "monolithic_bars", "monolithic_or_default_structure", "destructured_as_2_4") VALUES ('xzzb-wasm-babe', 'qdod-ad7l-8gr2', 'Dm', NULL, 'Niols''s Version', '\relative c'' <<
   {
     \clef treble
     \key d \minor
@@ -869,10 +879,10 @@ INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguat
     }
   }
 >>
-', 32, 'AABB');
-INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguation", "monolithic_lilypond", "monolithic_bars", "monolithic_or_default_structure") VALUES ('jyot-ypt9-caxu', 'rifw-ul36-3uq5', 'Dm', NULL, 'destructured', NULL, NULL, 'ABAB');
-INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguation", "monolithic_lilypond", "monolithic_bars", "monolithic_or_default_structure") VALUES ('or5b-64lk-hlj5', 'gm7o-khcu-8faz', 'Dm', NULL, 'destructured w/ transitions', NULL, NULL, 'AABBAB');
-INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguation", "monolithic_lilypond", "monolithic_bars", "monolithic_or_default_structure") VALUES ('xsbz-vqy7-xj3s', 'rifw-ul36-3uq5', 'Dm', NULL, NULL, NULL, NULL, NULL);
+', 32, 'AABB', false);
+INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguation", "monolithic_lilypond", "monolithic_bars", "monolithic_or_default_structure", "destructured_as_2_4") VALUES ('jyot-ypt9-caxu', 'rifw-ul36-3uq5', 'Dm', NULL, 'destructured', NULL, NULL, 'ABAB', false);
+INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguation", "monolithic_lilypond", "monolithic_bars", "monolithic_or_default_structure", "destructured_as_2_4") VALUES ('or5b-64lk-hlj5', 'gm7o-khcu-8faz', 'Dm', NULL, 'destructured w/ transitions', NULL, NULL, 'AABBAB', false);
+INSERT INTO "dancelor"."version" ("id", "tune_id", "key", "remark", "disambiguation", "monolithic_lilypond", "monolithic_bars", "monolithic_or_default_structure", "destructured_as_2_4") VALUES ('xsbz-vqy7-xj3s', 'rifw-ul36-3uq5', 'Dm', NULL, NULL, NULL, NULL, NULL, false);
 
 
 --
