@@ -28,7 +28,3 @@ val to_long_string : capitalised: bool -> t -> string
 
 val of_string : string -> t
 val of_string_opt : string -> t option
-
-val tempo : t -> string * int
-(** Returns the base lilypond unit and the associated tempo. eg. [("2", 108)]
-    for reels. *)
