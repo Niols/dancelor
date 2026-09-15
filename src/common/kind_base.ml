@@ -110,19 +110,3 @@ let of_yojson = function
         | _ -> Error "Dancelor_common.Kind.Base.of_yojson: not a valid base kind"
     )
   | _ -> Error "Dancelor_common.Kind.Base.of_yojson: not a JSON string"
-
-let tempo = function
-  | Air -> ("2", 60)
-  | Hornpipe -> ("2", 108)
-  | Jig -> ("4.", 104)
-  | Jig_9_8 -> ("4.", 104)
-  | March_2_4 -> ("2", 108)
-  | March_4_4 -> ("2", 108)
-  | March_6_8 -> ("4.", 104)
-  | Other -> ("2", 108)
-  | Polka -> ("2", 108)
-  | Reel -> ("2", 108)
-  | Strathspey -> ("2", 60)
-  | Schottische -> ("2", 60)
-  | Two_step -> ("4", 130)
-  | Waltz -> ("2.", 60)

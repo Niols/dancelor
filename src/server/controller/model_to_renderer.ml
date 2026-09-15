@@ -94,7 +94,22 @@ let version_to_renderer_tune ?(version_params = Model.Version_parameters.none) v
   let first_bar = Model.Version_parameters.first_bar' version_params in
   let%lwt tune = Model.Version.tune version in
   let kind = Model.Tune.kind' tune in
-  let (tempo_unit, tempo_value) = Kind.Base.tempo kind in
+  let (tempo_unit, tempo_value) =
+    match kind with
+    | Jig | March_6_8 -> ("4.", 104)
+    | Reel | Hornpipe | Polka | March_2_4 | March_4_4 ->
+      let as_2_4 =
+        match Model.Version.content version with
+        | No_content | Monolithic _ -> false
+        | Destructured {as_2_4; _} -> as_2_4
+      in
+        ((if as_2_4 then "4" else "2"), 108)
+    | Jig_9_8 -> ("4.", 104)
+    | Strathspey | Air | Schottische -> ("2", 60)
+    | Two_step -> ("4", 130)
+    | Waltz -> ("2.", 60)
+    | Other -> ("2", 108)
+  in
   let chords_kind =
     match kind with
     | Jig | March_6_8 -> "jig"
