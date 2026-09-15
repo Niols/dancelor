@@ -1613,3 +1613,18 @@ DROP TABLE "entry_owners";
 
 -- @m075_2026_09_entry_merge_owners_viewers_into_actors__drop_viewers_table
 DROP TABLE "entry_viewers";
+
+-- @m076_2026_09_version_add_destructured_as_2_4__add_column
+ALTER TABLE "version" ADD COLUMN "destructured_as_2_4" BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- @m076_2026_09_version_add_destructured_as_2_4__drop_default
+ALTER TABLE "version" ALTER COLUMN "destructured_as_2_4" DROP DEFAULT;
+
+-- -- @m077_2026_09_kind_type_add_missing_values
+-- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Air';
+-- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Hornpipe';
+-- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_2_4';
+-- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_4_4';
+-- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_6_8';
+-- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Schottische';
+-- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Two_step';

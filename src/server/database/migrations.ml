@@ -1056,6 +1056,19 @@ let migrations : migration list = [
     Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__drop_owners_table;
     Migrations_sql.m075_2026_09_entry_merge_owners_viewers_into_actors__drop_viewers_table;
   ];
+  make_ddls "m076_2026_09_version_add_destructured_as_2_4" [
+    Migrations_sql.m076_2026_09_version_add_destructured_as_2_4__add_column;
+    Migrations_sql.m076_2026_09_version_add_destructured_as_2_4__drop_default;
+  ];
+  make_ddls "m077_2026_09_add_new_kinds" [
+    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Air'|};
+    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Hornpipe'|};
+    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_2_4'|};
+    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_4_4'|};
+    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_6_8'|};
+    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Schottische'|};
+    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Two_step'|};
+  ];
 ]
 
 exception Migration_failed of string * exn

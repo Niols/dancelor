@@ -110,6 +110,7 @@ let sql_to_version
     ~monolithic_lilypond
     ~monolithic_bars
     ~monolithic_or_default_structure
+    ~destructured_as_2_4
     ~created_at
     ~modified_at
     ~arrangers
@@ -124,12 +125,22 @@ let sql_to_version
     | (None, None), ([], []), None ->
       No_content
     | (Some lilypond, Some bars), ([], []), Some structure ->
-      Monolithic {lilypond; bars = Int64.to_int bars; structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure))}
+      Monolithic {
+        lilypond;
+        bars = Int64.to_int bars;
+        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+      }
     | (None, None), (parts, transitions), Some default_structure ->
       (
         match NEList.of_list parts with
         | None -> assert false
-        | Some parts -> Destructured {parts; transitions; default_structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure))}
+        | Some parts ->
+          Destructured {
+            parts;
+            transitions;
+            default_structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure));
+            as_2_4 = destructured_as_2_4;
+          }
       )
     | _ -> assert false
   in
@@ -151,11 +162,11 @@ let sql_to_version
 
 let version_to_sql ~create_or_update db id version =
   (* FIXME: transaction, maybe [Connection.with_transaction] *)
-  let (monolithic_lilypond, monolithic_bars, monolithic_or_default_structure) =
+  let (monolithic_lilypond, monolithic_bars, monolithic_or_default_structure, destructured_as_2_4) =
     match Model_builder.Core.Version.content version with
-    | No_content -> (None, None, None)
-    | Monolithic {lilypond; bars; structure} -> (Some lilypond, Some (Int64.of_int bars), Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure))
-    | Destructured {default_structure; _} -> (None, None, Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string default_structure))
+    | No_content -> (None, None, None, false)
+    | Monolithic {lilypond; bars; structure} -> (Some lilypond, Some (Int64.of_int bars), Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure), false)
+    | Destructured {default_structure; as_2_4; _} -> (None, None, Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string default_structure), as_2_4)
   in
   ignore
   <$> create_or_update
@@ -167,7 +178,8 @@ let version_to_sql ~create_or_update db id version =
       ~disambiguation: (Option.map NEString.to_string @@ Model_builder.Core.Version.disambiguation version)
       ~monolithic_lilypond
       ~monolithic_bars
-      ~monolithic_or_default_structure;%lwt
+      ~monolithic_or_default_structure
+      ~destructured_as_2_4;%lwt
   ignore <$> Version_sql.delete_all_arrangers db ~version_id: id;%lwt
   Lwt_list.iter_s
     (fun arranger ->
@@ -195,7 +207,7 @@ let version_to_sql ~create_or_update db id version =
     ignore <$> Version_sql.delete_all_destructured_transitions db ~version_id: id;%lwt
     match Model_builder.Core.Version.content version with
     | No_content | Monolithic _ -> lwt_unit
-    | Destructured {parts; transitions; default_structure = _} ->
+    | Destructured {parts; transitions; default_structure = _; as_2_4 = _} ->
       Lwt_list.iteri_s
         (fun part Model_builder.Core.Version.Voices.{melody; chords} ->
           ignore

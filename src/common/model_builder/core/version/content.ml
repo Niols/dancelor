@@ -4,6 +4,7 @@ type destructured = {
   parts: Voices.t NEList.t;
   transitions: (Part_name.opens * Part_name.opens * Voices.t) list;
   default_structure: Structure.t;
+  as_2_4: bool; (* only used for binary kinds *)
 }
 [@@deriving eq, ord, yojson, show {with_path = false}]
 
@@ -18,6 +19,7 @@ let erase_lilypond = function
   | Destructured {default_structure; _} ->
     Destructured {
       default_structure;
+      as_2_4 = false;
       parts = NEList.singleton Voices.empty;
       transitions = [];
     }
@@ -98,7 +100,7 @@ let lilypond_voices
   let first_part = Structure.first_part_exn structure in
   Voices.concat_l [transition ~toplevel: true Start (Middle first_part); Voices.space; lilypond]
 
-let lilypond ?structure ~kind ~key parts transitions =
+let lilypond ?structure ~as_2_4 ~kind ~key parts transitions =
   let Voices.{melody; chords} =
     (* Wrap the parts in \relative f' by default. If the parts come with their
        own \relative, it will override our own, so the change won't be impactful. *)
@@ -116,13 +118,14 @@ let lilypond ?structure ~kind ~key parts transitions =
     Voices.concat (lilypond_voices ~parts ~transitions ~structure ~show_part_marks) Voices.fine
   in
   let time =
-    match kind with
-    | Kind.Base.Reel -> "4/4" (* technically 2/2 but https://github.com/niols/dancelor/issues/744 *)
-    | Jig -> "6/8"
-    | Strathspey -> "4/4"
-    | Waltz -> "3/4"
-    | Polka -> "2/2"
+    match (kind : Kind.Base.t) with
+    | Jig | March_6_8 -> "6/8"
+    | Reel | Hornpipe | Polka | March_2_4 | March_4_4 ->
+      if as_2_4 then "2/4" else "4/4" (* technically 2/2 but https://github.com/niols/dancelor/issues/744 *)
+    | Strathspey | Air | Schottische -> "4/4"
     | Jig_9_8 -> "9/8"
+    | Two_step -> "4/4"
+    | Waltz -> "3/4"
     | Other -> "2/2" (* FIXME: we should not let Other be used for destructured tunes *)
   in let key =
     (Music.Pitch.to_lilypond_string @@ Music.Key.pitch key) ^
@@ -138,4 +141,4 @@ let lilypond ?structure ~kind ~key parts transitions =
 let lilypond ?structure ~kind ~key = function
   | No_content -> None
   | Monolithic {lilypond; _} -> Some lilypond
-  | Destructured {parts; transitions; _} -> Some (lilypond ?structure ~kind ~key parts transitions)
+  | Destructured {parts; transitions; as_2_4; _} -> Some (lilypond ?structure ~as_2_4 ~kind ~key parts transitions)

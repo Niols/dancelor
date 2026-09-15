@@ -1,7 +1,20 @@
 (** {1 Base Kind} *)
 
 type t =
-  Jig | Reel | Strathspey | Waltz | Polka | Jig_9_8 | Other
+  | Air
+  | Hornpipe
+  | Jig
+  | Jig_9_8
+  | March_2_4
+  | March_4_4
+  | March_6_8
+  | Other
+  | Polka
+  | Reel
+  | Schottische
+  | Strathspey
+  | Two_step
+  | Waltz
 [@@deriving eq, ord, show, yojson]
 
 val all : t list

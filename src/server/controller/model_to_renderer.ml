@@ -97,9 +97,9 @@ let version_to_renderer_tune ?(version_params = Model.Version_parameters.none) v
   let (tempo_unit, tempo_value) = Kind.Base.tempo kind in
   let chords_kind =
     match kind with
-    | Jig -> "jig"
-    | Reel | Polka -> "reel"
-    | Strathspey -> "strathspey"
+    | Jig | March_6_8 -> "jig"
+    | Reel | Hornpipe | Polka | March_2_4 | March_4_4 -> "reel"
+    | Air | Strathspey | Schottische | Two_step -> "strathspey"
     | Waltz -> "waltz"
     | Other | Jig_9_8 -> "other"
   in
