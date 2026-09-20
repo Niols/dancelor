@@ -18,3 +18,22 @@ val use :
 (** Looks up the [~key] in the [~cache]. If it exists, return its value.
     Otherwise, call the given function, store its result and return it. The
     optional argument, [?if_], skips the cache when [false] ([true] by default). *)
+
+val get :
+  cache: ('key, 'value) t ->
+  key: 'key ->
+  'value option
+(** Looks up the [~key] in the [~cache] and return its value. *)
+
+val set :
+  cache: ('key, 'value) t ->
+  key: 'key ->
+  value: 'value ->
+  unit
+(** Adds or replaces the [~value] associated to [~key] in the [~cache]. *)
+
+val cleanup :
+  cache: ('key, 'value) t ->
+  unit
+(** Remove from the cache any value that is past its lifetime. Regular cleanup
+    also happens automatically on normal use. *)
