@@ -64,6 +64,16 @@ let setup_reporter reporter =
   Logs.set_reporter {report}
 
 let initialise loglevel =
+  (
+    match loglevel.default with
+    | None -> ()
+    | Some default_loglevel ->
+      match default_loglevel with
+      | Logs.Error | Warning ->
+        Log.info (fun m -> m "Default log level will be %a from now on; this is the last Info message." pp_loglevel default_loglevel);
+      | Info | Debug -> ()
+      | App -> assert false
+  );
   (* Crawl through all defined sources, but handle the one for this module
      before all others, since it itself logs debug messages. *)
   List.iter
