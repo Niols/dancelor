@@ -2,6 +2,9 @@ open Nes
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.config": Logs.LOG)
 
+(** A temporary directory specific to this run of Dancelor. *)
+let temp_dir = Filename.temp_dir "dancelor-" ""
+
 type endpoint =
   | Address of string * int
   | Socket of string
