@@ -16,7 +16,11 @@ let make_svg_gen ?(show_logs = false) status_signal =
         a_mime_type "image/svg+xml";
         a_data href;
       ]
-      []
+      [
+        Utils.Alert.make ~level: Danger [
+          txt "This tune could not load. Try again, and, if the error persists, please contact your administrator or file a bug report."
+        ]
+      ]
   ]
   in
   R.div
