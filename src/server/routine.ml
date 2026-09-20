@@ -56,5 +56,18 @@ let initialiase_job_runners ~threads =
     ]
   )
 
+let rec clean_nix_gc_roots () =
+  Log.debug (fun m -> m "Starting cleanup of Nix GC roots");
+  Controller.Job.Nix_gc_root.clean ~older_than_sec: Controller.Job.lifetime_nix_gc_roots;%lwt
+  Log.debug (fun m -> m "Done with cleanup of Nix GC roots; waiting one hour");
+  Lwt_unix.sleep 3600.;%lwt
+  clean_nix_gc_roots ()
+
+let initialise_nix_gc_roots_cleanup () =
+  Lwt.async (fun () ->
+    clean_nix_gc_roots ()
+  )
+
 let initialise () =
-  initialiase_job_runners ~threads: (Config.get ()).routine_threads
+  initialiase_job_runners ~threads: (Config.get ()).routine_threads;
+  initialise_nix_gc_roots_cleanup ()
