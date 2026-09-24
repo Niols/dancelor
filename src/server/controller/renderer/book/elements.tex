@@ -112,7 +112,7 @@
     %%
     local numberOfPages = minimalNumberOfPages(eltHeights, interEltSpace, tex.dimen.textheight)
 
-    if numberOfPages > 1 and (math.fmod(\thepage, 2) == 0) then
+    if numberOfPages > 1 and (math.fmod(\thepage, 2) == 1) then
       tex.print("\\blankpage{}")
     end
 
