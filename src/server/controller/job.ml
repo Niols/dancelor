@@ -116,6 +116,54 @@ let register_job_and_file (expr : expr) (file : string) : Job_id.t Endpoints.Job
   | Succeeded _ -> Already_succeeded job_and_file.id
   | _ -> Registered job_and_file.id
 
+(** Given a string representing one log line of Nix, return a cleaned up version
+    hiding Nix-specific things. This is meant for end users, who don't need to
+    know the nitty gritty, to give them a more understandable output. *)
+let clean_nix_log_line =
+  let store_path_prefix_regexp = Str.regexp "/nix/store/[a-z0-9]*-" in
+  let drv_suffix_regexp = Str.regexp "\\.drv" in
+  let derivation_regexp = Str.regexp "derivation" in
+  fun (line : string) ->
+    line
+    |> Str.global_replace store_path_prefix_regexp ""
+    |> Str.global_replace drv_suffix_regexp ""
+    |> Str.global_replace derivation_regexp "object"
+
+(** Given references holding a cleaned up version of stderr, add a Nix log line
+    to it. Log lines are cleaned with {!clean_nix_log_line} and the last error
+    block repeating the last X log lines is ignored.  *)
+let make_add_nix_log_line clean_stderr =
+  (* whether the last log line was an `error: `, possibly indicating the
+     beginning of the Nix error block *)
+  let last_stderr_line_was_error = ref false in
+  let in_nix_error_block = ref false in
+  fun (line : string) ->
+    let add_line =
+      if !in_nix_error_block then
+        false
+      else if !last_stderr_line_was_error then
+        (
+          if String.starts_with ~needle: "       Reason: " line then
+            (
+              in_nix_error_block := true;
+              false
+            )
+          else
+            (
+              last_stderr_line_was_error := false;
+              true
+            )
+        )
+      else
+        (
+          if String.starts_with ~needle: "error: " line then
+            last_stderr_line_was_error := true;
+          true
+        )
+    in
+    if add_line then
+      clean_stderr := !clean_stderr @ [clean_nix_log_line line]
+
 let run_job job =
   match !(job.state) with
   | Running _ -> invalid_arg "run_job: cannot start a job that is already started"
@@ -126,13 +174,20 @@ let run_job job =
     let command = [|"nix-build"; "--impure"; "--out-link"; path; "--expr"; expr_val job.expr|] in
     let process = Lwt_process.open_process_full ("", command) in
     let stderr = ref [] in
-    job.state := Running {process; stderr};
+    let clean_stderr = ref [] in
+    let add_stderr_line =
+      let add_nix_log_line = make_add_nix_log_line clean_stderr in
+      fun line ->
+        stderr := !stderr @ [line];
+        add_nix_log_line line
+    in
+    job.state := Running {process; stderr = clean_stderr};
     Lwt_io.close process#stdin;%lwt
     Lwt.async (fun () ->
       let rec follow_stderr () =
         match%lwt Lwt_io.read_line_opt process#stderr with
         | None -> lwt_unit
-        | Some line -> stderr := !stderr @ [line]; follow_stderr ()
+        | Some line -> add_stderr_line line; follow_stderr ()
       in
       follow_stderr ()
     );
@@ -140,16 +195,16 @@ let run_job job =
     let%lwt status = process#status in
     let%lwt stdout = Lwt_io.read process#stdout in
     let%lwt last_stderr = String.split_on_char '\n' <$> Lwt_io.(atomic read process#stderr) in
-    let stderr = !stderr @ last_stderr in
+    List.iter add_stderr_line last_stderr;
     Log.debug (fun m -> m "Ran job: %s" (expr_val job.expr));
     Log.debug (fun m -> m "Status: %a" Process.pp_process_status status);
     Log.debug (fun m -> m "%a" (Format.pp_multiline_sensible "Stdout") stdout);
-    Log.debug (fun m -> m "%a" (Format.pp_multiline_sensible "Stderr") (String.concat "\n" stderr));
+    Log.debug (fun m -> m "%a" (Format.pp_multiline_sensible "Stderr") (String.concat "\n" !stderr));
     (
       job.state :=
         match status with
         | WEXITED 0 -> Succeeded {path}
-        | _ -> Failed {status; logs = stderr}
+        | _ -> Failed {status; logs = !clean_stderr}
     );
     lwt_unit
 
@@ -162,6 +217,7 @@ let get id =
 
 let status id =
   Log.debug (fun m -> m "status %s" (Job_id.to_string id));
+  Lwt_unix.sleep 0.1;%lwt
   get id >>= fun {job; _} ->
   lwt @@
     match !(job.state) with

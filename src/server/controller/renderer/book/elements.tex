@@ -33,19 +33,17 @@
   \clearpage%
   \thispagestyle{norightmark}%
   \addparttotoc{#1}%
-  \recordsetstartpage{}%
   \null\vfill%
   \begin{center}
     {\huge #1}%
   \end{center}
   \vfill\vfill\null%
-  \recordsetendpage{}%
   \clearpage%
 }
 
 %% Blank pages will get a message to explain why they are blank. This macro does
 %% nothing when the book is simple, and creates the “blank” page in question otherwise.
-\newcommand\blankpage{%
+\newcommand\blankPageIfNonSimple{%
   \ifsimple%
   \else%
     \clearpage%
@@ -113,7 +111,7 @@
     local numberOfPages = minimalNumberOfPages(eltHeights, interEltSpace, tex.dimen.textheight)
 
     if numberOfPages > 1 and (math.fmod(\thepage, 2) == 1) then
-      tex.print("\\blankpage{}")
+      tex.print("\\blankPageIfNonSimple{}")
     end
 
     %% Compute the optimal distribution of this set's elements, then render the
