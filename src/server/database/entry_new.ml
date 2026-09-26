@@ -115,3 +115,12 @@ let get_newest ~actor_id ~limit =
     )
   in
   lwt @@ List.filter_map Fun.id newest
+
+let get_permission db ~actor_id id =
+  let%lwt permission = Entry_sql.get_permission db ~actor_id ~id in
+  lwt @@
+    Option.map
+      (fun (entry_is_public, actor_role, actor_is_omniscient_administrator) ->
+        Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator
+      )
+      permission

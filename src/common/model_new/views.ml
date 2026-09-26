@@ -17,6 +17,9 @@ module Person_view = struct
     published_tunes_are_public: bool; [@default false]
   }
   [@@deriving yojson, fields]
+
+  let to_name : t -> Person_name.t = fun {id; name; _} ->
+    {id; name}
 end
 
 module Dance_view = struct

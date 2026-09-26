@@ -41,3 +41,5 @@ val delete : Connection.t -> 'any Entry.Id.t -> unit Lwt.t
 val get_newest : actor_id: User_id.t option -> limit: int -> Any_id.t list Lwt.t
 (** Return the [~limit] newest elements in the database that the user
     has access to. *)
+
+val get_permission : Connection.t -> actor_id: User_id.t option -> 'any Entry.Id.t -> Permission_new.t option Lwt.t

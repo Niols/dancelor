@@ -37,6 +37,13 @@ SELECT
     "published_tunes_are_public"
 FROM "person";
 
+-- @get_person_forms | include: reuse
+SELECT
+    "id",
+    "name",
+    "scddb_id"
+FROM "person";
+
 --------------------------------- [ Sources ] ----------------------------------
 
 -- @get_source_rows | include: reuse

@@ -1,3 +1,4 @@
+module Entry = Entry_new
 module Any = Any
 module Book = Book
 module Dance = Dance
@@ -10,6 +11,7 @@ module Version = Version
 module Utils = Utils
 
 type t = Connection.t
+let with_ = Connection.with_
 
 module Migrations = Migrations
 let apply_migrations = Migrations.apply_migrations

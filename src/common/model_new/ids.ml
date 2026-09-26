@@ -1,6 +1,6 @@
 module Person_id = struct
   type t = Model_builder.Core.Person.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string

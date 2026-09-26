@@ -28,6 +28,7 @@ type view_reason =
   | Viewer
   | Owner
   | Omniscient_administrator
+[@@deriving show]
 
 let view_reason {entry_is_public; actor_role; actor_is_omniscient_administrator} =
   match entry_is_public, actor_role, actor_is_omniscient_administrator with
@@ -40,8 +41,20 @@ let view_reason {entry_is_public; actor_role; actor_is_omniscient_administrator}
 type edit_reason =
   | Owner
   | Omniscient_administrator
+[@@deriving show]
 
 let edit_reason {actor_role; actor_is_omniscient_administrator; _} =
+  match actor_role, actor_is_omniscient_administrator with
+  | Some Owner, _ -> Some Owner
+  | _, true -> Some Omniscient_administrator
+  | _ -> None
+
+type delete_reason =
+  | Owner
+  | Omniscient_administrator
+[@@deriving show]
+
+let delete_reason {actor_role; actor_is_omniscient_administrator; _} =
   match actor_role, actor_is_omniscient_administrator with
   | Some Owner, _ -> Some Owner
   | _, true -> Some Omniscient_administrator
