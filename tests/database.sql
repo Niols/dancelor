@@ -454,7 +454,8 @@ CREATE TABLE "dancelor"."user" (
     "person_id" character varying(14),
     "role" "dancelor"."role" NOT NULL,
     "username_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("username")::"text")) STORED,
-    "github_handle" character varying(64)
+    "github_handle" character varying(64),
+    "email" character varying(256) NOT NULL
 );
 
 
@@ -715,6 +716,7 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m074_2026_09
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m075_2026_09_entry_merge_owners_viewers_into_actors', '2026-09-11 21:35:29.47458+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m076_2026_09_version_add_destructured_as_2_4', '2026-09-15 17:05:03.672173+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m077_2026_09_add_new_kinds', '2026-09-15 17:35:34.126356+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m078_2026_09_user_add_email', '2026-09-26 13:32:31.204444+00');
 
 
 --
@@ -812,8 +814,8 @@ INSERT INTO "dancelor"."tune_composers" ("tune_id", "index", "composer_id", "det
 -- Data for Name: user; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols');
-INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, NULL, 'Normal_user', NULL);
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols', 'niols@example.com');
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, NULL, 'Normal_user', NULL, 'testouille@example.com');
 
 
 --
@@ -1148,6 +1150,14 @@ ALTER TABLE ONLY "dancelor"."tune_composers"
 
 ALTER TABLE ONLY "dancelor"."tune_composers"
     ADD CONSTRAINT "uq_tune_composers_tune_id_index_composer_id" UNIQUE ("tune_id", "index", "composer_id");
+
+
+--
+-- Name: user uq_user_email; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."user"
+    ADD CONSTRAINT "uq_user_email" UNIQUE ("email");
 
 
 --

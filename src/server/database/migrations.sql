@@ -1628,3 +1628,15 @@ ALTER TABLE "version" ALTER COLUMN "destructured_as_2_4" DROP DEFAULT;
 -- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_6_8';
 -- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Schottische';
 -- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Two_step';
+
+-- @m078_2026_09_user_add_email__add_column
+ALTER TABLE "user" ADD COLUMN "email" VARCHAR(256);
+
+-- -- @m078_2026_09_user_add_email__generate_placeholders
+-- UPDATE "user" SET "email" = CONCAT('placeholder-', FLOOR(10000000000 * RANDOM()), '@example.com');
+
+-- @m078_2026_09_user_add_email__set_not_null
+ALTER TABLE "user" ALTER COLUMN "email" SET NOT NULL;
+
+-- @m078_2026_09_user_add_email__set_unique
+ALTER TABLE "user" ADD CONSTRAINT "uq_user_email" UNIQUE ("email");

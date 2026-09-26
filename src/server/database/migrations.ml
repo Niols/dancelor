@@ -1069,6 +1069,12 @@ let migrations : migration list = [
     bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Schottische'|};
     bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Two_step'|};
   ];
+  make_ddls "m078_2026_09_user_add_email" [
+    Migrations_sql.m078_2026_09_user_add_email__add_column;
+    bypass {|UPDATE "user" SET "email" = CONCAT('placeholder-', FLOOR(10000000000 * RANDOM()), '@example.com')|};
+    Migrations_sql.m078_2026_09_user_add_email__set_not_null;
+    Migrations_sql.m078_2026_09_user_add_email__set_unique;
+  ];
 ]
 
 exception Migration_failed of string * exn
