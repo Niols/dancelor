@@ -1,4 +1,5 @@
 open Dancelor_common
+open Model_new
 
 module Make_id_conv (T : sig type t end) = struct
   let get_column : string -> T.t Entry.Id.t = Entry.Id.of_string_exn
@@ -81,3 +82,13 @@ let two_chords_of_common : Model_builder.Core.Dance.two_chords -> two_chords = f
   | Dont_know -> `Dont_know
   | One_chord -> `One_chord
   | Two_chords -> `Two_chords
+
+type role = [`Owner | `Viewer]
+
+let role_to_common : role -> Permission_new.actor_role = function
+  | `Owner -> Owner
+  | `Viewer -> Viewer
+
+let role_of_common : Permission_new.actor_role -> role = function
+  | Owner -> `Owner
+  | Viewer -> `Viewer

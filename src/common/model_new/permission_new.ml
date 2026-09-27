@@ -59,3 +59,13 @@ let delete_reason {actor_role; actor_is_omniscient_administrator; _} =
   | Some Owner, _ -> Some Owner
   | _, true -> Some Omniscient_administrator
   | _ -> None
+
+type share_reason =
+  | Owner
+  | Omniscient_administrator
+
+let share_reason {actor_role; actor_is_omniscient_administrator; _} =
+  match actor_role, actor_is_omniscient_administrator with
+  | Some Owner, _ -> Some Owner
+  | _, true -> Some Omniscient_administrator
+  | _ -> None

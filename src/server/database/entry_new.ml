@@ -1,6 +1,7 @@
 open Nes
 open Dancelor_common
 open Model_new
+open Sql_to_row
 
 module Entry_sql = Entry_sql.Sqlgg(Sqlgg_postgresql)
 
@@ -124,10 +125,24 @@ let get_newest ~actor_id ~limit =
   lwt @@ List.filter_map Fun.id newest
 
 let get_permission db ~actor_id id =
-  let%lwt permission = Entry_sql.get_permission db ~actor_id ~id in
-  lwt @@
-    Option.map
-      (fun (entry_is_public, actor_role, actor_is_omniscient_administrator) ->
-        Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator
-      )
-      permission
+  Option.map
+    (fun (entry_is_public, actor_role, actor_is_omniscient_administrator) ->
+      Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator
+    )
+  <$> Entry_sql.get_permission db ~actor_id ~id
+
+let get_actor_roles db id =
+  Entry_sql.List.get_actor_roles db ~entry_id: id (fun ~role ->
+    user_sql_to_row ~k: (fun actor -> (actor, Sql_types.role_to_common role))
+  )
+
+let set_is_public db id is_public =
+  ignore <$> Entry_sql.set_is_public db ~id ~is_public
+
+let set_actor_roles db id actor_roles =
+  ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
+  Lwt_list.iter_s
+    (fun ({User_row.id = user_id; _}, role) ->
+      ignore <$> Entry_sql.add_one_actor db ~entry_id: id ~user_id ~role: (Sql_types.role_of_common role)
+    )
+    actor_roles

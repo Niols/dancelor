@@ -104,3 +104,14 @@ let book_sql_to_row
     authors;
     permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
   }
+
+let user_sql_to_row
+    ~id
+    ~username
+    ~(k : User_row.t -> 'w)
+    : 'w
+  =
+  k {
+    id;
+    username = Username.of_string_exn username;
+  }

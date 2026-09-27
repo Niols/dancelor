@@ -203,6 +203,37 @@ let search_context_5_10 env query element =
   | Some List.{index; total; next; previous; element = _} ->
     lwt {Search_context_result.index; total; next; previous}
 
+let assert_can_edit_permissions env db id f =
+  let actor_id = Environment.actor_id env in
+  match%lwt Database.Entry.get_permission db ~actor_id id with
+  | None ->
+    (* not even read permissions on the item *)
+    Permission.reject_can_get ()
+  | Some permission ->
+    match Permission_new.share_reason permission with
+    | None ->
+      (* no permission to share *)
+      Madge_server.shortcut_forbidden "You cannot edit permissions for this object"
+    | Some _reason ->
+      f ~entry_is_public: permission.entry_is_public
+
+let get_permissions env id =
+  Database.with_ @@ fun db ->
+  assert_can_edit_permissions env db id @@ fun ~entry_is_public ->
+  let%lwt actor_roles = Database.Entry.get_actor_roles db id in
+  lwt {Permissions_form.entry_is_public; actor_roles}
+
+let set_permissions env id {Permissions_form.entry_is_public; actor_roles} =
+  Database.with_ @@ fun db ->
+  assert_can_edit_permissions env db id @@ fun ~entry_is_public: entry_was_public ->
+  (
+    if entry_is_public <> entry_was_public then
+      Database.Entry.set_is_public db id entry_is_public
+    else
+      lwt_unit
+  );%lwt
+  Database.Entry.set_actor_roles db id actor_roles
+
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Any.t -> a = fun env endpoint ->
   match endpoint with
   | Get -> get env
@@ -210,3 +241,5 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Any.t -> a =
   | Newest -> newest env
   | Search -> search env
   | Search_context_5_10 -> search_context_5_10 env
+  | Get_permissions -> get_permissions env
+  | Set_permissions -> set_permissions env

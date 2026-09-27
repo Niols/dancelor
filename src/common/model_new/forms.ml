@@ -191,3 +191,11 @@ module Book_form = struct
   let to_name id {name; _} : Book_name.t =
     {id; name = NEString.to_string name}
 end
+
+module Permissions_form = struct
+  type t = {
+    entry_is_public: bool;
+    actor_roles: (User_row.t * Permission_new.actor_role) list;
+  }
+  [@@deriving eq, yojson]
+end

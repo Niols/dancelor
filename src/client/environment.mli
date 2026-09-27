@@ -17,6 +17,7 @@ val server_status : server_status S.t
     it is needed, hence the promise. *)
 val actor : Model.User.entry option Lwt.t
 val actor_new : User_row.t option Lwt.t
+val actor_id : User_id.t option Lwt.t
 
 (** For places where we don't want to wait for the promise to resolve, we can
     use {!user_now}. This might however answer [None] even though we are

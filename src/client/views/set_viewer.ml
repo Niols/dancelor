@@ -114,6 +114,10 @@ let view in_search id =
     ~before_title: [Components.Context_links.for_search in_search (Any_id.Set id)]
     ~title: (lwt set.name)
     ~subtitles: (subtitles set)
-    ~share: (Sharing_dialog.copy_link_button @@ Set id)
+    ~share: (
+      match Permission_new.share_reason set.permission with
+      | Some _ -> Sharing_dialog.open_dialog_button @@ Set id
+      | None -> Sharing_dialog.copy_link_button @@ Set id
+    )
     ~actions: (actions set)
     (body set)
