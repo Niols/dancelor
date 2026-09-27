@@ -57,11 +57,18 @@ let
   #     ;
   # })
 
+  ## A `fonts.conf` file ready to be passed as the `FONTCONFIG_FILE` environment
+  ## variable that provides Source Sans Pro _and nothing else_. NOTE: avoid
+  ## `pkgs.makeFontsConf` which also brings in a lot of other fonts.
   myFontconfigFile =
     with pkgs;
-    makeFontsConf {
-      fontDirectories = [ source-sans-pro ];
-    };
+    writeText "fonts.conf" ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+      <fontconfig>
+        <dir>${source-sans-pro}</dir>
+      </fontconfig>
+    '';
 
   ## The luaotfload cache is computed when starting LuaLaTeX if not
   ## precomputed, and that takes a few seconds. We save them by
