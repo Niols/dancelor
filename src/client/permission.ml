@@ -8,7 +8,7 @@ include Make(Model.User)
 (** {3 Tests} *)
 
 let can can = fun () ->
-  can <$> Environment.user
+  can <$> Environment.actor
 
 let can_get_public entry = can (flip can_get_public entry) ()
 
@@ -31,6 +31,6 @@ let can_delete_private entry = can (flip can_delete_private entry) ()
 (** {2 Ad-hoc tests and assertions} *)
 
 let can_administrate () =
-  match%lwt Environment.user with
+  match%lwt Environment.actor with
   | None -> lwt_false
-  | Some user -> lwt @@ Model.User.is_administrator' user
+  | Some actor -> lwt @@ Model.User.is_administrator' actor

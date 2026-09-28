@@ -5,20 +5,20 @@ SELECT *
 FROM (
     SELECT
         "entry"."id",
-        "entry"."is_public",
+        "entry"."is_public" AS "entry_is_public",
         "entry_actors"."role" AS "actor_role",
         COALESCE(
             ("user"."role" = 'Administrator' AND "user"."omniscience"),
             FALSE
-        ) AS "user_is_omniscient_administrator"
+        ) AS "actor_is_omniscient_administrator"
     FROM "entry"
-    LEFT JOIN "entry_actors" ON "entry_actors"."entry_id" = "entry"."id" AND "entry_actors"."user_id" = (@user_id :: TEXT NULL)
-    LEFT JOIN "user" ON "user"."id" = (@user_id :: TEXT NULL)
+    LEFT JOIN "entry_actors" ON "entry_actors"."entry_id" = "entry"."id" AND "entry_actors"."user_id" = (@actor_id :: TEXT NULL)
+    LEFT JOIN "user" ON "user"."id" = (@actor_id :: TEXT NULL)
 ) AS "sub"
 WHERE
-    "sub"."is_public"
+    "sub"."entry_is_public"
     OR "sub"."actor_role" IS NOT NULL
-    OR "sub"."user_is_omniscient_administrator";
+    OR "sub"."actor_is_omniscient_administrator";
 
 --------------------------------- [ Persons ] ----------------------------------
 

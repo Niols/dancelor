@@ -96,12 +96,12 @@ let delete db id =
   ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
   ignore <$> Entry_sql.delete db ~id
 
-let get_newest ~user_id ~limit =
+let get_newest ~actor_id ~limit =
   assert (limit <= 1000);
   Connection.with_ @@ fun db ->
   (* FIXME: some gymnastics just because users aren't handled so well yet *)
   let%lwt newest =
-    Entry_sql.List.get_newest db ~user_id ~limit: (Int64.of_int limit) (fun ~id ~type_ ->
+    Entry_sql.List.get_newest db ~actor_id ~limit: (Int64.of_int limit) (fun ~id ~type_ ->
       some @@
         match type_ with
         | `Book -> Any_id.book @@ Entry.Id.unsafe_coerce id

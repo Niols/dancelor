@@ -76,12 +76,12 @@ let get_content_for db set_ids =
       k set_id (version, params)
     )
 
-let get_row_for ~user_id ids : (Set_id.t -> Set_row.t option) Lwt.t =
+let get_row_for ~actor_id ids : (Set_id.t -> Set_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt tunes_for = get_tunes_for db (`One_of ids) in
   let%lwt conceptors_for = get_conceptors_for db (`One_of ids) in
   Utils.fold_to_get_single
-    (Set_sql.Fold.get_rows db ~ids ~user_id)
+    (Set_sql.Fold.get_rows db ~ids ~actor_id)
     (fun k ~id ->
       set_sql_to_row
         ~id
@@ -90,24 +90,24 @@ let get_row_for ~user_id ids : (Set_id.t -> Set_row.t option) Lwt.t =
         ~k: (k id)
     )
 
-let get_view ~user_id id : Set_view.t option Lwt.t =
+let get_view ~actor_id id : Set_view.t option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt conceptors = (fun f -> f id) <$> get_conceptors_for db (`One_of [id]) in
   let%lwt content = (fun f -> f id) <$> get_content_for db (`One_of [id]) in
   Set_sql.Single.get_view
     db
-    ~user_id
+    ~actor_id
     ~id
     (set_sql_to_view ~conceptors ~content ~k: Fun.id)
 
-let search ~user_id query : (Set_row.t * float) list Lwt.t =
+let search ~actor_id query : (Set_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Set_query.conceptor; contains_version; contains_tune}} = query in
   Connection.with_ @@ fun db ->
   let%lwt tunes_for = get_tunes_for db `All in
   let%lwt conceptors_for = get_conceptors_for db `All in
   Set_sql.List.search
     db
-    ~user_id
+    ~actor_id
     ~terms
     ~conceptor: (Utils.option_to_sql conceptor)
     ~contains_version: (Utils.option_to_sql contains_version)

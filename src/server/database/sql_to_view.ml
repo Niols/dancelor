@@ -147,9 +147,9 @@ let version_sql_to_view
 
 let set_sql_to_view
     ~id
-    ~is_public
+    ~entry_is_public
     ~actor_role
-    ~user_is_omniscient_administrator
+    ~actor_is_omniscient_administrator
     ~name
     ~kind
     ~conceptors
@@ -167,14 +167,14 @@ let set_sql_to_view
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
     order = Model_builder.Core.Set_order.of_string order;
     remark;
-    permission = Permission_new.make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator;
+    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
   }
 
 let book_sql_to_view
     ~id
-    ~is_public
+    ~entry_is_public
     ~actor_role
-    ~user_is_omniscient_administrator
+    ~actor_is_omniscient_administrator
     ~name
     ~date
     ~authors
@@ -195,5 +195,5 @@ let book_sql_to_view
     sources; (* Source_name.t list *)
     scddb_id = Option.map Int64.to_int scddb_id;
     warnings = []; (* a bit ugly *)
-    permission = Permission_new.make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator;
+    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
   }

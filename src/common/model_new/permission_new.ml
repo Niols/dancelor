@@ -8,17 +8,20 @@ let actor_role_of_poly = function
   | `Viewer -> Viewer
 
 type t = {
-  is_public: bool;
+  entry_is_public: bool;
   actor_role: actor_role option;
-  user_is_omniscient_administrator: bool;
+  actor_is_omniscient_administrator: bool;
 }
 [@@deriving yojson]
 
-let make ~is_public ~actor_role ~user_is_omniscient_administrator =
-  {is_public; actor_role; user_is_omniscient_administrator}
+let make ~entry_is_public ~actor_role ~actor_is_omniscient_administrator =
+  {entry_is_public; actor_role; actor_is_omniscient_administrator}
 
-let make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator =
-  make ~is_public ~actor_role: (Option.map actor_role_of_poly actor_role) ~user_is_omniscient_administrator
+let make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator =
+  make
+    ~entry_is_public
+    ~actor_role: (Option.map actor_role_of_poly actor_role)
+    ~actor_is_omniscient_administrator
 
 type view_reason =
   | Public
@@ -26,8 +29,8 @@ type view_reason =
   | Owner
   | Omniscient_administrator
 
-let view_reason {is_public; actor_role; user_is_omniscient_administrator} =
-  match is_public, actor_role, user_is_omniscient_administrator with
+let view_reason {entry_is_public; actor_role; actor_is_omniscient_administrator} =
+  match entry_is_public, actor_role, actor_is_omniscient_administrator with
   | true, _, _ -> Public
   | _, Some Owner, _ -> Owner
   | _, Some Viewer, _ -> Viewer
@@ -38,8 +41,8 @@ type edit_reason =
   | Owner
   | Omniscient_administrator
 
-let edit_reason {actor_role; user_is_omniscient_administrator; _} =
-  match actor_role, user_is_omniscient_administrator with
+let edit_reason {actor_role; actor_is_omniscient_administrator; _} =
+  match actor_role, actor_is_omniscient_administrator with
   | Some Owner, _ -> Some Owner
   | _, true -> Some Omniscient_administrator
   | _ -> None

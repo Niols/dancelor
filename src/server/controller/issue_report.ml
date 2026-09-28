@@ -26,12 +26,12 @@ let report env issue =
         match issue.reporter with
         | Left `Connected ->
           (
-            match Environment.user env with
-            | Some user ->
+            match Environment.actor env with
+            | Signed_in actor ->
               (* FIXME: when there is a profile page for users, link to it *)
-              (Username.to_string @@ Model.User.username' user) ^
-                (match Model.User.github_handle' user with None -> "" | Some handle -> spf " (@%s)" handle)
-            | None -> "(claiming to be connected but is not)"
+              (Username.to_string @@ Model.User.username' actor) ^
+                (match Model.User.github_handle' actor with None -> "" | Some handle -> spf " (@%s)" handle)
+            | Anonymous -> "(claiming to be connected but is not)"
           )
         | Right string -> string ^ " (not connected)"
       )

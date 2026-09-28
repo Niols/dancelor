@@ -8,9 +8,9 @@ include Endpoints.Page.Make_describe(Model)
 
 let open_dialog page =
   let%lwt maybe_reporter_input =
-    match Environment.user_now () with
-    | Some user ->
-      lwt_left (`Connected, Input.inactive ~label: "Reporter" (Username.to_string @@ Model.User.username' user))
+    match Environment.actor_now () with
+    | Some actor ->
+      lwt_left (`Connected, Input.inactive ~label: "Reporter" (Username.to_string @@ Model.User.username' actor))
     | None ->
       right
       <$> Input.make

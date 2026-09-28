@@ -93,16 +93,16 @@ let dialog_to_book ~source_type ~source_format source source_page =
     )
 
 let button ~target_type create_dialog =
-  match%lwt Environment.user with
+  match%lwt Environment.actor with
   | None -> lwt_nil
-  | Some user ->
+  | Some actor ->
     lwt [
       Button.make
         ~label: (spf "Add to %s" target_type)
         ~label_processing: (spf "Adding to %s..." target_type)
         ~icon: (Action Add)
         ~dropdown: true
-        ~onclick: (fun () -> create_dialog user)
+        ~onclick: (fun () -> create_dialog actor)
         ()
     ]
 
