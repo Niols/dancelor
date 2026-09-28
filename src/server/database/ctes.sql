@@ -63,6 +63,16 @@ SELECT
     "date"
 FROM "source";
 
+-- @get_source_forms | include: reuse
+SELECT
+    "id",
+    "name",
+    "short_name",
+    "scddb_id",
+    "description",
+    "date"
+FROM "source";
+
 -- @get_source_names | include: reuse
 SELECT
     "id",

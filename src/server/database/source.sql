@@ -87,6 +87,12 @@ SELECT "sources".*
 FROM "sources"
 WHERE "id" = @id;
 
+-- @get_form
+WITH "sources" AS &get_source_forms
+SELECT "sources".*
+FROM "sources"
+WHERE "id" = @id;
+
 -- @search
 WITH "source_rows" AS &get_source_rows
 SELECT

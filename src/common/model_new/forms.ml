@@ -25,3 +25,25 @@ module Person_form = struct
   let to_row id {name; _} : Person_row.t =
     {id; name = NEString.to_string name}
 end
+
+module Source_form = struct
+  type t = {
+    name: NEString.t;
+    short_name: NEString.t option;
+    editors: Person_row.t list;
+    scddb_id: int option;
+    description: string option;
+    date: PartialDate.t option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {name; _} : Source_name.t =
+    {id; name = NEString.to_string name}
+
+  let to_row id {name; date; editors; _} : Source_row.t = {
+    id;
+    name = NEString.to_string name;
+    date;
+    editors;
+  }
+end
