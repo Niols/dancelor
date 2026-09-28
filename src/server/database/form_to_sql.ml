@@ -16,3 +16,13 @@ let source_form_to_sql query id {Source_form.name; short_name; scddb_id; descrip
     ~scddb_id: (Option.map Int64.of_int scddb_id)
     ~description
     ~date: (Option.map PartialDate.to_string date)
+
+let dance_form_to_sql query id {Dance_form.names; kind; two_chords; scddb_id; disambiguation; date; devisers = _} =
+  query
+    ~id
+    ~name: (NEString.to_string @@ NEList.hd names)
+    ~kind: (Kind_dance.to_string kind)
+    ~two_chords: (Sql_types.two_chords_of_common two_chords)
+    ~scddb_id: (Option.map Int64.of_int scddb_id)
+    ~disambiguation: (Option.map NEString.to_string disambiguation)
+    ~date: (Option.map PartialDate.to_string date)

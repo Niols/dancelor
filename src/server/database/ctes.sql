@@ -107,6 +107,17 @@ SELECT
     "two_chords"
 FROM "dance";
 
+-- @get_dance_forms | include: reuse
+SELECT
+    "id",
+    "name",
+    "kind",
+    "scddb_id",
+    "disambiguation",
+    "date",
+    "two_chords"
+FROM "dance";
+
 ---------------------------------- [ Users ] -----------------------------------
 
 -- @get_user_rows | include: reuse

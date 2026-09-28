@@ -47,3 +47,27 @@ module Source_form = struct
     editors;
   }
 end
+
+module Dance_form = struct
+  type t = {
+    names: NEString.t NEList.t;
+    kind: Kind.Dance.t;
+    devisers: Person_row.t list;
+    two_chords: Model_builder.Core.Dance.two_chords;
+    scddb_id: int option;
+    disambiguation: NEString.t option;
+    date: PartialDate.t option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {names; _} : Dance_name.t =
+    {id; name = NEString.to_string (NEList.hd names)}
+
+  let to_row id {names; kind; devisers; disambiguation; _} : Dance_row.t = {
+    id;
+    name = NEString.to_string (NEList.hd names);
+    kind;
+    devisers;
+    disambiguation = Option.map NEString.to_string disambiguation;
+  }
+end
