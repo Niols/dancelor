@@ -33,11 +33,9 @@ let assemble (name, (scddb_id, ())) =
 let submit mode person =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_person ->
-      Madge_client.call_exn Endpoints.Api.(route @@ Person Update) (Entry.id prev_person) person;%lwt
-      lwt (Entry.id prev_person)
+    | Editor.Edit prev_person -> Api.call_exn (Person Update) (Entry.id prev_person) person;%lwt lwt (Entry.id prev_person)
     | _ ->
-      Madge_client.call_exn Endpoints.Api.(route @@ Person Create) person
+      Api.call_exn (Person Create) person
   in
   Option.get <$> Model.Person.get id
 

@@ -36,7 +36,7 @@ let view in_search id =
           lwt [
             Action.delete
               ~model: "source"
-              ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Source Delete) id)
+              ~onclick: (fun () -> Api.call (Source Delete) id)
               ();
           ]
       );

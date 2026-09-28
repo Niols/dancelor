@@ -1,21 +1,12 @@
-open Nes
-open Dancelor_common
-
-let madge_call_or_option endpoint id =
-  Lwt.flip_map (Madge_client.call (Endpoints.Api.route @@ endpoint) id) @@ function
-    | Ok v -> Some v
-    | Error (Madge_client.Http {status = `Not_found; _}) -> None
-    | Error e -> raise (Madge_client.Error e)
-
 module Getters = struct
-  let get_user = madge_call_or_option (User Get)
-  let get_book = madge_call_or_option (Book Get)
-  let get_dance = madge_call_or_option (Dance Get)
-  let get_person = madge_call_or_option (Person Get)
-  let get_set = madge_call_or_option (Set Get)
-  let get_source = madge_call_or_option (Source Get)
-  let get_tune = madge_call_or_option (Tune Get)
-  let get_version = madge_call_or_option (Version Get)
+  let get_user = Api.call_or_option (User Get)
+  let get_book = Api.call_or_option (Book Get)
+  let get_dance = Api.call_or_option (Dance Get)
+  let get_person = Api.call_or_option (Person Get)
+  let get_set = Api.call_or_option (Set Get)
+  let get_source = Api.call_or_option (Source Get)
+  let get_tune = Api.call_or_option (Tune Get)
+  let get_version = Api.call_or_option (Version Get)
 end
 
-include Model_builder.Build(Getters)
+include Dancelor_common.Model_builder.Build(Getters)

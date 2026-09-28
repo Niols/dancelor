@@ -29,7 +29,7 @@ let status_stream slug (promise : Job_id.t Endpoints.Job.registration_response E
         lwt @@
         Lwt_stream.from_next @@ fun () ->
         Js_of_ocaml_lwt.Lwt_js.sleep 2.;%lwt
-        let%lwt status = Madge_client.call_exn Endpoints.Api.(route @@ Job Status) job_id in
+        let%lwt status = Api.call_exn (Job Status) job_id in
         lwt @@
           match status with
           | Pending -> Lwt_stream.Next Pending

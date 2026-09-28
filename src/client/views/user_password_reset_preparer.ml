@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 open Model_new
-open Search_new
 open Components
 open Html
 open Utils
@@ -35,15 +34,11 @@ let create () =
       ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
       ~make_result: (Any_result_new.make_user_result ?in_search: None)
       ~results_when_no_search: lwt_nil
-      ~search: (fun slice input ->
-        match User_query.parse input with
-        | Error msg -> lwt_error msg
-        | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ User Search) slice query
-      )
+      ~search: Api.user_search
       ~id_to_yojson: Entry.Id.to_yojson'
       ~id_of_yojson: Entry.Id.of_yojson'
       ~serialise: User_row.id
-      ~unserialise: (madge_call_or_option @@ User Get_row)
+      ~unserialise: (Api.call_or_option @@ User Get_row)
       None
   in
   let signal = Component.signal user_selector in
@@ -59,7 +54,7 @@ let create () =
         ~disabled: (S.map Result.is_error signal)
         ~onclick: (fun () ->
           let user = Result.get_ok @@ S.value signal in
-          let%lwt token = Madge_client.call_exn Endpoints.Api.(route @@ User Prepare_reset_password) user.username in
+          let%lwt token = Api.call_exn (User Prepare_reset_password) user.username in
           open_token_result_dialog user token
         )
         ();

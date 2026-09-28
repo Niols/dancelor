@@ -54,7 +54,7 @@ let actions (set : Set_view.t) = [
             ~dropdown: true
             ();
           Action.delete
-            ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Set Delete) set.id)
+            ~onclick: (fun () -> Api.call (Set Delete) set.id)
             ~model: "set"
             ();
         ]

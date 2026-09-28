@@ -75,14 +75,15 @@ let dialog_to_book ~source_type ~source_format source source_page =
     ~target_href: Endpoints.Page.href_book
     ~target_result: (Any_result.make_book_result ?classes: None ?prefix: None ?suffix: None)
     ~target_search: (fun slice query ->
-      match Book_query.parse query with
-      | Error msg -> lwt_error msg
-      | Ok query ->
-        let%lwt books = Madge_client.call_exn Endpoints.Api.(route @@ Book Search) slice query in
-        let%lwt items = Lwt_list.map_p (fun book -> Option.get <$> Model.Book.get book.Book_row.id) books.items in
-        lwt_ok {books with items}
+      Monadise_lwt.lift_1_1
+        Result.map
+        (fun (books : Book_row.t Search_result.t) ->
+          let%lwt items = Lwt_list.map_p (fun book -> Option.get <$> Model.Book.get book.Book_row.id) books.items in
+          lwt {books with items}
+        )
+      =<< Api.book_search slice query
     )
-    ~target_update: (Madge_client.call_exn Endpoints.Api.(route @@ Book Update))
+    ~target_update: (Api.call_exn (Book Update))
     ~target_history: (fun () ->
       let%lwt books = History.get_books () in
       Lwt_list.map_p (fun book -> Option.get <$> Model.Book.get book.Book_row.id) books

@@ -72,14 +72,14 @@ let open_ (book : Book_view.t) dialog =
           let (book_params, rendering_params) = S.value dialog.parameters_signal in
           let (endpoint, extension) =
             match S.value dialog.download_type with
-            | `Book_pdf -> Endpoints.Api.(route @@ Book Build_pdf), ".pdf"
-            | `Sets_zip -> Endpoints.Api.(route @@ Book Build_zip), ".zip"
+            | `Book_pdf -> Endpoints.Book.Build_pdf, ".pdf"
+            | `Sets_zip -> Endpoints.Book.Build_zip, ".zip"
           in
           return None;
           Version_download_dialog.open_pdf_generation_dialog (
             Job.status_signal_non_copyrighted
               (NesSlug.add_suffix (NesSlug.of_string book.name) extension)
-              (Madge_client.call_exn endpoint book.id book_params rendering_params)
+              (Api.call_exn (Book endpoint) book.id book_params rendering_params)
           )
         )
         ();

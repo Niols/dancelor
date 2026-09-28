@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 open Model_new
-open Search_new
 open Components
 open Html
 open Utils
@@ -25,15 +24,11 @@ let editor =
     (
       Selector.prepare
         ~label: "Editor"
-        ~search: (fun slice query ->
-          match Person_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Person Search) slice query
-        )
+        ~search: Api.person_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Person_row.id
-        ~unserialise: (madge_call_or_option @@ Person Get_row)
+        ~unserialise: (Api.call_or_option @@ Person Get_row)
         ~make_descr: (lwt % Person_row.name)
         ~make_result: (Any_result_new.make_person_result ?in_search: None)
         ~results_when_no_search: (Option.to_list <$> Environment.person_row)
@@ -83,10 +78,8 @@ let assemble (name, (short_name, (editors, (date, (scddb_id, (description, ())))
 let submit mode source =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_source ->
-      Madge_client.call_exn Endpoints.Api.(route @@ Source Update) (Entry.id prev_source) source;%lwt
-      lwt (Entry.id prev_source)
-    | _ -> Madge_client.call_exn Endpoints.Api.(route @@ Source Create) source
+    | Editor.Edit prev_source -> Api.call_exn (Source Update) (Entry.id prev_source) source;%lwt lwt (Entry.id prev_source)
+    | _ -> Api.call_exn (Source Create) source
   in
   Option.get <$> Model.Source.get id
 
@@ -95,7 +88,7 @@ let unsubmit = lwt % Entry.value
 let disassemble source =
   let name = Model.Source.name source in
   let short_name = Model.Source.short_name source in
-  let%lwt editors = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Person Get_row)) (Model.Source.editors source) in
+  let%lwt editors = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Source.editors source) in
   let date = Model.Source.date source in
   let scddb_id = Model.Source.scddb_id source in
   let description = Model.Source.description source in

@@ -1,8 +1,6 @@
 open Nes
 open Dancelor_common
 open Model_new
-open Search_new
-
 open Components
 open Html
 open Utils
@@ -40,15 +38,11 @@ let editor =
             ~label: "Composer"
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
-            ~search: (fun slice query ->
-              match Person_query.parse query with
-              | Error msg -> lwt_error msg
-              | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Person Search) slice query
-            )
+            ~search: Api.person_search
             ~id_to_yojson: Entry.Id.to_yojson'
             ~id_of_yojson: Entry.Id.of_yojson'
             ~serialise: Person_row.id
-            ~unserialise: (madge_call_or_option @@ Person Get_row)
+            ~unserialise: (Api.call_or_option @@ Person Get_row)
             ()
         )
         (
@@ -78,15 +72,11 @@ let editor =
     ~label: "Dances"
     (
       Selector.prepare
-        ~search: (fun slice query ->
-          match Dance_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Dance Search) slice query
-        )
+        ~search: Api.dance_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Dance_row.id
-        ~unserialise: (madge_call_or_option @@ Dance Get_row)
+        ~unserialise: (Api.call_or_option @@ Dance Get_row)
         ~make_descr: (lwt % Dance_row.name)
         ~make_result: (Any_result_new.make_dance_result ?in_search: None)
         ~label: "Dance"
@@ -124,12 +114,10 @@ let assemble (names, (kind, (composers, (date, (dances, (remark, (scddb_id, ()))
 let submit mode tune =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_tune ->
-      Madge_client.call_exn Endpoints.Api.(route @@ Tune Update) (Entry.id prev_tune) tune;%lwt
-      lwt (Entry.id prev_tune)
-    | _ -> Madge_client.call_exn Endpoints.Api.(route @@ Tune Create) tune
+    | Editor.Edit prev_tune -> Api.call_exn (Tune Update) (Entry.id prev_tune) tune;%lwt lwt (Entry.id prev_tune)
+    | _ -> Api.call_exn (Tune Create) tune
   in
-  Madge_client.call_exn Endpoints.Api.(route @@ Tune Get) id
+  Api.call_exn (Tune Get) id
 
 let unsubmit = lwt % Entry.value
 
@@ -139,13 +127,13 @@ let disassemble tune =
   let%lwt composers =
     Lwt_list.map_p
       (fun Model.Tune.{composer; details} ->
-        let%lwt composer = Madge_client.call_exn Endpoints.Api.(route @@ Person Get_row) composer in
+        let%lwt composer = Api.call_exn (Person Get_row) composer in
         lwt (composer, details)
       )
       (Model.Tune.composers tune)
   in
   let date = Model.Tune.date tune in
-  let%lwt dances = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Dance Get_row)) (Model.Tune.dances tune) in
+  let%lwt dances = Lwt_list.map_p (Api.call_exn (Dance Get_row)) (Model.Tune.dances tune) in
   let remark = Model.Tune.remark tune in
   let scddb_id = Model.Tune.scddb_id tune in
   lwt (names, (kind, (composers, (date, (dances, (remark, (scddb_id, ())))))))

@@ -20,11 +20,7 @@ let view query page =
   let page_url = ref (fun _n -> assert false) in
   let search =
     Search.make
-      ~search: (fun slice query ->
-        match Any_query.parse query with
-        | Error msg -> lwt_error msg
-        | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Any Search) slice query
-      )
+      ~search: Api.any_search
       ~initial_input: query
       ~initial_page: page
       ~pagination_mode: (Pagination ())

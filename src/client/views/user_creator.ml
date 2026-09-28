@@ -53,7 +53,7 @@ let create () =
         ~disabled: (S.map Result.is_error signal)
         ~onclick: (fun () ->
           let user = Result.get_ok @@ S.value signal in
-          let%lwt (user, token) = Madge_client.call_exn Endpoints.Api.(route @@ User Create) user in
+          let%lwt (user, token) = Api.call_exn (User Create) user in
           open_token_result_dialog user token;%lwt
           Component.clear username_input
         )

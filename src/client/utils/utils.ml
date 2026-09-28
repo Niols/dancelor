@@ -49,7 +49,7 @@ let quick_explorer_links links =
     ul ~a: [a_class ["bullet-list"]] (
       List.map
         (fun (text, query) ->
-          let count_lwt = Search_result.total <$> Madge_client.call_exn Endpoints.Api.(route @@ Any Search) Slice.nothing query in
+          let count_lwt = Search_result.total <$> Api.call_exn (Any Search) Slice.nothing query in
           li [
             a
               ~a: [a_href @@ Endpoints.Page.(href Explore) (Any_query.print query) 1]
@@ -70,12 +70,6 @@ let href_any_for_sharing_new any =
   let current = Uri.of_string (Js.to_string Dom_html.window##.location##.href) in
   let path = Endpoints.Page.(href Any) @@ Any_id.to_entry_id any in
   Uri.to_string @@ Uri.with_query (Uri.with_path current (Uri.path path)) []
-
-let madge_call_or_option endpoint id =
-  Lwt.flip_map (Madge_client.call (Endpoints.Api.route @@ endpoint) id) @@ function
-    | Ok v -> Some v
-    | Error (Madge_client.Http {status = `Not_found; _}) -> None
-    | Error e -> raise (Madge_client.Error e)
 
 let old_any_to_any_id : Model.Any.t -> Any_id.t = function
   | Person p -> Person (Entry.id p)
