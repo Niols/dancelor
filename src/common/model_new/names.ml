@@ -5,7 +5,7 @@ module Person_name = struct
     id: Person_id.t;
     name: string;
   }
-  [@@deriving yojson, fields]
+  [@@deriving eq, yojson, fields]
 end
 
 module Person_name_with_details = struct

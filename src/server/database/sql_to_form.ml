@@ -28,3 +28,14 @@ let dance_sql_to_form ~id: _ ~name ~extra_names ~kind ~devisers ~scddb_id ~disam
     date = Option.map (Option.get % PartialDate.from_string) date;
     two_chords = Sql_types.two_chords_to_common two_chords;
   }
+
+let tune_sql_to_form ~id: _ ~name ~extra_names ~kind ~composers ~dances ~remark ~scddb_id ~date ~(k : Tune_form.t -> 'w) : 'w =
+  k {
+    names = NEList.map NEString.of_string_exn (NEList.cons name extra_names);
+    kind = Sql_types.kind_base_to_common kind;
+    composers;
+    dances;
+    remark = Option.map NEString.of_string_exn remark;
+    scddb_id = Option.map Int64.to_int scddb_id;
+    date = Option.map (Option.get % PartialDate.from_string) date;
+  }

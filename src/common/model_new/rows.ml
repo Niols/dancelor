@@ -26,7 +26,7 @@ module Dance_row = struct
     devisers: Person_name.t list; [@default []]
     disambiguation: string option; [@default None]
   }
-  [@@deriving yojson, fields]
+  [@@deriving eq, yojson, fields]
 
   let to_name : t -> Dance_name.t = fun {id; name; _} -> {id; name}
 end

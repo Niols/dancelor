@@ -145,6 +145,17 @@ SELECT
     "date"
 FROM "tune";
 
+
+-- @get_tune_forms | include: reuse
+SELECT
+    "id",
+    "name",
+    "kind",
+    "remark",
+    "scddb_id",
+    "date"
+FROM "tune";
+
 ---------------------------------- [ Tunes ] -----------------------------------
 
 -- @get_tune_ids_for_dances | include: reuse

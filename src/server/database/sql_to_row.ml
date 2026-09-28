@@ -5,6 +5,12 @@ open Model_new
 let person_sql_to_row ~id ~name ~(k : Person_row.t -> 'w) : 'w =
   k {id; name}
 
+let person_sql_to_tune_composer ~id ~name ~details ~(k : Tune_form.composer -> 'w) : 'w =
+  k {
+    composer = {id; name};
+    details = Option.map NEString.of_string_exn details;
+  }
+
 let source_sql_to_row ~id ~name ~date ~editors ~(k : Source_row.t -> 'w) : 'w =
   k {id; name; date = Option.map (Option.get % PartialDate.from_string) date; editors}
 

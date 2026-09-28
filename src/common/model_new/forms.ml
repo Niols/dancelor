@@ -71,3 +71,32 @@ module Dance_form = struct
     disambiguation = Option.map NEString.to_string disambiguation;
   }
 end
+
+module Tune_form = struct
+  type composer = {
+    composer: Person_row.t;
+    details: NEString.t option;
+  }
+  [@@deriving eq, yojson]
+
+  type t = {
+    names: NEString.t NEList.t;
+    kind: Kind.Base.t;
+    composers: composer list;
+    dances: Dance_row.t list;
+    remark: NEString.t option;
+    scddb_id: int option;
+    date: PartialDate.t option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {names; _} : Tune_name.t =
+    {id; name = NEString.to_string (NEList.hd names)}
+
+  let to_row id {names; kind; composers; _} : Tune_row.t = {
+    id;
+    name = NEString.to_string (NEList.hd names);
+    kind;
+    composers = List.map (fun {composer; _} -> composer) composers;
+  }
+end

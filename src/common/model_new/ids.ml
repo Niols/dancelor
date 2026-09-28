@@ -18,7 +18,7 @@ end
 
 module Dance_id = struct
   type t = Model_builder.Core.Dance.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string

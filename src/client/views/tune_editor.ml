@@ -107,36 +107,23 @@ let editor =
   nil
 
 let assemble (names, (kind, (composers, (date, (dances, (remark, (scddb_id, ()))))))) =
-  let composers = List.map (fun (composer, details) -> {Model.Tune.composer = Person_row.id composer; details}) composers in
-  let dances = List.map Dance_row.id dances in
-  Model.Tune.make ~names ~kind ~composers ~date ~dances ~remark ~scddb_id ()
+  let composers = List.map (fun (composer, details) -> {Tune_form.composer; details}) composers in
+    {Tune_form.names; kind; composers; date; dances; remark; scddb_id}
+
+let disassemble tune =
+  let {Tune_form.names; kind; composers; date; dances; remark; scddb_id} = tune in
+  let composers = List.map (fun {Tune_form.composer; details} -> (composer, details)) composers in
+  lwt (names, (kind, (composers, (date, (dances, (remark, (scddb_id, ())))))))
 
 let submit mode tune =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_tune -> Api.call_exn (Tune Update) (Entry.id prev_tune) tune;%lwt lwt (Entry.id prev_tune)
+    | Editor.Edit {With_id.id; _} -> Api.call_exn (Tune Update) id tune;%lwt lwt id
     | _ -> Api.call_exn (Tune Create) tune
   in
-  Api.call_exn (Tune Get) id
+  lwt {With_id.id; form = tune}
 
-let unsubmit = lwt % Entry.value
-
-let disassemble tune =
-  let names = Model.Tune.names tune in
-  let kind = Model.Tune.kind tune in
-  let%lwt composers =
-    Lwt_list.map_p
-      (fun Model.Tune.{composer; details} ->
-        let%lwt composer = Api.call_exn (Person Get_row) composer in
-        lwt (composer, details)
-      )
-      (Model.Tune.composers tune)
-  in
-  let date = Model.Tune.date tune in
-  let%lwt dances = Lwt_list.map_p (Api.call_exn (Dance Get_row)) (Model.Tune.dances tune) in
-  let remark = Model.Tune.remark tune in
-  let scddb_id = Model.Tune.scddb_id tune in
-  lwt (names, (kind, (composers, (date, (dances, (remark, (scddb_id, ())))))))
+let unsubmit = lwt % With_id.form
 
 let create mode =
   (* FIXME: if [mode] is an edition, then we should assert_can_update_public *)
@@ -146,13 +133,13 @@ let create mode =
     ~icon: (Model Tune)
     editor
     ~mode
-    ~format: (Formatters.Tune.name' ~link: true)
-    ~href: (Endpoints.Page.href_tune % Entry.id)
+    ~format: (Formatters_new.Tune.name ~link: true % With_id.map Tune_form.to_name)
+    ~href: (Endpoints.Page.href_tune % With_id.id)
     ~assemble
     ~submit
     ~unsubmit
     ~disassemble
-    ~check_product: Model.Tune.equal
+    ~check_product: Tune_form.equal
 
 let to_row tune =
   let%lwt composers = Lwt_list.map_s (Option.get <%> Model.Person.get % Model.Tune.composer_composer) @@ Model.Tune.composers' tune in
@@ -165,7 +152,7 @@ let to_row tune =
   }
 
 let create_row (mode : (Tune_row.t, 'a) Editor.mode) =
-  let%lwt (mode : (Model.Tune.entry, 'a) Editor.mode) =
+  let%lwt (mode : ((Tune_id.t, Tune_form.t) With_id.t, 'a) Editor.mode) =
     match mode with
     | Create state -> lwt @@ Editor.Create state
     | Create_with_local_storage -> lwt Editor.Create_with_local_storage
@@ -173,11 +160,11 @@ let create_row (mode : (Tune_row.t, 'a) Editor.mode) =
       lwt @@
         Editor.Quick_create (
           init,
-          (fun tune -> callback =<< to_row tune)
+          (callback % With_id.map Tune_form.to_row)
         )
-    | Edit result ->
-      let%lwt result = Option.get <$> Model.Tune.get (Tune_row.id result) in
-      lwt @@ Editor.Edit result
+    | Edit {Tune_row.id; _} ->
+      let%lwt form = Api.call_exn (Tune Get_form) id in
+      lwt @@ Editor.Edit {With_id.id; form}
     | Quick_edit state -> lwt @@ Editor.Quick_edit state
   in
   create mode
@@ -186,5 +173,5 @@ let add () =
   create Create_with_local_storage
 
 let edit id =
-  let%lwt tune = Option.get <$> Model.Tune.get id in
-  create (Edit tune)
+  let%lwt form = Api.call_exn (Tune Get_form) id in
+  create @@ Edit {With_id.id; form}
