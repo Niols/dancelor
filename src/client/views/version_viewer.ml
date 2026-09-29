@@ -8,7 +8,7 @@ open Utils
 
 let show_lilypond_dialog (version : Version_view.t) =
   let content_promise =
-    let%lwt content = Madge_client.call_exn Endpoints.Api.(route @@ Version Content) version.id in
+    let%lwt content = Api.call_exn (Version Content) version.id in
     let content =
       match content with
       | Endpoints.Version.Protected -> assert false
@@ -51,14 +51,15 @@ let add_to_set_dialog (version : Version_name.t) =
     ~target_href: Endpoints.Page.href_set
     ~target_result: (Any_result.make_set_result ?classes: None ?prefix: None ?suffix: None ?params: None)
     ~target_search: (fun slice query ->
-      match Set_query.parse query with
-      | Error msg -> lwt_error msg
-      | Ok query ->
-        let%lwt sets = Madge_client.call_exn Endpoints.Api.(route @@ Set Search) slice query in
-        let%lwt items = Lwt_list.map_p (fun set -> Option.get <$> Model.Set.get set.Set_row.id) sets.items in
-        lwt_ok {sets with items}
+      Monadise_lwt.lift_1_1
+        Result.map
+        (fun (sets : Set_row.t Search_result.t) ->
+          let%lwt items = Lwt_list.map_p (fun set -> Option.get <$> Model.Set.get set.Set_row.id) sets.items in
+          lwt {sets with items}
+        )
+      =<< Api.set_search slice query
     )
-    ~target_update: (Madge_client.call_exn Endpoints.Api.(route @@ Set Update))
+    ~target_update: (Api.call_exn (Set Update))
     ~target_history: (fun () ->
       let%lwt sets = History.get_sets () in
       Lwt_list.map_p (fun set -> Option.get <$> Model.Set.get set.Set_row.id) sets
@@ -171,7 +172,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
             Action.delete
               ~label_suffix: "version"
               ~model: "version"
-              ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Version Delete) version.Version_view.id)
+              ~onclick: (fun () -> Api.call (Version Delete) version.Version_view.id)
               ()
           ]
       )
@@ -184,7 +185,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
         Action.delete
           ~label_suffix: "tune"
           ~model: "tune"
-          ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Tune Delete) tune.id)
+          ~onclick: (fun () -> Api.call (Tune Delete) tune.id)
           ()
       ]
   );

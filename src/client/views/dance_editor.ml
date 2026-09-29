@@ -1,8 +1,6 @@
 open Nes
 open Dancelor_common
 open Model_new
-open Search_new
-
 open Components
 open Html
 open Utils
@@ -34,15 +32,11 @@ let editor =
     (
       Selector.prepare
         ~label: "Deviser"
-        ~search: (fun slice query ->
-          match Person_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Person Search) slice query
-        )
+        ~search: Api.person_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Model_new.Person_row.id
-        ~unserialise: (madge_call_or_option @@ Person Get_row)
+        ~unserialise: (Api.call_or_option @@ Person Get_row)
         ~make_descr: (lwt % Person_row.name)
         ~make_result: (Any_result_new.make_person_result ?in_search: None)
         ~results_when_no_search: (Option.to_list <$> Environment.person_row)
@@ -99,10 +93,8 @@ let assemble (names, (kind, (devisers, (date, (disambiguation, (two_chords, (scd
 let submit mode dance =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_dance ->
-      Madge_client.call_exn Endpoints.Api.(route @@ Dance Update) (Entry.id prev_dance) dance;%lwt
-      lwt (Entry.id prev_dance)
-    | _ -> Madge_client.call_exn Endpoints.Api.(route @@ Dance Create) dance
+    | Editor.Edit prev_dance -> Api.call_exn (Dance Update) (Entry.id prev_dance) dance;%lwt lwt (Entry.id prev_dance)
+    | _ -> Api.call_exn (Dance Create) dance
   in
   Option.get <$> Model.Dance.get id
 
@@ -111,7 +103,7 @@ let unsubmit = lwt % Entry.value
 let disassemble dance =
   let names = Model.Dance.names dance in
   let kind = Model.Dance.kind dance in
-  let%lwt devisers = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Person Get_row)) (Model.Dance.devisers dance) in
+  let%lwt devisers = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Dance.devisers dance) in
   let date = Model.Dance.date dance in
   let disambiguation = Model.Dance.disambiguation dance in
   let two_chords = Model.Dance.two_chords dance in

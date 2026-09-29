@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Search_new
 open Js_of_ocaml
 open Html
 open Utils
@@ -21,11 +20,7 @@ let quick_search_to_explorer value =
 
 let quick_search =
   Components.Search.Quick.make
-    ~search: (fun slice query ->
-      match Any_query.parse query with
-      | Error msg -> lwt_error msg
-      | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Any Search) slice query
-    )
+    ~search: Api.any_search
     ~on_enter: (fun value -> Lwt.async (fun () -> quick_search_to_explorer value))
     ()
 
@@ -280,7 +275,7 @@ let load_sleep_raise ?(delay = 1.) page_promise =
 
 let madge_call_or_404 endpoint arg f =
   try%lwt
-    f =<< Madge_client.call_exn Endpoints.Api.(route @@ endpoint) arg
+    f =<< Api.call_exn endpoint arg
   with
     | Madge_client.(Error (Http {status; _})) -> Oooops_viewer.create status
 

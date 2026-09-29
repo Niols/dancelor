@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 open Model_new
-open Search_new
 open Components
 open Html
 open Utils
@@ -37,15 +36,11 @@ let editor user =
         ~label: "Conceptor"
         ~model_name: "person"
         ~create_dialog_content: Person_editor.create_row
-        ~search: (fun slice query ->
-          match Person_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Person Search) slice query
-        )
+        ~search: Api.person_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Person_row.id
-        ~unserialise: (madge_call_or_option @@ Person Get_row)
+        ~unserialise: (Api.call_or_option @@ Person Get_row)
         ()
     ) ^::
   Star.prepare
@@ -64,15 +59,11 @@ let editor user =
             ~label: "Version"
             ~model_name: "version"
             ~create_dialog_content: Version_editor.create_row
-            ~search: (fun slice query ->
-              match Version_query.parse query with
-              | Error msg -> lwt_error msg
-              | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Version Search) slice query
-            )
+            ~search: Api.version_search
             ~id_to_yojson: Entry.Id.to_yojson'
             ~id_of_yojson: Entry.Id.of_yojson'
             ~serialise: Version_row.id
-            ~unserialise: (madge_call_or_option @@ Version Get_row)
+            ~unserialise: (Api.call_or_option @@ Version Get_row)
             ()
         )
         (
@@ -114,15 +105,11 @@ let editor user =
         ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
         ~make_result: (Any_result_new.make_user_result ?in_search: None)
         ~results_when_no_search: (Option.to_list <$> Environment.actor_new)
-        ~search: (fun slice input ->
-          match User_query.parse input with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ User Search) slice query
-        )
+        ~search: Api.user_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: User_row.id
-        ~unserialise: (madge_call_or_option @@ User Get_row)
+        ~unserialise: (Api.call_or_option @@ User Get_row)
         ()
     ) ^::
   (
@@ -154,15 +141,11 @@ let editor user =
                 ~model_name: "user"
                 ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
                 ~make_result: (Any_result_new.make_user_result ?in_search: None)
-                ~search: (fun slice input ->
-                  match User_query.parse input with
-                  | Error msg -> lwt_error msg
-                  | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ User Search) slice query
-                )
+                ~search: Api.user_search
                 ~id_to_yojson: Entry.Id.to_yojson'
                 ~id_of_yojson: Entry.Id.of_yojson'
                 ~serialise: User_row.id
-                ~unserialise: (madge_call_or_option @@ User Get_row)
+                ~unserialise: (Api.call_or_option @@ User Get_row)
                 ()
             )
         ) ^::
@@ -190,12 +173,10 @@ let assemble (name, (kind, (conceptors, (contents, (order, (owners, (visibility,
 let submit mode (set, access) =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_set ->
-      Madge_client.call_exn Endpoints.Api.(route @@ Set Update) (Entry.id prev_set) set access;%lwt
-      lwt (Entry.id prev_set)
-    | _ -> Madge_client.call_exn Endpoints.Api.(route @@ Set Create) set access
+    | Editor.Edit prev_set -> Api.call_exn (Set Update) (Entry.id prev_set) set access;%lwt lwt (Entry.id prev_set)
+    | _ -> Api.call_exn (Set Create) set access
   in
-  Madge_client.call_exn Endpoints.Api.(route @@ Set Get) id
+  Api.call_exn (Set Get) id
 
 let unsubmit entry =
   lwt (Entry.value entry, Entry.access entry)
@@ -203,11 +184,11 @@ let unsubmit entry =
 let disassemble (set, access) =
   let name = Model.Set.name set in
   let kind = Model.Set.kind set in
-  let%lwt conceptors = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Person Get_row)) (Model.Set.conceptors set) in
-  let%lwt contents = Lwt_list.map_p (fun (version, params) -> let%lwt version = Madge_client.call_exn Endpoints.Api.(route @@ Version Get_row) version in lwt (version, params)) (Model.Set.contents set) in
+  let%lwt conceptors = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Set.conceptors set) in
+  let%lwt contents = Lwt_list.map_p (fun (version, params) -> let%lwt version = Api.call_exn (Version Get_row) version in lwt (version, params)) (Model.Set.contents set) in
   let order = Model.Set.order set in
-  let%lwt owners = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (Entry.Access.Private.owners access) in
-  let%lwt viewers = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (Entry.Access.Private.viewers access) in
+  let%lwt owners = Lwt_list.map_p (Api.call_exn (User Get_row)) (Entry.Access.Private.owners access) in
+  let%lwt viewers = Lwt_list.map_p (Api.call_exn (User Get_row)) (Entry.Access.Private.viewers access) in
   let visibility =
     match Entry.Access.Private.is_public access, NEList.of_list viewers with
     | true, _ -> `Everyone

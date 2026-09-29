@@ -10,8 +10,8 @@ let (server_status, set_server_status) = S.create Reachable
 let () = Madge_client.on_server_reachable := (fun () -> set_server_status Reachable)
 let () = Madge_client.on_server_unreachable := (fun () -> set_server_status Unreachable)
 
-let actor = Madge_client.call_exn Endpoints.Api.(route @@ User Status)
-let actor_new = Madge_client.call_exn Endpoints.Api.(route @@ User Status_new)
+let actor = Api.call_exn (User Status)
+let actor_new = Api.call_exn (User Status_new)
 
 let is_connected = Lwt.map Option.is_some actor
 
@@ -20,7 +20,7 @@ let actor_now () = match Lwt.state actor with Return actor -> actor | _ -> None
 let person_row =
   match%lwt actor with
   | None -> lwt_none
-  | Some actor -> Madge_client.call_exn Endpoints.Api.(route @@ Person For_user) (Entry.id actor)
+  | Some actor -> Api.call_exn (Person For_user) (Entry.id actor)
 
 let person_id =
   let%lwt person = person_row in

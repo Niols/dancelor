@@ -120,13 +120,7 @@ let open_ (version : Version_name.t) dialog =
           open_pdf_generation_dialog (
             Job.status_signal
               (NesSlug.add_suffix (NesSlug.of_string version.name) ".pdf")
-              (
-                Madge_client.call_exn
-                  Endpoints.Api.(route @@ Version Build_pdf)
-                  version.id
-                  version_params
-                  rendering_params
-              )
+              (Api.call_exn (Version Build_pdf) version.id version_params rendering_params)
           )
         )
         ();

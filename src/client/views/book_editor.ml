@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 open Model_new
-open Search_new
 open Components
 open Html
 open Utils
@@ -14,27 +13,27 @@ let model_content_to_content =
     | Model.Book.Part title ->
       lwt @@ `Part title
     | Dance (dance, Dance_only) ->
-      let%lwt dance = Madge_client.call_exn Endpoints.Api.(route @@ Dance Get_row) dance in
+      let%lwt dance = Api.call_exn (Dance Get_row) dance in
       lwt @@ `Dance (dance, `Dance_only)
     | Dance (dance, Dance_versions versions_and_params) ->
-      let%lwt dance = Madge_client.call_exn Endpoints.Api.(route @@ Dance Get_row) dance in
+      let%lwt dance = Api.call_exn (Dance Get_row) dance in
       let%lwt versions_and_params =
         Monadise_lwt.run @@ fun () ->
-        NEList.map (Pair.map_fst (Monadise_lwt.yield % Madge_client.call_exn Endpoints.Api.(route @@ Version Get_row))) versions_and_params
+        NEList.map (Pair.map_fst (Monadise_lwt.yield % Api.call_exn (Version Get_row))) versions_and_params
       in
       lwt @@ `Dance (dance, `Dance_versions versions_and_params)
     | Dance (dance, Dance_set (set, params)) ->
-      let%lwt dance = Madge_client.call_exn Endpoints.Api.(route @@ Dance Get_row) dance in
-      let%lwt set = Madge_client.call_exn Endpoints.Api.(route @@ Set Get_row) set in
+      let%lwt dance = Api.call_exn (Dance Get_row) dance in
+      let%lwt set = Api.call_exn (Set Get_row) set in
       lwt @@ `Dance (dance, `Dance_set (set, params))
     | Versions versions_and_params ->
       let%lwt versions_and_params =
         Monadise_lwt.run @@ fun () ->
-        NEList.map (Pair.map_fst (Monadise_lwt.yield % Madge_client.call_exn Endpoints.Api.(route @@ Version Get_row))) versions_and_params
+        NEList.map (Pair.map_fst (Monadise_lwt.yield % Api.call_exn (Version Get_row))) versions_and_params
       in
       lwt @@ `Versions versions_and_params
     | Set (set, params) ->
-      let%lwt set = Madge_client.call_exn Endpoints.Api.(route @@ Set Get_row) set in
+      let%lwt set = Api.call_exn (Set Get_row) set in
       lwt @@ `Set (set, params)
 
 let content_to_model_content =
@@ -63,15 +62,11 @@ let versions_and_parameters ?(label = "Versions") () =
             ~label
             ~model_name: "version"
             ~create_dialog_content: Version_editor.create_row
-            ~search: (fun slice query ->
-              match Version_query.parse query with
-              | Error msg -> lwt_error msg
-              | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Version Search) slice query
-            )
+            ~search: Api.version_search
             ~id_to_yojson: Entry.Id.to_yojson'
             ~id_of_yojson: Entry.Id.of_yojson'
             ~serialise: Version_row.id
-            ~unserialise: (madge_call_or_option @@ Version Get_row)
+            ~unserialise: (Api.call_or_option @@ Version Get_row)
             ()
         )
         Version_parameters_editor.e
@@ -91,15 +86,11 @@ let set_and_parameters ?(label = "Set") () =
         ~label
         ~model_name: "set"
         ~create_dialog_content: Set_editor.create_row
-        ~search: (fun slice query ->
-          match Set_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Set Search) slice query
-        )
+        ~search: Api.set_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Set_row.id
-        ~unserialise: (madge_call_or_option @@ Set Get_row)
+        ~unserialise: (Api.call_or_option @@ Set Get_row)
         ()
     )
     Set_parameters_editor.e
@@ -115,15 +106,11 @@ let dance_and_dance_page =
         ~label: "Dance"
         ~model_name: "dance"
         ~create_dialog_content: Dance_editor.create_row
-        ~search: (fun slice query ->
-          match Dance_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Dance Search) slice query
-        )
+        ~search: Api.dance_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Dance_row.id
-        ~unserialise: (madge_call_or_option @@ Dance Get_row)
+        ~unserialise: (Api.call_or_option @@ Dance Get_row)
         ()
     )
     (
@@ -162,15 +149,11 @@ let editor user =
     (
       Selector.prepare
         ~label: "Editor"
-        ~search: (fun slice query ->
-          match Person_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Person Search) slice query
-        )
+        ~search: Api.person_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Person_row.id
-        ~unserialise: (madge_call_or_option @@ Person Get_row)
+        ~unserialise: (Api.call_or_option @@ Person Get_row)
         ~make_descr: (lwt % Person_row.name)
         ~make_result: (Any_result_new.make_person_result ?in_search: None)
         ~results_when_no_search: (Option.to_list <$> Environment.person_row)
@@ -255,15 +238,11 @@ let editor user =
         ~label: "Source"
         ~model_name: "source"
         ~create_dialog_content: Source_editor.create_row
-        ~search: (fun slice query ->
-          match Source_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Source Search) slice query
-        )
+        ~search: Api.source_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Source_row.id
-        ~unserialise: (madge_call_or_option @@ Source Get_row)
+        ~unserialise: (Api.call_or_option @@ Source Get_row)
         ()
     ) ^::
   Input.prepare
@@ -289,15 +268,11 @@ let editor user =
         ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
         ~make_result: (Any_result_new.make_user_result ?in_search: None)
         ~results_when_no_search: (Option.to_list <$> Environment.actor_new)
-        ~search: (fun slice input ->
-          match User_query.parse input with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ User Search) slice query
-        )
+        ~search: Api.user_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: User_row.id
-        ~unserialise: (madge_call_or_option @@ User Get_row)
+        ~unserialise: (Api.call_or_option @@ User Get_row)
         ()
     ) ^::
   (
@@ -329,15 +304,11 @@ let editor user =
                 ~model_name: "user"
                 ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
                 ~make_result: (Any_result_new.make_user_result ?in_search: None)
-                ~search: (fun slice input ->
-                  match User_query.parse input with
-                  | Error msg -> lwt_error msg
-                  | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ User Search) slice query
-                )
+                ~search: Api.user_search
                 ~id_to_yojson: Entry.Id.to_yojson'
                 ~id_of_yojson: Entry.Id.of_yojson'
                 ~serialise: User_row.id
-                ~unserialise: (madge_call_or_option @@ User Get_row)
+                ~unserialise: (Api.call_or_option @@ User Get_row)
                 ()
             )
         ) ^::
@@ -364,26 +335,24 @@ let assemble (name, (authors, (date, (contents, (remark, (sources, (scddb_id, (o
 let submit mode (book, access) =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_book ->
-      Madge_client.call_exn Endpoints.Api.(route @@ Book Update) (Entry.id prev_book) book access;%lwt
-      lwt (Entry.id prev_book)
-    | _ -> Madge_client.call_exn Endpoints.Api.(route @@ Book Create) book access
+    | Editor.Edit prev_book -> Api.call_exn (Book Update) (Entry.id prev_book) book access;%lwt lwt (Entry.id prev_book)
+    | _ -> Api.call_exn (Book Create) book access
   in
-  Madge_client.call_exn Endpoints.Api.(route @@ Book Get) id
+  Api.call_exn (Book Get) id
 
 let unsubmit entry =
   lwt (Entry.value entry, Entry.access entry)
 
 let disassemble (book, access) =
   let name = Model.Book.name book in
-  let%lwt authors = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Person Get_row)) (Model.Book.authors book) in
+  let%lwt authors = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Book.authors book) in
   let date = Model.Book.date book in
   let%lwt contents = model_content_to_content @@ Model.Book.contents book in
   let remark = Model.Book.remark book in
-  let%lwt sources = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Source Get_row)) (Model.Book.sources book) in
+  let%lwt sources = Lwt_list.map_p (Api.call_exn (Source Get_row)) (Model.Book.sources book) in
   let scddb_id = Model.Book.scddb_id book in
-  let%lwt owners = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (Entry.Access.Private.owners access) in
-  let%lwt viewers = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ User Get_row)) (Entry.Access.Private.viewers access) in
+  let%lwt owners = Lwt_list.map_p (Api.call_exn (User Get_row)) (Entry.Access.Private.owners access) in
+  let%lwt viewers = Lwt_list.map_p (Api.call_exn (User Get_row)) (Entry.Access.Private.viewers access) in
   let visibility =
     match Entry.Access.Private.is_public access, NEList.of_list viewers with
     | true, _ -> `Everyone

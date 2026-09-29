@@ -30,7 +30,7 @@ let actions (dance : Dance_view.t) = [
     | Some _ ->
       lwt [
         Action.delete
-          ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Dance Delete) dance.id)
+          ~onclick: (fun () -> Api.call (Dance Delete) dance.id)
           ~model: "dance"
           ();
       ]

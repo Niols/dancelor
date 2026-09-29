@@ -34,8 +34,8 @@ let preload_pages_from_context ~page_descr ~versions_in_page ~previous ~next =
         ~max_concurrency: 4
         (fun (version_id, params) ->
           let response_promise =
-            Madge_client.call_exn
-              Endpoints.Api.(route @@ Version Build_snippets)
+            Api.call_exn
+              (Version Build_snippets)
               version_id
               params
               Rendering_parameters.none
@@ -190,7 +190,7 @@ let for_search query (any_id : Any_id.t) =
       let query = Endpoints.Page.In_search.project query in
       let neighbours_lwt =
         let%olwt query = lwt @@ Result.to_option @@ Any_query.parse query in
-        Result.to_option <$> Madge_client.call Endpoints.Api.(route @@ Any Search_context_5_10) query any_id
+        Result.to_option <$> Api.call (Any Search_context_5_10) query any_id
       in
       let parent_page =
         let open Endpoints.Page in
@@ -224,7 +224,7 @@ let for_search query (any_id : Any_id.t) =
         | Version version ->
           lwt [(version, Version_parameters.none)]
         | Set set ->
-          let%lwt set = Madge_client.call_exn Endpoints.Api.(route @@ Set Get_view) set in
+          let%lwt set = Api.call_exn (Set Get_view) set in
           lwt @@ List.map (Pair.map_fst Version_row.id) set.content
       in
       let previous_next_lwt =
@@ -247,7 +247,7 @@ let for_set ~this_page in_set =
     in_set
     ~none: (no_context_links ())
     ~some: (fun ((id : Set_id.t), index) ->
-      let set_lwt = Madge_client.call_exn Endpoints.Api.(route @@ Set Get_view) id in
+      let set_lwt = Api.call_exn (Set Get_view) id in
       let parent_page = S.const @@ Endpoints.Page.href_set id in
       let index_total_category_name_lwt =
         let%lwt set = set_lwt in
@@ -310,7 +310,7 @@ let for_book (book : Book_view.t) pageno =
       (
         match set with
         | Allowed set ->
-          let%lwt set = Madge_client.call_exn Endpoints.Api.(route @@ Set Get_view) set.id in
+          let%lwt set = Api.call_exn (Set Get_view) set.id in
           lwt @@ List.map (Pair.map_fst Version_row.id) set.content
         | Forbidden -> lwt_nil
       )

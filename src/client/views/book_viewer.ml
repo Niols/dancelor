@@ -136,7 +136,7 @@ let view in_search id =
                 ();
               Action.delete
                 ~model: "book"
-                ~onclick: (fun () -> Madge_client.call Endpoints.Api.(route @@ Book Delete) id)
+                ~onclick: (fun () -> Api.call (Book Delete) id)
                 ();
             ]
       );
@@ -169,47 +169,47 @@ let parent_title_and_title = function
 let subtitles = function
   | Book_view.Part _ -> lwt_nil
   | Dance (dance, dance_page) ->
-    let%lwt dance = Madge_client.call_exn Endpoints.Api.(route @@ Dance Get_view) dance.Dance_row.id in
+    let%lwt dance = Api.call_exn (Dance Get_view) dance.Dance_row.id in
     let%lwt more_subtitles =
       match dance_page with
       | Dance_only -> lwt_nil
       | Dance_versions [(version, _)] ->
-        let%lwt version = Madge_client.call_exn Endpoints.Api.(route @@ Version Get_view) version.Version_row.id in
+        let%lwt version = Api.call_exn (Version Get_view) version.Version_row.id in
         lwt @@ Version_viewer.subtitles version.tune
       | Dance_versions _ -> lwt_nil
       | Dance_set (Allowed set, _params) ->
-        let%lwt set = Madge_client.call_exn Endpoints.Api.(route @@ Set Get_view) set.Set_row.id in
+        let%lwt set = Api.call_exn (Set Get_view) set.Set_row.id in
         lwt @@ Set_viewer.subtitles set
       | Dance_set (Forbidden, _) -> lwt_nil
     in
     lwt @@ Dance_viewer.subtitles dance @ more_subtitles
   | Versions [] -> assert false
   | Versions [(version, _)] ->
-    let%lwt version = Madge_client.call_exn Endpoints.Api.(route @@ Version Get_view) version.Version_row.id in
+    let%lwt version = Api.call_exn (Version Get_view) version.Version_row.id in
     lwt @@ Version_viewer.subtitles version.tune
   | Versions versions_and_params ->
     let versions = List.map fst versions_and_params in
-    let%lwt versions = Lwt_list.map_s (fun version -> Madge_client.call_exn Endpoints.Api.(route @@ Version Get_view) version.Version_row.id) versions in
+    let%lwt versions = Lwt_list.map_s (fun version -> Api.call_exn (Version Get_view) version.Version_row.id) versions in
     lwt @@ List.concat_map (fun version -> Version_viewer.subtitles version.Version_view.tune) versions
   | Set (Allowed set, _) ->
-    let%lwt set = Madge_client.call_exn Endpoints.Api.(route @@ Set Get_view) set.Set_row.id in
+    let%lwt set = Api.call_exn (Set Get_view) set.Set_row.id in
     lwt @@ Set_viewer.subtitles set
   | Set (Forbidden, _) ->
     lwt_nil
 
 let body_dance (dance : Dance_row.t) =
-  let%lwt dance = Madge_client.call_exn Endpoints.Api.(route @@ Dance Get_view) dance.id in
+  let%lwt dance = Api.call_exn (Dance Get_view) dance.id in
   lwt @@ Dance_viewer.body dance
 
 let body_versions = function
   | [(version, _params)] ->
-    let%lwt version = Madge_client.call_exn Endpoints.Api.(route @@ Version Get_view) version.Version_row.id in
+    let%lwt version = Api.call_exn (Version Get_view) version.Version_row.id in
     lwt @@ Version_viewer.body (`Version version.id) version.tune (Some version)
   | versions ->
     lwt @@ Set_viewer.body_gen versions None
 
 let body_set (set : Set_row.t) =
-  let%lwt set = Madge_client.call_exn Endpoints.Api.(route @@ Set Get_view) set.id in
+  let%lwt set = Api.call_exn (Set Get_view) set.id in
   lwt @@ Set_viewer.body set
 
 let body = function

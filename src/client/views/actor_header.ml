@@ -83,7 +83,7 @@ let open_sign_in_dialog () =
               ~none: lwt_unit
               ~some: (fun (username, password, remember_me) ->
                 set_status_signal Dont_know;
-                match%lwt Madge_client.call_exn Endpoints.Api.(route @@ User Sign_in) username password remember_me with
+                match%lwt Api.call_exn (User Sign_in) username password remember_me with
                 | None -> set_status_signal Invalid; lwt_unit
                 | Some _ -> return (Some ()); lwt_unit
               )
@@ -95,12 +95,12 @@ let open_sign_in_dialog () =
   lwt_unit
 
 let sign_out () =
-  Madge_client.call_exn Endpoints.Api.(route @@ User Sign_out);%lwt
+  Api.call_exn (User Sign_out);%lwt
   Js_of_ocaml.Dom_html.window##.location##reload;
   lwt_unit
 
 let set_omniscience enable =
-  let%lwt _ = Madge_client.call Endpoints.Api.(route @@ User Set_omniscience) enable in
+  let%lwt _ = Api.call (User Set_omniscience) enable in
   Toast.open_
     ~type_: Forever
     ~title: "Omniscience"

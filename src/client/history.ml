@@ -6,7 +6,7 @@ open Model_new
 module Log = (val Logs.src_log @@ Logs.Src.create "client.history": Logs.LOG)
 
 let madge_call_or_option endpoint id =
-  Lwt.flip_map (Madge_client.call (Endpoints.Api.route @@ endpoint) id) @@ function
+  Lwt.flip_map (Api.call endpoint id) @@ function
     | Ok v -> Some v
     | Error (Madge_client.Http {status = `Not_found; _}) -> None
     | Error e -> raise (Madge_client.Error e)
@@ -70,16 +70,16 @@ let get_model_ids () : Any_id.t list =
 
 let get_models () : Any_row.t list Lwt.t =
   Logger.bracket (module Log) "getting models" @@ fun () ->
-  Madge_client.call_exn Endpoints.Api.(route @@ Any Get_rows) (get_model_ids ())
+  Api.call_exn (Any Get_rows) (get_model_ids ())
 
 (** Returns all the sets whose page is present in the history. *)
 let get_sets () : Set_row.t list Lwt.t =
   Logger.bracket_lwt (module Log) "getting sets" @@ fun () ->
   let set_ids = List.filter_map (function Any_id.Set set -> Some set | _ -> None) (get_model_ids ()) in
-  Madge_client.call_exn Endpoints.Api.(route @@ Set Get_rows) set_ids
+  Api.call_exn (Set Get_rows) set_ids
 
 (** Returns all the books whose page is present in the history. *)
 let get_books () : Book_row.t list Lwt.t =
   Logger.bracket_lwt (module Log) "getting books" @@ fun () ->
   let book_ids = List.filter_map (function Any_id.Book book -> Some book | _ -> None) (get_model_ids ()) in
-  Madge_client.call_exn Endpoints.Api.(route @@ Book Get_rows) book_ids
+  Api.call_exn (Book Get_rows) book_ids

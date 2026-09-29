@@ -83,7 +83,7 @@ let confirmation_dialog ~this_version ~other_version =
       failwith "Version de-duplicator: these two versions do not share the same disambiguation.";
     (* FIXME: can do better? *)
     (* content *)
-    let%lwt other_content = Madge_client.call_exn Endpoints.Api.(route @@ Version Content) (Entry.id other_version) in
+    let%lwt other_content = Api.call_exn (Version Content) (Entry.id other_version) in
     let other_content =
       match other_content with
       | Endpoints.Version.Protected -> assert false
@@ -111,8 +111,8 @@ let confirmation_dialog ~this_version ~other_version =
                things. We use it so rarely anyway that the convenience isn't
                really anything we care about. *)
             ignore
-            <$> Madge_client.call_exn
-                Endpoints.Api.(route @@ Version Update)
+            <$> Api.call_exn
+                (Version Update)
                 (Entry.id other_version) @@
                 Model.Version.make
                   ~tune: (Entry.id other_tune)
@@ -146,7 +146,7 @@ let confirmation_dialog ~this_version ~other_version =
   (* changes to sets *)
   let%lwt sets =
     Search_result.items
-    <$> Madge_client.call_exn Endpoints.Api.(route @@ Set Search) Slice.everything @@
+    <$> Api.call_exn (Set Search) Slice.everything @@
         Query.make ~specific: (Set_query.make_specific ~contains_version: (Some [Entry.id this_version]) ()) ()
   in
   let%lwt sets = Lwt_list.map_p (fun set -> Option.get <$> Model.Set.get set.Set_row.id) sets in
@@ -156,8 +156,8 @@ let confirmation_dialog ~this_version ~other_version =
         ~action: (fun () ->
           let contents = List.map (Pair.map_fst replace_version) (Model.Set.contents' set) in
           ignore
-          <$> Madge_client.call_exn
-              Endpoints.Api.(route @@ Set Update)
+          <$> Api.call_exn
+              (Set Update)
               (Entry.id set)
               (Model.Set.set_contents contents (Entry.value set))
               (Entry.access set)
@@ -169,7 +169,7 @@ let confirmation_dialog ~this_version ~other_version =
   (* changes to books *)
   let%lwt books =
     Search_result.items
-    <$> Madge_client.call_exn Endpoints.Api.(route @@ Book Search) Slice.everything @@
+    <$> Api.call_exn (Book Search) Slice.everything @@
         Query.make ~specific: (Book_query.make_specific ~contains_version: (Some [Entry.id this_version]) ()) ()
   in
   let%lwt books = Lwt_list.map_p (fun book -> Option.get <$> Model.Book.get book.Book_row.id) books in
@@ -189,8 +189,8 @@ let confirmation_dialog ~this_version ~other_version =
               (Model.Book.contents' book)
           in
           ignore
-          <$> Madge_client.call_exn
-              Endpoints.Api.(route @@ Book Update)
+          <$> Api.call_exn
+              (Book Update)
               (Entry.id book)
               (Model.Book.set_contents contents (Entry.value book))
               (Entry.access book)
@@ -205,10 +205,7 @@ let confirmation_dialog ~this_version ~other_version =
 
   (* removal of the current version *)
   add_changes
-    ~action: (fun () ->
-      ignore
-      <$> Madge_client.call_exn Endpoints.Api.(route @@ Version Delete) (Entry.id this_version)
-    )
+    ~action: (fun () -> ignore <$> Api.call_exn (Version Delete) (Entry.id this_version))
     [
       txt "delete the current version, ";
       Formatters.Version.name_disambiguation_and_sources' this_version;

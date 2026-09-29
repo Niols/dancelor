@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 open Model_new
-open Search_new
 open Components
 open Html
 open Utils
@@ -221,15 +220,11 @@ let editor =
     ~label: "Tune"
     ~model_name: "tune"
     ~create_dialog_content: Tune_editor.create_row
-    ~search: (fun slice query ->
-      match Tune_query.parse query with
-      | Error msg -> lwt_error msg
-      | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Tune Search) slice query
-    )
+    ~search: Api.tune_search
     ~id_to_yojson: Entry.Id.to_yojson'
     ~id_of_yojson: Entry.Id.of_yojson'
     ~serialise: Tune_row.id
-    ~unserialise: (madge_call_or_option @@ Tune Get_row)
+    ~unserialise: (Api.call_or_option @@ Tune Get_row)
     () ^::
   Input.prepare
     ~type_: Text
@@ -252,15 +247,11 @@ let editor =
         ~label: "Arranger"
         ~model_name: "person"
         ~create_dialog_content: Person_editor.create_row
-        ~search: (fun slice query ->
-          match Person_query.parse query with
-          | Error msg -> lwt_error msg
-          | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Person Search) slice query
-        )
+        ~search: Api.person_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Person_row.id
-        ~unserialise: (madge_call_or_option @@ Person Get_row)
+        ~unserialise: (Api.call_or_option @@ Person Get_row)
         ()
     ) ^::
   Input.prepare_option
@@ -282,15 +273,11 @@ let editor =
             ~label: "Source"
             ~model_name: "source"
             ~create_dialog_content: Source_editor.create_row
-            ~search: (fun slice query ->
-              match Source_query.parse query with
-              | Error msg -> lwt_error msg
-              | Ok query -> ok <$> Madge_client.call_exn Endpoints.Api.(route @@ Source Search) slice query
-            )
+            ~search: Api.source_search
             ~id_to_yojson: Entry.Id.to_yojson'
             ~id_of_yojson: Entry.Id.of_yojson'
             ~serialise: Source_row.id
-            ~unserialise: (madge_call_or_option @@ Source Get_row)
+            ~unserialise: (Api.call_or_option @@ Source Get_row)
             ()
         )
         (
@@ -342,17 +329,15 @@ let preview version =
 let submit mode version =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_version ->
-      Madge_client.call_exn Endpoints.Api.(route @@ Version Update) (Entry.id prev_version) version;%lwt
-      lwt (Entry.id prev_version)
-    | _ -> Madge_client.call_exn Endpoints.Api.(route @@ Version Create) version
+    | Editor.Edit prev_version -> Api.call_exn (Version Update) (Entry.id prev_version) version;%lwt lwt (Entry.id prev_version)
+    | _ -> Api.call_exn (Version Create) version
   in
-  Madge_client.call_exn Endpoints.Api.(route @@ Version Get) id
+  Api.call_exn (Version Get) id
 
 let unsubmit version =
   (* NOTE: The API erases the LilyPond from versions, so we need to pull the
      full content ourselves and re-insert it in the version. *)
-  let%lwt content = Madge_client.call_exn Endpoints.Api.(route @@ Version Content) (Entry.id version) in
+  let%lwt content = Api.call_exn (Version Content) (Entry.id version) in
   let content =
     match content with
     | Endpoints.Version.Protected -> assert false
@@ -361,14 +346,14 @@ let unsubmit version =
   lwt @@ Model.Version.set_content content (Entry.value version)
 
 let disassemble version =
-  let%lwt tune = Madge_client.call_exn Endpoints.Api.(route @@ Tune Get_row) (Model.Version.tune_id version) in
+  let%lwt tune = Api.call_exn (Tune Get_row) (Model.Version.tune_id version) in
   let key = Model.Version.key version in
-  let%lwt arrangers = Lwt_list.map_p (Madge_client.call_exn Endpoints.Api.(route @@ Person Get_row)) (Model.Version.arrangers version) in
+  let%lwt arrangers = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Version.arrangers version) in
   let remark = Model.Version.remark version in
   let%lwt sources =
     Lwt_list.map_p
       (fun Model.Version.{source; structure; details} ->
-        let%lwt source = Madge_client.call_exn Endpoints.Api.(route @@ Source Get_row) source in
+        let%lwt source = Api.call_exn (Source Get_row) source in
         lwt (source, (structure, details))
       )
       (Model.Version.sources version)

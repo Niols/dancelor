@@ -1,5 +1,4 @@
 open Nes
-open Dancelor_common
 open Html
 
 let faq_item ?(last = false) ~id ~question body =
@@ -57,7 +56,7 @@ let create () =
         R.div ~a: [a_class ["mb-3"]] (
           let length = 15 in
           S.from_lwt (Utils.Tables.placeholder ~rows: length ()) @@
-            let%lwt newest = Madge_client.call_exn Endpoints.Api.(route @@ Any Newest) length in
+            let%lwt newest = Api.call_exn (Any Newest) length in
             lwt [Utils.Tables.any newest]
         );
       ];

@@ -1,5 +1,4 @@
 open Nes
-
 open Dancelor_common
 open Model_new
 open Html
@@ -103,8 +102,8 @@ let make ?show_logs ?show_audio ?(params = Model.Version_parameters.none) (versi
     ?show_audio
     ~slug: (NesSlug.of_string version.name)
     (
-      Madge_client.call_exn
-        Endpoints.Api.(route @@ Version Build_snippets)
+      Api.call_exn
+        (Version Build_snippets)
         version.id
         params
         Rendering_parameters.none
@@ -117,8 +116,8 @@ let make_preview ?show_logs ?show_audio ?(params = Model.Version_parameters.none
     ~slug
     (
       let%lwt payload =
-        Madge_client.call_exn
-          Endpoints.Api.(route @@ Version Build_snippets')
+        Api.call_exn
+          (Version Build_snippets')
           version
           params
           Rendering_parameters.none
