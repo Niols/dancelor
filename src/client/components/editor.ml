@@ -3,28 +3,6 @@ open Nes
 open Html
 open Utils
 
-(* Bundles *)
-
-type ('value, 'state) bundle = Bundle of ('value, 'state) Component.s
-
-let cons (type value1)(type state1)(type value2)(type state2)
-    (component : (value1, state1) Component.s)
-    (Bundle bundle: (value2, state2) bundle)
-    : (value1 * value2, state1 * state2) bundle
-  =
-  Bundle (module struct
-    include (val Cpair.bundle ~wrap: id ~unwrap: id component bundle)
-
-    let inner_html p =
-      div [
-        Component.html' (module C1) (c1 p);
-        C2.inner_html (c2 p);
-      ]
-  end)
-
-let (^::) = cons
-let nil : (unit, unit) bundle = Bundle (Nil.prepare ())
-
 (* Helpers *)
 
 exception Non_convertible
@@ -67,13 +45,13 @@ type ('result, 'product, 'value, 'state) s = {
   preview: ('product -> bool Lwt.t);
   format: ('result -> Html_types.div_content_fun Html.elt);
   href: ('result -> Uri.t);
-  bundle: ('value, 'state) bundle;
+  bundle: ('value, 'state) Bundle.t;
 }
 
 let key {key; _} = key
-let empty (type value)(type state) {bundle = (Bundle(module C): (value, state) bundle); _} : state = C.empty
-let state_of_yojson (type value)(type state) {bundle = (Bundle(module C): (value, state) bundle); _} = C.state_of_yojson
-let state_to_yojson (type value)(type state) {bundle = (Bundle(module C): (value, state) bundle); _} = C.state_to_yojson
+let empty (type value)(type state) {bundle = (Bundle(module C): (value, state) Bundle.t); _} : state = C.empty
+let state_of_yojson (type value)(type state) {bundle = (Bundle(module C): (value, state) Bundle.t); _} = C.state_of_yojson
+let state_to_yojson (type value)(type state) {bundle = (Bundle(module C): (value, state) Bundle.t); _} = C.state_to_yojson
 let result_to_state (type result)(type value)(type state) : (result, 'product, value, state) s -> result -> state Lwt.t = fun {bundle = Bundle(module C); unsubmit; disassemble; _} value ->
   unsubmit value >>= disassemble >>= C.value_to_state
 

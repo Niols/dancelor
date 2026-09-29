@@ -6,7 +6,7 @@ open Html
 open Utils
 
 let editor =
-  let open Editor in
+  let open Bundle in
   Input.prepare_non_empty
     ~type_: Text
     ~label: "Name"

@@ -6,7 +6,7 @@ open Html
 open Utils
 
 let editor =
-  let open Editor in
+  let open Bundle in
   Star.prepare_non_empty
     ~label: "Names"
     (

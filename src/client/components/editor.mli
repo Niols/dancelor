@@ -3,26 +3,6 @@
 open Html
 open Utils
 
-(** {2 Bundle of components}
-
-    An editor features several components, and therefore we provide here a way
-    to bundle components together under a list-like structure. *)
-
-type ('value, 'state) bundle
-
-val nil : (unit, unit) bundle
-
-val cons :
-  ('value1, 'state1) Component.s ->
-  ('value2, 'state2) bundle ->
-  ('value1 * 'value2, 'state1 * 'state2) bundle
-
-val (^::):
-  ('value1, 'state1) Component.s ->
-  ('value2, 'state2) bundle ->
-  ('value1 * 'value2, 'state1 * 'state2) bundle
-(** [c ^:: cs] is an alias for [cons c cs]. It is right associative. *)
-
 (** {2 High-level interface} *)
 
 type ('result, 'state) mode =
@@ -54,7 +34,7 @@ val make_page :
   ?title_suffix: string ->
   ?pre_body: Html_types.div_content_fun elt list ->
   ?post_body: Html_types.div_content_fun elt list ->
-  ('value, 'state) bundle ->
+  ('value, 'state) Bundle.t ->
   Page.t Lwt.t
 (** Make a fully-featured editor that takes a whole page.
 
@@ -101,7 +81,7 @@ val prepare :
   ?preview: ('product -> bool Lwt.t) ->
   format: ('result -> Html_types.div_content_fun Html.elt) ->
   href: ('result -> Uri.t) ->
-  ('value, 'state) bundle ->
+  ('value, 'state) Bundle.t ->
   ('result, 'product, 'value, 'state) s
 
 val prepare_nosubmit :
@@ -113,7 +93,7 @@ val prepare_nosubmit :
   ?preview: ('result -> bool Lwt.t) ->
   format: ('result -> Html_types.div_content_fun Html.elt) ->
   href: ('result -> Uri.t) ->
-  ('value, 'state) bundle ->
+  ('value, 'state) Bundle.t ->
   ('result, 'result, 'value, 'state) s
 (** Variant of {!prepare} for an editor that does not include submission. In
     this case, the ['product] and the ['result] are conflated. *)

@@ -213,7 +213,7 @@ let content () =
     )
 
 let editor =
-  let open Editor in
+  let open Bundle in
   Selector.prepare
     ~make_descr: (lwt % Tune_row.name)
     ~make_result: (Any_result_new.make_tune_result ?in_search: None)

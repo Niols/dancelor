@@ -3,7 +3,7 @@ open Components
 open Html
 
 let editor =
-  let open Editor in
+  let open Bundle in
   Input.prepare_option
     ~type_: Text
     ~label: "Display name"
