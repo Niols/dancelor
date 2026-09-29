@@ -5,6 +5,8 @@ open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view
+open Sql_to_form
+open Form_to_sql
 
 module Version_sql = Version_sql.Sqlgg(Sqlgg_postgresql)
 
@@ -27,6 +29,10 @@ let get_sources_for db version_ids =
 let get_version_sources_for db version_ids =
   Utils.fold_to_get_list (Version_sql.Fold.get_version_sources_for db ~version_ids) (fun k ~version_id -> version_sql_to_source ~k: (k version_id))
 
+let get_version_form_sources_for db version_ids =
+  let%lwt editors_for = Utils.fold_to_get_list (Version_sql.Fold.get_editors_for_sources_of db ~version_ids) (fun k ~source_id -> person_sql_to_name ~k: (k source_id)) in
+  Utils.fold_to_get_list (Version_sql.Fold.get_version_form_sources_for db ~version_ids) (fun k ~version_id ~id -> version_sql_to_form_source ~id ~editors: (editors_for id) ~k: (k version_id))
+
 let get_arrangers_for db version_ids =
   Utils.fold_to_get_list (Version_sql.Fold.get_arrangers_for db ~version_ids) (fun k ~version_id -> person_sql_to_name ~k: (k version_id))
 
@@ -34,6 +40,40 @@ let get_other_versions_for db version_ids =
   let%lwt sources_for = Utils.fold_to_get_list (Version_sql.Fold.get_sources_for_other_versions_of db ~version_ids) (fun k ~version_id -> source_sql_to_short_name ~k: (k version_id)) in
   let%lwt arrangers_for = Utils.fold_to_get_list (Version_sql.Fold.get_arrangers_for_other_versions_of db ~version_ids) (fun k ~version_id -> person_sql_to_name ~k: (k version_id)) in
   Utils.fold_to_get_list (Version_sql.Fold.get_other_versions_for db ~version_ids) (fun k ~id ~tune_id -> tune_sql_to_version_row_without_tune ~id ~arrangers: (arrangers_for id) ~sources: (sources_for id) ~k: (k tune_id))
+
+let get_destructured_parts_for =
+  let check_destructured_parts =
+    (* NOTE: A bit weird: on the OCaml side, part names are implicit and just come
+       from the order in the list, while in SQL we store the part name/number. SQL
+       sorts for us, but now we need to check that they correspond. *)
+    List.mapi (fun i (part, voices) ->
+      if Model_builder.Core.Version.Part_name.to_int part <> i then assert false
+      else voices
+    )
+  in
+  fun db version_ids ->
+    let%lwt get_list =
+      Utils.fold_to_get_list
+        (Version_sql.Fold.get_destructured_parts_for db ~version_ids)
+        (fun k ~version_id ~part ~melody ~chords ->
+          k version_id (
+            Option.get (Model_builder.Core.Version.Part_name.of_string part),
+            {Model_builder.Core.Version.Voices.melody; chords}
+          )
+        )
+    in
+    lwt (check_destructured_parts % get_list)
+
+let get_destructured_transitions_for db version_ids =
+  Utils.fold_to_get_list
+    (Version_sql.Fold.get_destructured_transitions_for db ~version_ids)
+    (fun k ~version_id ~from_parts ~to_parts ~melody ~chords ->
+      k version_id (
+        Option.get (Model_builder.Core.Version.Part_name.opens_of_string from_parts),
+        Option.get (Model_builder.Core.Version.Part_name.opens_of_string to_parts),
+        {Model_builder.Core.Version.Voices.melody; chords}
+      )
+    )
 
 let get_row_for ids : (Version_id.t -> Version_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
@@ -73,6 +113,25 @@ let get_view id : Version_view.t option Lwt.t =
       ~k: Fun.id
   )
 
+let get_form id : Version_form.t option Lwt.t =
+  Connection.with_ @@ fun db ->
+  let%lwt tune_composers_for = get_tune_composers_for db (`One_of [id]) in
+  let%lwt arrangers = (fun f -> f id) <$> get_arrangers_for db (`One_of [id]) in
+  let%lwt sources = (fun f -> f id) <$> get_version_form_sources_for db (`One_of [id]) in
+  let%lwt destructured_parts = (fun f -> f id) <$> get_destructured_parts_for db (`One_of [id]) in
+  let%lwt destructured_transitions = (fun f -> f id) <$> get_destructured_transitions_for db (`One_of [id]) in
+  Version_sql.Single.get_form db ~id (fun ~id ~tune_id ->
+    version_sql_to_form
+      ~id
+      ~tune_id
+      ~arrangers
+      ~sources
+      ~tune_composers: (tune_composers_for tune_id)
+      ~destructured_parts
+      ~destructured_transitions
+      ~k: Fun.id
+  )
+
 let search query : (Version_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Version_query.tune; key; source}} = query in
   Connection.with_ @@ fun db ->
@@ -96,10 +155,76 @@ let search query : (Version_row.t * float) list Lwt.t =
         ~k: (Pair.snoc score)
     )
 
-(* Legacy *)
+let update_other_tables db ~version_id ~arrangers ~sources ~content =
+  ignore <$> Version_sql.delete_all_arrangers db ~version_id;%lwt
+  Lwt_list.iter_s
+    (fun arranger ->
+      ignore <$> Version_sql.add_one_arranger db ~version_id ~arranger_id: arranger.Person_row.id
+    )
+    arrangers;%lwt
+  ignore <$> Version_sql.delete_all_sources db ~version_id;%lwt
+  Lwt_list.iter_s
+    (fun {Version_form.source; structure; details} ->
+      ignore
+      <$> Version_sql.add_one_source
+          db
+          ~version_id
+          ~source_id: source.id
+          ~structure: (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure)
+          ~details: (Option.map NEString.to_string details)
+    )
+    sources;%lwt
+  ignore <$> Version_sql.delete_all_destructured_parts db ~version_id;%lwt
+  ignore <$> Version_sql.delete_all_destructured_transitions db ~version_id;%lwt
+  (
+    match content with
+    | Model_builder.Core.Version.Content.No_content | Monolithic _ -> lwt_unit
+    | Destructured {parts; transitions; default_structure = _; as_2_4 = _} ->
+      Lwt_list.iteri_s
+        (fun part {Model_builder.Core.Version.Voices.melody; chords} ->
+          ignore
+          <$> Version_sql.add_one_destructured_part
+              db
+              ~version_id
+              ~part: Model_builder.Core.Version.Part_name.(to_string @@ of_int part)
+              ~melody
+              ~chords
+        )
+        (NEList.to_list parts);%lwt
+      Lwt_list.iter_s
+        (fun (from_parts, to_parts, {Model_builder.Core.Version.Voices.melody; chords}) ->
+          ignore
+          <$> Version_sql.add_one_destructured_transition
+              db
+              ~version_id
+              ~from_parts: (Model_builder.Core.Version.Part_name.opens_to_string from_parts)
+              ~to_parts: (Model_builder.Core.Version.Part_name.opens_to_string to_parts)
+              ~melody
+              ~chords
+        )
+        transitions
+  )
 
-type t = Model_builder.Core.Version.t
-type entry = Model_builder.Core.Version.entry
+let create db version =
+  let%lwt id = Entry_new.make_public db `Version in
+  ignore <$> version_form_to_sql (Version_sql.create db) id version;%lwt
+  update_other_tables db ~version_id: id ~arrangers: version.arrangers ~sources: version.sources ~content: version.content;%lwt
+  lwt id
+
+let update db id version =
+  Entry_new.touch db id;%lwt
+  ignore <$> version_form_to_sql (fun ~id -> Version_sql.update db ~id) id version;%lwt
+  update_other_tables db ~version_id: id ~arrangers: version.arrangers ~sources: version.sources ~content: version.content
+
+let delete db id =
+  ignore <$> Version_sql.delete_all_arrangers db ~version_id: id;%lwt
+  ignore <$> Version_sql.delete_all_sources db ~version_id: id;%lwt
+  ignore <$> Version_sql.delete_all_destructured_parts db ~version_id: id;%lwt
+  ignore <$> Version_sql.delete_all_destructured_transitions db ~version_id: id;%lwt
+  ignore <$> Version_sql.delete db ~id;%lwt
+  Entry_new.delete db id
+
+(* Legacy *)
 
 let sql_to_version
     ~id
@@ -160,79 +285,6 @@ let sql_to_version
         ()
     )
 
-let version_to_sql ~create_or_update db id version =
-  (* FIXME: transaction, maybe [Connection.with_transaction] *)
-  let (monolithic_lilypond, monolithic_bars, monolithic_or_default_structure, destructured_as_2_4) =
-    match Model_builder.Core.Version.content version with
-    | No_content -> (None, None, None, false)
-    | Monolithic {lilypond; bars; structure} -> (Some lilypond, Some (Int64.of_int bars), Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure), false)
-    | Destructured {default_structure; as_2_4; _} -> (None, None, Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string default_structure), as_2_4)
-  in
-  ignore
-  <$> create_or_update
-      db
-      ~id
-      ~tune_id: (Model_builder.Core.Version.tune version)
-      ~key: (Music.Key.to_string @@ Model_builder.Core.Version.key version)
-      ~remark: (Option.map NEString.to_string @@ Model_builder.Core.Version.remark version)
-      ~disambiguation: (Option.map NEString.to_string @@ Model_builder.Core.Version.disambiguation version)
-      ~monolithic_lilypond
-      ~monolithic_bars
-      ~monolithic_or_default_structure
-      ~destructured_as_2_4;%lwt
-  ignore <$> Version_sql.delete_all_arrangers db ~version_id: id;%lwt
-  Lwt_list.iter_s
-    (fun arranger ->
-      ignore
-      <$> Version_sql.add_one_arranger
-          db
-          ~version_id: id
-          ~arranger_id: arranger
-    )
-    (Model_builder.Core.Version.arrangers version);%lwt
-  ignore <$> Version_sql.delete_all_sources db ~version_id: id;%lwt
-  Lwt_list.iter_s
-    (fun Model_builder.Core.Version.{source; structure; details} ->
-      ignore
-      <$> Version_sql.add_one_source
-          db
-          ~version_id: id
-          ~source_id: source
-          ~structure: (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure)
-          ~details: (Option.map NEString.to_string details)
-    )
-    (Model_builder.Core.Version.sources version);%lwt
-  (
-    ignore <$> Version_sql.delete_all_destructured_parts db ~version_id: id;%lwt
-    ignore <$> Version_sql.delete_all_destructured_transitions db ~version_id: id;%lwt
-    match Model_builder.Core.Version.content version with
-    | No_content | Monolithic _ -> lwt_unit
-    | Destructured {parts; transitions; default_structure = _; as_2_4 = _} ->
-      Lwt_list.iteri_s
-        (fun part Model_builder.Core.Version.Voices.{melody; chords} ->
-          ignore
-          <$> Version_sql.add_one_destructured_part
-              db
-              ~version_id: id
-              ~part: Model_builder.Core.Version.Part_name.(to_string @@ of_int part)
-              ~melody
-              ~chords
-        )
-        (NEList.to_list parts);%lwt
-      Lwt_list.iter_s
-        (fun (from_parts, to_parts, Model_builder.Core.Version.Voices.{melody; chords}) ->
-          ignore
-          <$> Version_sql.add_one_destructured_transition
-              db
-              ~version_id: id
-              ~from_parts: (Model_builder.Core.Version.Part_name.opens_to_string from_parts)
-              ~to_parts: (Model_builder.Core.Version.Part_name.opens_to_string to_parts)
-              ~melody
-              ~chords
-        )
-        transitions
-  )
-
 let check_destructured_parts =
   (* NOTE: A bit weird: on the OCaml side, part names are implicit and just come
      from the order in the list, while in SQL we store the part name/number. SQL
@@ -257,22 +309,28 @@ let get id : Model_builder.Core.Version.entry option Lwt.t =
   let%lwt destructured_parts =
     check_destructured_parts
     <$> (
-        Version_sql.List.get_destructured_parts db ~version_id: id (fun ~part ~melody ~chords ->
-          (
-            Option.get (Model_builder.Core.Version.Part_name.of_string part),
-            {Model_builder.Core.Version.Voices.melody; chords}
+        Version_sql.List.get_destructured_parts_for
+          db
+          ~version_ids: (`One_of [id])
+          (fun ~version_id: _ ~part ~melody ~chords ->
+            (
+              Option.get (Model_builder.Core.Version.Part_name.of_string part),
+              {Model_builder.Core.Version.Voices.melody; chords}
+            )
           )
-        )
       )
   in
   let%lwt destructured_transitions =
-    Version_sql.List.get_destructured_transitions db ~version_id: id (fun ~from_parts ~to_parts ~melody ~chords ->
-      (
-        Option.get (Model_builder.Core.Version.Part_name.opens_of_string from_parts),
-        Option.get (Model_builder.Core.Version.Part_name.opens_of_string to_parts),
-        {Model_builder.Core.Version.Voices.melody; chords}
+    Version_sql.List.get_destructured_transitions_for
+      db
+      ~version_ids: (`One_of [id])
+      (fun ~version_id: _ ~from_parts ~to_parts ~melody ~chords ->
+        (
+          Option.get (Model_builder.Core.Version.Part_name.opens_of_string from_parts),
+          Option.get (Model_builder.Core.Version.Part_name.opens_of_string to_parts),
+          {Model_builder.Core.Version.Voices.melody; chords}
+        )
       )
-    )
   in
   Version_sql.Single.get db ~id (sql_to_version ~id ~arrangers ~sources ~destructured_parts ~destructured_transitions)
 
@@ -301,8 +359,9 @@ let get_all () =
         }
     )
     ();%lwt
-  Version_sql.Fold.get_all_destructured_parts
+  Version_sql.Fold.get_destructured_parts_for
     db
+    ~version_ids: `All
     (fun ~version_id ~part ~melody ~chords () ->
       Hashtbl.add destructured_parts version_id (
         Option.get (Model_builder.Core.Version.Part_name.of_string part),
@@ -310,8 +369,9 @@ let get_all () =
       )
     )
     ();%lwt
-  Version_sql.Fold.get_all_destructured_transitions
+  Version_sql.Fold.get_destructured_transitions_for
     db
+    ~version_ids: `All
     (fun ~version_id ~from_parts ~to_parts ~melody ~chords () ->
       Hashtbl.add
         destructured_transitions
@@ -357,8 +417,9 @@ let get_all_for_tune tune_id =
         }
     )
     ();%lwt
-  Version_sql.Fold.get_all_destructured_parts
+  Version_sql.Fold.get_destructured_parts_for
     db
+    ~version_ids: `All
     (fun ~version_id ~part ~melody ~chords () ->
       Hashtbl.add destructured_parts version_id (
         Option.get (Model_builder.Core.Version.Part_name.of_string part),
@@ -366,8 +427,9 @@ let get_all_for_tune tune_id =
       )
     )
     ();%lwt
-  Version_sql.Fold.get_all_destructured_transitions
+  Version_sql.Fold.get_destructured_transitions_for
     db
+    ~version_ids: `All
     (fun ~version_id ~from_parts ~to_parts ~melody ~chords () ->
       Hashtbl.add
         destructured_transitions
@@ -388,23 +450,3 @@ let get_all_for_tune tune_id =
       ~destructured_parts: (check_destructured_parts @@ List.rev @@ Hashtbl.find_all destructured_parts id)
       ~destructured_transitions: (List.rev @@ Hashtbl.find_all destructured_transitions id)
   )
-
-let create version =
-  Connection.with_ @@ fun db ->
-  let%lwt id = Entry_new.make_public db `Version in
-  version_to_sql ~create_or_update: Version_sql.create db id version;%lwt
-  lwt id
-
-let update id version =
-  Connection.with_ @@ fun db ->
-  Entry_new.touch db id;%lwt
-  version_to_sql ~create_or_update: (fun db ~id -> Version_sql.update db ~id) db id version
-
-let delete id =
-  Connection.with_ @@ fun db ->
-  ignore <$> Version_sql.delete_all_arrangers db ~version_id: id;%lwt
-  ignore <$> Version_sql.delete_all_sources db ~version_id: id;%lwt
-  ignore <$> Version_sql.delete_all_destructured_parts db ~version_id: id;%lwt
-  ignore <$> Version_sql.delete_all_destructured_transitions db ~version_id: id;%lwt
-  ignore <$> Version_sql.delete db ~id;%lwt
-  Entry_new.delete db id

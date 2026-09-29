@@ -106,23 +106,51 @@ let confirmation_dialog ~this_version ~other_version =
       | changes ->
         add_changes
           ~action: (fun () ->
-            (* FIXME: it would in fact be better if [make] didn't have any
-               optional arguments. This would ensure that we cannot forget
-               things. We use it so rarely anyway that the convenience isn't
-               really anything we care about. *)
+            (* FIXME: we should clearly not be reconstructing anything here but
+               have the right data right away *)
+            let%lwt other_composers =
+              Lwt_list.map_p
+                (fun {Tune.composer; _} ->
+                  Api.call_exn (Person Get_row) composer
+                )
+                (Model.Tune.composers' other_tune)
+            in
+            let%lwt other_sources =
+              Lwt_list.map_p
+                (fun {Version.source; structure; details} ->
+                  let%lwt source = Api.call_exn (Source Get_row) source in
+                  lwt {Version_form.source; structure; details}
+                )
+                other_sources
+            in
+            let other_arrangers =
+              List.map
+                (fun arranger ->
+                  {
+                    Person_row.id = Entry.id arranger;
+                    name = NEString.to_string @@ Model.Person.name' arranger;
+                  }
+                )
+                other_arrangers
+            in
             ignore
             <$> Api.call_exn
                 (Version Update)
-                (Entry.id other_version) @@
-                Model.Version.make
-                  ~tune: (Entry.id other_tune)
-                  ~key: other_key
-                  ~sources: other_sources
-                  ~arrangers: (List.map Entry.id other_arrangers)
-                  ~remark: other_remark
-                  ~disambiguation: other_disambiguation
-                  ~content: other_content
-                  ()
+                (Entry.id other_version)
+                {
+                  Version_form.tune = {
+                    Tune_row.id = Entry.id other_tune;
+                    name = NEString.to_string @@ NEList.hd @@ Model.Tune.names' other_tune;
+                    kind = Model.Tune.kind' other_tune;
+                    composers = other_composers;
+                  };
+                  key = other_key;
+                  sources = other_sources;
+                  arrangers = other_arrangers;
+                  remark = other_remark;
+                  disambiguation = other_disambiguation;
+                  content = other_content;
+                }
           (* FIXME: we should report nicely if things fail *)
           )
           [

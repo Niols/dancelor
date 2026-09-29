@@ -1,6 +1,7 @@
 open Nes
 open Dancelor_common
 open Model_new
+open Sql_to_row
 
 let person_sql_to_form ~id: _ ~name ~scddb_id ~(k : Person_form.t -> 'w) : 'w =
   k {
@@ -38,4 +39,75 @@ let tune_sql_to_form ~id: _ ~name ~extra_names ~kind ~composers ~dances ~remark 
     remark = Option.map NEString.of_string_exn remark;
     scddb_id = Option.map Int64.to_int scddb_id;
     date = Option.map (Option.get % PartialDate.from_string) date;
+  }
+
+let version_sql_to_form_source
+    ~id
+    ~name
+    ~date
+    ~editors
+    ~structure
+    ~details
+    ~(k : Version_form.source -> 'w)
+    : 'w
+  =
+  k {
+    source = source_sql_to_row ~id ~name ~date ~editors ~k: Fun.id;
+    structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+    details = Option.map NEString.of_string_exn details;
+  }
+
+let version_sql_to_form
+    ~id: _
+    ~tune_id
+    ~disambiguation
+    ~key
+    ~remark
+    ~monolithic_bars
+    ~monolithic_or_default_structure
+    ~monolithic_lilypond
+    ~destructured_parts
+    ~destructured_transitions
+    ~destructured_as_2_4
+    ~sources
+    ~arrangers
+    ~tune_name
+    ~tune_kind
+    ~tune_composers
+    ~(k : Version_form.t -> 'w)
+    : 'w
+  =
+  let content : Model_builder.Core.Version.Content.t =
+    match (monolithic_bars, monolithic_or_default_structure, monolithic_lilypond) with
+    | (None, None, None) -> No_content
+    | (None, Some default_structure, None) ->
+      Destructured {
+        default_structure =
+        Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure));
+        parts = NEList.of_list_exn destructured_parts;
+        transitions = destructured_transitions;
+        as_2_4 = destructured_as_2_4;
+      }
+    | (Some bars, Some structure, Some monolithic_lilypond) ->
+      Monolithic {
+        lilypond = monolithic_lilypond;
+        bars = Int64.to_int bars;
+        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+      }
+    | _ -> assert false
+  in
+  k {
+    tune =
+    tune_sql_to_row
+      ~id: tune_id
+      ~name: tune_name
+      ~kind: tune_kind
+      ~composers: tune_composers
+      ~k: Fun.id;
+    key = Music.Key.of_string key;
+    sources;
+    remark = Option.map NEString.of_string_exn remark;
+    disambiguation = Option.map NEString.of_string_exn disambiguation;
+    arrangers;
+    content;
   }

@@ -306,21 +306,25 @@ let editor =
   nil
 
 let assemble (tune, (key, (arrangers, (remark, (sources, (disambiguation, (content, ()))))))) =
-  let tune = Tune_row.id tune in
-  let arrangers = List.map Person_row.id arrangers in
-  let sources = List.map (fun (source, (structure, details)) -> Model.Version.{source = Source_row.id source; structure; details}) sources in
-  Model.Version.make ~tune ~key ~arrangers ~remark ~sources ~disambiguation ~content ()
+  let sources = List.map (fun (source, (structure, details)) -> {Version_form.source; structure; details}) sources in
+    {Version_form.tune; key; arrangers; remark; sources; disambiguation; content}
+
+let disassemble version =
+  let {Version_form.tune; key; arrangers; remark; sources; disambiguation; content} = version in
+  let sources = List.map (fun {Version_form.source; structure; details} -> (source, (structure, details))) sources in
+  lwt (tune, (key, (arrangers, (remark, (sources, (disambiguation, (content, ())))))))
 
 let preview version =
-  match Model.Version.content version with
+  let {Version_form.tune; content; _} = version in
+  match content with
   | No_content -> lwt_true
   | _ ->
-    let%lwt slug = Model.Version.slug version in
+    let slug = NesSlug.of_string tune.name in
     Option.fold ~none: false ~some: (const true)
     <$> Page.open_dialog @@ fun return ->
       Page.make'
         ~title: (lwt "Preview")
-        [Components.Version_snippets.make_preview ~show_logs: true slug version]
+        [Components.Version_snippets.make_preview_new ~show_logs: true slug version]
         ~buttons: [
           Button.cancel' ~return ();
           Button.save ~onclick: (fun () -> return (Some ()); lwt_unit) ();
@@ -329,52 +333,37 @@ let preview version =
 let submit mode version =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_version -> Api.call_exn (Version Update) (Entry.id prev_version) version;%lwt lwt (Entry.id prev_version)
+    | Editor.Edit {With_id.id; _} -> Api.call_exn (Version Update) id version;%lwt lwt id
     | _ -> Api.call_exn (Version Create) version
   in
-  Api.call_exn (Version Get) id
+  lwt {With_id.id; form = version}
 
-let unsubmit version =
-  (* NOTE: The API erases the LilyPond from versions, so we need to pull the
-     full content ourselves and re-insert it in the version. *)
-  let%lwt content = Api.call_exn (Version Content) (Entry.id version) in
-  let content =
-    match content with
-    | Endpoints.Version.Protected -> assert false
-    | Endpoints.Version.Granted {payload; _} -> payload
-  in
-  lwt @@ Model.Version.set_content content (Entry.value version)
+let unsubmit = lwt % With_id.form
 
-let disassemble version =
-  let%lwt tune = Api.call_exn (Tune Get_row) (Model.Version.tune_id version) in
-  let key = Model.Version.key version in
-  let%lwt arrangers = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Version.arrangers version) in
-  let remark = Model.Version.remark version in
-  let%lwt sources =
-    Lwt_list.map_p
-      (fun Model.Version.{source; structure; details} ->
-        let%lwt source = Api.call_exn (Source Get_row) source in
-        lwt (source, (structure, details))
-      )
-      (Model.Version.sources version)
-  in
-  let disambiguation = Model.Version.disambiguation version in
-  let content = Model.Version.content version in
-  lwt (tune, (key, (arrangers, (remark, (sources, (disambiguation, (content, ())))))))
+(* let unsubmit {With_id.id; form = version} = *)
+(*   (\* NOTE: The API erases the LilyPond from versions, so we need to pull the *)
+(*      full content ourselves and re-insert it in the version. *\) *)
+(*   let%lwt content = Api.call_exn (Version Content) id in *)
+(*   let content = *)
+(*     match content with *)
+(*     | Endpoints.Version.Protected -> assert false *)
+(*     | Endpoints.Version.Granted {payload; _} -> payload *)
+(*   in *)
+(*   lwt ({version with content} : Version_form.t) *)
 
 let prepare () =
   Editor.prepare
     ~key: "version"
     ~icon: (Model Version)
     editor
-    ~href: (fun version -> Endpoints.Page.href_version (Entry.id version))
-    ~format: (Formatters.Version.name' ~link: true)
+    ~href: (Endpoints.Page.href_version % With_id.id)
+    ~format: (Formatters_new.Version.name ~link: true % With_id.map Version_form.to_name)
     ~assemble
     ~submit
     ~unsubmit
     ~disassemble
     ~preview
-    ~check_product: Model.Version.equal
+    ~check_product: Version_form.equal
 
 let create_gen mode =
   (* FIXME: if [mode] is an edition, then we should assert_can_update_public *)
@@ -413,7 +402,7 @@ let to_row (version : Model.Version.entry) : Version_row.t Lwt.t =
   }
 
 let create_row (mode : (Version_row.t, 'a) Editor.mode) =
-  let%lwt (mode : (Model.Version.entry, 'a) Editor.mode) =
+  let%lwt (mode : ((Version_id.t, Version_form.t) With_id.t, 'a) Editor.mode) =
     match mode with
     | Create state -> lwt @@ Editor.Create state
     | Create_with_local_storage -> lwt Editor.Create_with_local_storage
@@ -421,11 +410,11 @@ let create_row (mode : (Version_row.t, 'a) Editor.mode) =
       lwt @@
         Editor.Quick_create (
           init,
-          (fun version -> callback =<< to_row version)
+          (callback % With_id.map Version_form.to_row)
         )
-    | Edit result ->
-      let%lwt result = Option.get <$> Model.Version.get (Version_row.id result) in
-      lwt @@ Editor.Edit result
+    | Edit {Version_row.id; _} ->
+      let%lwt form = Api.call_exn (Version Get_form) id in
+      lwt @@ Editor.Edit {With_id.id; form}
     | Quick_edit state -> lwt @@ Editor.Quick_edit state
   in
   create mode
@@ -435,5 +424,5 @@ let add = function
   | Some tune_id -> create_gen (`Make_mode_from_tune_id tune_id)
 
 let edit id =
-  let%lwt version = Option.get <$> Model.Version.get id in
-  create (Edit version)
+  let%lwt form = Api.call_exn (Version Get_form) id in
+  create @@ Edit {With_id.id; form}

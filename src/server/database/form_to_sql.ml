@@ -35,3 +35,33 @@ let tune_form_to_sql query id {Tune_form.names; kind; remark; scddb_id; date; co
     ~remark: (Option.map NEString.to_string remark)
     ~scddb_id: (Option.map Int64.of_int scddb_id)
     ~date: (Option.map PartialDate.to_string date)
+
+let version_form_to_sql
+    query
+    id
+    {
+      Version_form.tune;
+      key;
+      sources = _;
+      arrangers = _;
+      remark;
+      disambiguation;
+      content;
+    }
+  =
+  let (monolithic_lilypond, monolithic_bars, monolithic_or_default_structure, destructured_as_2_4) =
+    match content with
+    | No_content -> (None, None, None, false)
+    | Monolithic {lilypond; bars; structure} -> (Some lilypond, Some (Int64.of_int bars), Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure), false)
+    | Destructured {default_structure; as_2_4; _} -> (None, None, Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string default_structure), as_2_4)
+  in
+  query
+    ~id
+    ~tune_id: tune.id
+    ~key: (Music.Key.to_string key)
+    ~remark: (Option.map NEString.to_string remark)
+    ~disambiguation: (Option.map NEString.to_string disambiguation)
+    ~monolithic_lilypond
+    ~monolithic_bars
+    ~monolithic_or_default_structure
+    ~destructured_as_2_4

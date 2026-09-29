@@ -38,7 +38,7 @@ module Source_row = struct
     date: PartialDate.t option; [@default None]
     editors: Person_name.t list; [@default []]
   }
-  [@@deriving yojson, fields]
+  [@@deriving eq, yojson, fields]
 
   let to_name : t -> Source_name.t = fun {id; name; _} -> {id; name}
 end
@@ -50,7 +50,7 @@ module Tune_row = struct
     kind: Kind_base.t;
     composers: Person_name.t list; [@default []]
   }
-  [@@deriving yojson, fields]
+  [@@deriving eq, yojson, fields]
 
   let to_name : t -> Tune_name.t = fun {id; name; _} -> {id; name}
 end

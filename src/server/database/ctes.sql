@@ -201,6 +201,25 @@ SELECT
 FROM "version"
 JOIN "tune" ON "version"."tune_id" = "tune"."id";
 
+-- @get_version_forms | include: reuse
+SELECT
+    -- ids
+    "version"."id",
+    "tune"."id" AS "tune_id",
+    -- version
+    "version"."disambiguation",
+    "version"."key",
+    "version"."remark",
+    "version"."monolithic_bars",
+    "version"."monolithic_or_default_structure",
+    "version"."monolithic_lilypond",
+    "version"."destructured_as_2_4",
+    -- tune
+    "tune"."name" AS "tune_name",
+    "tune"."kind" AS "tune_kind"
+FROM "version"
+JOIN "tune" ON "version"."tune_id" = "tune"."id";
+
 -- @get_version_names | include: reuse
 SELECT
     "version"."id",

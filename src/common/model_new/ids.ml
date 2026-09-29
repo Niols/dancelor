@@ -27,7 +27,7 @@ end
 
 module Source_id = struct
   type t = Model_builder.Core.Source.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string
@@ -36,7 +36,7 @@ end
 
 module Tune_id = struct
   type t = Model_builder.Core.Tune.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string

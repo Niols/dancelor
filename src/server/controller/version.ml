@@ -5,10 +5,12 @@ open Search_new
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.version": Logs.LOG)
 
-include Shared.Make_public(struct
+include Shared.Make_public_full(struct
+  type entry = Model_builder.Core.Version.t
   type id = Version_id.t
   type row = Version_row.t
   type view = Version_view.t
+  type form = Version_form.t
   type query = Version_query.t
   include Database.Version
 end)
@@ -21,18 +23,6 @@ let get env id =
   | Some version ->
     Permission.assert_can_get_public env version;%lwt
     lwt version
-
-let create env version =
-  Permission.assert_can_create_public env;%lwt
-  Database.Version.create version
-
-let update env id version =
-  Permission.assert_can_update_public env =<< get env id;%lwt
-  Database.Version.update id version
-
-let delete env id =
-  Permission.assert_can_delete_public env =<< get env id;%lwt
-  Database.Version.delete id
 
 (** Additionnally to the low-level permission system, version content is
     protected by copyright, so we check whether the composer or the publisher of
@@ -115,16 +105,23 @@ let render_snippets ?version_params version =
   let%lwt tune = Model_to_renderer.version_to_renderer_tune ?version_params version in
   Renderer.make_tune_snippets tune
 
-let register_snippets_job ?version_params version =
-  let%lwt tune = Model_to_renderer.version_to_renderer_tune ?version_params version in
-  let%lwt svg_job = Renderer.make_tune_svg tune in
-  let%lwt ogg_job = Renderer.make_tune_ogg tune in
+let register_snippets_job_gen renderer_tune =
+  let%lwt svg_job = Renderer.make_tune_svg renderer_tune in
+  let%lwt ogg_job = Renderer.make_tune_ogg renderer_tune in
   lwt @@
     match (uncurry Job.register_job_and_file svg_job, uncurry Job.register_job_and_file ogg_job) with
     | Already_succeeded svg_job_id, Already_succeeded ogg_job_id -> Endpoints.Job.Already_succeeded {Endpoints.Version.Snippet_ids.svg_job_id; ogg_job_id}
     | Registered svg_job_id, Already_succeeded ogg_job_id -> Registered {svg_job_id; ogg_job_id}
     | Already_succeeded svg_job_id, Registered ogg_job_id -> Registered {svg_job_id; ogg_job_id}
     | Registered svg_job_id, Registered ogg_job_id -> Registered {svg_job_id; ogg_job_id}
+
+let register_snippets_job ?version_params version =
+  let%lwt tune = Model_to_renderer.version_to_renderer_tune ?version_params version in
+  register_snippets_job_gen tune
+
+let register_snippets_job_new ?version_params version =
+  let tune = Model_to_renderer.version_to_renderer_tune_new ?version_params version in
+  register_snippets_job_gen tune
 
 let build_snippets env id version_params _rendering_params =
   Log.debug (fun m -> m "build_snippets %a" Entry.Id.pp' id);
@@ -137,6 +134,11 @@ let build_snippets' env version version_params _rendering_params =
   Permission.assert_can_create_public env;%lwt
   register_snippets_job ~version_params version
 
+let build_snippets'_new env version version_params _rendering_params =
+  Log.debug (fun m -> m "build_snippets'_new");
+  Permission.assert_can_create_public env;%lwt
+  register_snippets_job_new ~version_params version
+
 (* Dispatch *)
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Version.t -> a = fun env endpoint ->
@@ -144,6 +146,7 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Version.t ->
   | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
+  | Get_form -> get_form env
   | Get_view_for_tune -> get_view_for_tune env
   | Content -> content env
   | Search -> search env
@@ -153,3 +156,4 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Version.t ->
   | Build_pdf -> build_pdf env
   | Build_snippets -> build_snippets env
   | Build_snippets' -> build_snippets' env
+  | Build_snippets'_new -> build_snippets'_new env
