@@ -10,98 +10,102 @@ let flip_show_preview () = set_show_preview (not (S.value show_preview))
 
 let editor =
   let open Bundle in
-  Input.prepare_non_empty
-    ~type_: Text
-    ~label: "Name"
-    ~placeholder: "eg. The Dusty Miller"
-    () ^::
-  Input.prepare
-    ~type_: Text
-    ~label: "Kind"
-    ~placeholder: "eg. 8x32R or 2x(16R+16S)"
-    ~serialise: Kind.Dance.to_string
-    ~validate: (
-      S.const %
-        Option.to_result ~none: "Enter a valid kind, eg. 8x32R or 2x(16R+16S)." %
-        Kind.Dance.of_string_opt
+  group
+    ~wrap: (fun (name, (kind, (conceptors, (contents, (order, ()))))) ->
+      {Set_form.name; kind; conceptors; contents; order}
     )
-    () ^::
-  Star.prepare
-    ~label: "Conceptors"
+    ~unwrap: (fun {Set_form.name; kind; conceptors; contents; order} ->
+      (name, (kind, (conceptors, (contents, (order, ())))))
+    )
+    ~check: Set_form.equal
     (
-      Selector.prepare
-        ~make_descr: (lwt % Person_row.name)
-        ~make_result: (Any_result_new.make_person_result ?in_search: None)
-        ~results_when_no_search: (Option.to_list <$> Environment.person_row)
-        ~label: "Conceptor"
-        ~model_name: "person"
-        ~create_dialog_content: Person_editor.create_row
-        ~search: Api.person_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
-        ~serialise: Person_row.id
-        ~unserialise: (Api.call_or_option @@ Person Get_row)
-        ()
-    ) ^::
-  Star.prepare
-    ~label: "Versions"
-    (
-      Parameteriser.prepare
+      Input.prepare_non_empty
+        ~type_: Text
+        ~label: "Name"
+        ~placeholder: "eg. The Dusty Miller"
+        () ^::
+      Input.prepare
+        ~type_: Text
+        ~label: "Kind"
+        ~placeholder: "eg. 8x32R or 2x(16R+16S)"
+        ~serialise: Kind.Dance.to_string
+        ~validate: (
+          S.const %
+            Option.to_result ~none: "Enter a valid kind, eg. 8x32R or 2x(16R+16S)." %
+            Kind.Dance.of_string_opt
+        )
+        () ^::
+      Star.prepare
+        ~label: "Conceptors"
         (
           Selector.prepare
-            ~make_descr: (lwt % Tune_row.name % Version_row.tune)
-            ~make_result: (Any_result_new.make_version_result ?in_search: None)
-            ~make_more_results: (fun version ->
-              S.flip_map show_preview @@ function
-                | true -> [tr [td ~a: [a_colspan 9999] [Version_snippets.make ~show_audio: false (Version_row.to_name version)]]]
-                | false -> []
-            )
-            ~label: "Version"
-            ~model_name: "version"
-            ~create_dialog_content: Version_editor.create_row
-            ~search: Api.version_search
+            ~make_descr: (lwt % Person_row.name)
+            ~make_result: (Any_result_new.make_person_result ?in_search: None)
+            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~label: "Conceptor"
+            ~model_name: "person"
+            ~create_dialog_content: Person_editor.create_row
+            ~search: Api.person_search
             ~id_to_yojson: Entry.Id.to_yojson'
             ~id_of_yojson: Entry.Id.of_yojson'
-            ~serialise: Version_row.id
-            ~unserialise: (Api.call_or_option @@ Version Get_row)
+            ~serialise: Person_row.id
+            ~unserialise: (Api.call_or_option @@ Person Get_row)
             ()
-        )
+        ) ^::
+      Star.prepare
+        ~label: "Versions"
         (
-          Version_parameters_editor.e
+          Parameteriser.prepare
+            (
+              Selector.prepare
+                ~make_descr: (lwt % Tune_row.name % Version_row.tune)
+                ~make_result: (Any_result_new.make_version_result ?in_search: None)
+                ~make_more_results: (fun version ->
+                  S.flip_map show_preview @@ function
+                    | true -> [tr [td ~a: [a_colspan 9999] [Version_snippets.make ~show_audio: false (Version_row.to_name version)]]]
+                    | false -> []
+                )
+                ~label: "Version"
+                ~model_name: "version"
+                ~create_dialog_content: Version_editor.create_row
+                ~search: Api.version_search
+                ~id_to_yojson: Entry.Id.to_yojson'
+                ~id_of_yojson: Entry.Id.of_yojson'
+                ~serialise: Version_row.id
+                ~unserialise: (Api.call_or_option @@ Version Get_row)
+                ()
+            )
+            (
+              Version_parameters_editor.e
+            )
         )
-    )
-    ~more_actions: (
-      let flip_show_preview_button ~icon =
-        Button.make
-          ~classes: ["btn-info"]
-          ~icon
-          ~tooltip: "Toggle the preview of versions. This can take a lot of \
+        ~more_actions: (
+          let flip_show_preview_button ~icon =
+            Button.make
+              ~classes: ["btn-info"]
+              ~icon
+              ~tooltip: "Toggle the preview of versions. This can take a lot of \
                      space on the page and is therefore disabled by default."
-          ~onclick: (fun _ -> flip_show_preview (); lwt_unit)
-          ()
-      in
-      S.flip_map show_preview @@ function
-        | true -> [flip_show_preview_button ~icon: (Action Preview)]
-        | false -> [flip_show_preview_button ~icon: (Action No_preview)]
-    ) ^::
-  Input.prepare
-    ~type_: Text
-    ~label: "Order"
-    ~placeholder: "eg. 1,2,3,4,2,3,4,1"
-    ~serialise: Model.Set_order.to_string
-    ~validate: (
-      S.const %
-        Option.to_result ~none: "Not a valid order." %
-        Model.Set_order.of_string_opt
+              ~onclick: (fun _ -> flip_show_preview (); lwt_unit)
+              ()
+          in
+          S.flip_map show_preview @@ function
+            | true -> [flip_show_preview_button ~icon: (Action Preview)]
+            | false -> [flip_show_preview_button ~icon: (Action No_preview)]
+        ) ^::
+      Input.prepare
+        ~type_: Text
+        ~label: "Order"
+        ~placeholder: "eg. 1,2,3,4,2,3,4,1"
+        ~serialise: Model.Set_order.to_string
+        ~validate: (
+          S.const %
+            Option.to_result ~none: "Not a valid order." %
+            Model.Set_order.of_string_opt
+        )
+        () ^::
+      nil
     )
-    () ^::
-  nil
-
-let assemble (name, (kind, (conceptors, (contents, (order, ()))))) =
-  {Set_form.name; kind; conceptors; contents; order}
-
-let disassemble {Set_form.name; kind; conceptors; contents; order} =
-  lwt (name, (kind, (conceptors, (contents, (order, ())))))
 
 let submit mode set =
   let%lwt id =
@@ -144,13 +148,10 @@ let create mode =
     ~icon: (Model Set)
     ~mode
     editor
-    ~assemble
     ~submit
     ~unsubmit
-    ~disassemble
     ~format: (Formatters_new.Set.name ~link: true % With_id.map Set_form.to_name)
     ~href: (Endpoints.Page.href_set % With_id.id)
-    ~check_product: Set_form.equal
 
 (* match mode with *)
 (* | Create _ | Create_with_local_storage | Quick_create _ -> *)

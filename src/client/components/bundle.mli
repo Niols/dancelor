@@ -18,3 +18,10 @@ val (^::):
   ('value2, 'state2) t ->
   ('value1 * 'value2, 'state1 * 'state2) t
 (** [c ^:: cs] is an alias for [cons c cs]. It is right associative. *)
+
+val group :
+  wrap: ('value -> 'value_wrapped) ->
+  unwrap: ('value_wrapped -> 'value) ->
+  ?check: ('value_wrapped -> 'value_wrapped -> bool) ->
+  ('value, 'state) t ->
+  ('value_wrapped, 'state) Component.s

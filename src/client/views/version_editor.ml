@@ -214,105 +214,108 @@ let content () =
 
 let editor =
   let open Bundle in
-  Selector.prepare
-    ~make_descr: (lwt % Tune_row.name)
-    ~make_result: (Any_result_new.make_tune_result ?in_search: None)
-    ~label: "Tune"
-    ~model_name: "tune"
-    ~create_dialog_content: Tune_editor.create_row
-    ~search: Api.tune_search
-    ~id_to_yojson: Entry.Id.to_yojson'
-    ~id_of_yojson: Entry.Id.of_yojson'
-    ~serialise: Tune_row.id
-    ~unserialise: (Api.call_or_option @@ Tune Get_row)
-    () ^::
-  Input.prepare
-    ~type_: Text
-    ~label: "Key"
-    ~placeholder: "eg. A or F#m"
-    ~serialise: Music.Key.to_string
-    ~validate: (
-      S.const %
-        Option.to_result ~none: "Enter a valid key, eg. A of F#m." %
-        Music.Key.of_string_opt
+  group
+    ~wrap: (fun (tune, (key, (arrangers, (remark, (sources, (disambiguation, (content, ()))))))) ->
+      let sources = List.map (fun (source, (structure, details)) -> {Version_form.source; structure; details}) sources in
+        {Version_form.tune; key; arrangers; remark; sources; disambiguation; content}
     )
-    () ^::
-  Star.prepare
-    ~label: "Arrangers"
+    ~unwrap: (fun {Version_form.tune; key; arrangers; remark; sources; disambiguation; content} ->
+      let sources = List.map (fun {Version_form.source; structure; details} -> (source, (structure, details))) sources in
+        (tune, (key, (arrangers, (remark, (sources, (disambiguation, (content, ())))))))
+    )
+    ~check: Version_form.equal
     (
       Selector.prepare
-        ~make_descr: (lwt % Person_row.name)
-        ~make_result: (Any_result_new.make_person_result ?in_search: None)
-        ~results_when_no_search: (Option.to_list <$> Environment.person_row)
-        ~label: "Arranger"
-        ~model_name: "person"
-        ~create_dialog_content: Person_editor.create_row
-        ~search: Api.person_search
+        ~make_descr: (lwt % Tune_row.name)
+        ~make_result: (Any_result_new.make_tune_result ?in_search: None)
+        ~label: "Tune"
+        ~model_name: "tune"
+        ~create_dialog_content: Tune_editor.create_row
+        ~search: Api.tune_search
         ~id_to_yojson: Entry.Id.to_yojson'
         ~id_of_yojson: Entry.Id.of_yojson'
-        ~serialise: Person_row.id
-        ~unserialise: (Api.call_or_option @@ Person Get_row)
-        ()
-    ) ^::
-  Input.prepare_option
-    ~type_: Text
-    ~label: "Remark"
-    ~placeholder: "Any additional information that doesn't fit in the other fields."
-    ~serialise: Fun.id
-    ~validate: (S.const % ok)
-    () ^::
-  Star.prepare
-    ~label: "Sources"
-    (
-      Cpair.prepare
-        ~label: "Source"
+        ~serialise: Tune_row.id
+        ~unserialise: (Api.call_or_option @@ Tune Get_row)
+        () ^::
+      Input.prepare
+        ~type_: Text
+        ~label: "Key"
+        ~placeholder: "eg. A or F#m"
+        ~serialise: Music.Key.to_string
+        ~validate: (
+          S.const %
+            Option.to_result ~none: "Enter a valid key, eg. A of F#m." %
+            Music.Key.of_string_opt
+        )
+        () ^::
+      Star.prepare
+        ~label: "Arrangers"
         (
           Selector.prepare
-            ~make_descr: (lwt % Source_row.name)
-            ~make_result: (Any_result_new.make_source_result ?in_search: None)
-            ~label: "Source"
-            ~model_name: "source"
-            ~create_dialog_content: Source_editor.create_row
-            ~search: Api.source_search
+            ~make_descr: (lwt % Person_row.name)
+            ~make_result: (Any_result_new.make_person_result ?in_search: None)
+            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~label: "Arranger"
+            ~model_name: "person"
+            ~create_dialog_content: Person_editor.create_row
+            ~search: Api.person_search
             ~id_to_yojson: Entry.Id.to_yojson'
             ~id_of_yojson: Entry.Id.of_yojson'
-            ~serialise: Source_row.id
-            ~unserialise: (Api.call_or_option @@ Source Get_row)
+            ~serialise: Person_row.id
+            ~unserialise: (Api.call_or_option @@ Person Get_row)
             ()
-        )
+        ) ^::
+      Input.prepare_option
+        ~type_: Text
+        ~label: "Remark"
+        ~placeholder: "Any additional information that doesn't fit in the other fields."
+        ~serialise: Fun.id
+        ~validate: (S.const % ok)
+        () ^::
+      Star.prepare
+        ~label: "Sources"
         (
           Cpair.prepare
-            ~label: "FIXME"
-            (structure ~label: "Structure in that particular source" ())
+            ~label: "Source"
             (
-              Input.prepare_option
-                ~type_: Text
-                ~label: "FIXME"
-                ~placeholder: "eg. “for The Eightsome Reel” or “as a 2/4 reel”"
-                ~serialise: id
-                ~validate: (S.const % ok)
+              Selector.prepare
+                ~make_descr: (lwt % Source_row.name)
+                ~make_result: (Any_result_new.make_source_result ?in_search: None)
+                ~label: "Source"
+                ~model_name: "source"
+                ~create_dialog_content: Source_editor.create_row
+                ~search: Api.source_search
+                ~id_to_yojson: Entry.Id.to_yojson'
+                ~id_of_yojson: Entry.Id.of_yojson'
+                ~serialise: Source_row.id
+                ~unserialise: (Api.call_or_option @@ Source Get_row)
                 ()
             )
-        )
-    ) ^::
-  Input.prepare_option
-    ~type_: Text
-    ~label: "Disambiguation"
-    ~placeholder: "If there are multiple versions with the same name, this field must be used to distinguish them."
-    ~serialise: Fun.id
-    ~validate: (S.const % ok)
-    () ^::
-  content () ^::
-  nil
-
-let assemble (tune, (key, (arrangers, (remark, (sources, (disambiguation, (content, ()))))))) =
-  let sources = List.map (fun (source, (structure, details)) -> {Version_form.source; structure; details}) sources in
-    {Version_form.tune; key; arrangers; remark; sources; disambiguation; content}
-
-let disassemble version =
-  let {Version_form.tune; key; arrangers; remark; sources; disambiguation; content} = version in
-  let sources = List.map (fun {Version_form.source; structure; details} -> (source, (structure, details))) sources in
-  lwt (tune, (key, (arrangers, (remark, (sources, (disambiguation, (content, ())))))))
+            (
+              Cpair.prepare
+                ~label: "FIXME"
+                (structure ~label: "Structure in that particular source" ())
+                (
+                  Input.prepare_option
+                    ~type_: Text
+                    ~label: "FIXME"
+                    ~placeholder: "eg. “for The Eightsome Reel” or “as a 2/4 reel”"
+                    ~serialise: id
+                    ~validate: (S.const % ok)
+                    ()
+                )
+            )
+        ) ^::
+      Input.prepare_option
+        ~type_: Text
+        ~label: "Disambiguation"
+        ~placeholder: "If there are multiple versions with the same name, this field must be used to distinguish them."
+        ~serialise: Fun.id
+        ~validate: (S.const % ok)
+        () ^::
+      content () ^::
+      nil
+    )
 
 let preview version =
   let {Version_form.tune; content; _} = version in
@@ -347,12 +350,9 @@ let prepare () =
     editor
     ~href: (Endpoints.Page.href_version % With_id.id)
     ~format: (Formatters_new.Version.name ~link: true % With_id.map Version_form.to_name)
-    ~assemble
     ~submit
     ~unsubmit
-    ~disassemble
     ~preview
-    ~check_product: Version_form.equal
 
 let create_gen mode =
   (* FIXME: if [mode] is an edition, then we should assert_can_update_public *)
