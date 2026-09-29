@@ -5,4 +5,4 @@ open Model_new
 
 val get : 'any Entry.Id.t -> Model_builder.Core.Any.t option Lwt.t
 
-val get_newest : user_id: User_id.t option -> limit: int -> Any_id.t list Lwt.t
+val get_newest : actor_id: User_id.t option -> limit: int -> Any_id.t list Lwt.t

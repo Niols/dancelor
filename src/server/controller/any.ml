@@ -57,9 +57,7 @@ let get_rows env ids =
       ids
 
 let newest env limit =
-  let user = Environment.user env in
-  let%lwt ids = Database.Any.get_newest ~user_id: (Option.map Entry.id user) ~limit in
-  get_rows env ids
+  get_rows env =<< Database.Any.get_newest ~actor_id: (Environment.actor_id env) ~limit
 
 (** Given two streams sorted according to the comparison function, produce one
     sorted stream of all the values. In case of equality, the left stream wins. *)

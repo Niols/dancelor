@@ -61,9 +61,9 @@ let version_sql_to_row
 
 let set_sql_to_row
     ~id
-    ~is_public
+    ~entry_is_public
     ~actor_role
-    ~user_is_omniscient_administrator
+    ~actor_is_omniscient_administrator
     ~name
     ~kind
     ~conceptors
@@ -77,14 +77,14 @@ let set_sql_to_row
     kind = Kind_dance.of_string kind;
     conceptors;
     tunes;
-    permission = Permission_new.make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator;
+    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
   }
 
 let book_sql_to_row
     ~id
-    ~is_public
+    ~entry_is_public
     ~actor_role
-    ~user_is_omniscient_administrator
+    ~actor_is_omniscient_administrator
     ~name
     ~date
     ~authors
@@ -96,5 +96,5 @@ let book_sql_to_row
     name;
     date = Option.map (Option.get % PartialDate.from_string) date;
     authors;
-    permission = Permission_new.make_of_poly ~is_public ~actor_role ~user_is_omniscient_administrator;
+    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
   }

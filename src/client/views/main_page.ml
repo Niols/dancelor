@@ -80,7 +80,7 @@ let nav_item_explore =
     ]
 
 let nav_item_create =
-  if%lwt Option.is_some <$> Environment.user then
+  if%lwt Option.is_some <$> Environment.actor then
     lwt [
       li
         ~a: [a_class ["nav-item"; "dropdown"]]
@@ -152,7 +152,7 @@ let header =
                   S.all @@ [
                     S.const [nav_item_explore];
                     S.from_lwt [] nav_item_create;
-                    S.const [User_header.header_item];
+                    S.const [Actor_header.header_item];
                   ]
                 );
             ];

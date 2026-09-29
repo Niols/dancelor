@@ -113,7 +113,7 @@ let editor user =
         ~model_name: "user"
         ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
         ~make_result: (Any_result_new.make_user_result ?in_search: None)
-        ~results_when_no_search: (Option.to_list <$> Environment.user_new)
+        ~results_when_no_search: (Option.to_list <$> Environment.actor_new)
         ~search: (fun slice input ->
           match User_query.parse input with
           | Error msg -> lwt_error msg
@@ -218,27 +218,27 @@ let disassemble (set, access) =
 
 let entry_permission_new entry =
   let access = Entry.access entry in
-  let is_public = Entry.Access.Private.is_public access in
-  let%lwt actor_role, user_is_omniscient_administrator =
-    match%lwt Environment.user with
+  let entry_is_public = Entry.Access.Private.is_public access in
+  let%lwt actor_role, actor_is_omniscient_administrator =
+    match%lwt Environment.actor with
     | None -> lwt (None, false)
-    | Some user ->
+    | Some actor ->
       lwt (
         (
-          if List.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.owners access) then
+          if List.exists (Entry.Id.equal' (Entry.id actor)) (Entry.Access.Private.owners access) then
             Some (Owner : Permission_new.actor_role)
-          else if List.exists (Entry.Id.equal' (Entry.id user)) (Entry.Access.Private.viewers access) then
+          else if List.exists (Entry.Id.equal' (Entry.id actor)) (Entry.Access.Private.viewers access) then
             Some (Viewer : Permission_new.actor_role)
           else
             None
         ),
-        Model.User.is_omniscient_administrator' user
+        Model.User.is_omniscient_administrator' actor
       )
   in
-  lwt @@ Permission_new.make ~is_public ~actor_role ~user_is_omniscient_administrator
+  lwt @@ Permission_new.make ~entry_is_public ~actor_role ~actor_is_omniscient_administrator
 
 let create mode =
-  let%lwt user = Option.map Entry.id <$> Environment.user in
+  let%lwt user = Option.map Entry.id <$> Environment.actor in
   let make_editor = fun ?pre_body () ->
     Editor.make_page
       ~key: "set"

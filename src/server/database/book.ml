@@ -86,13 +86,13 @@ let get_content_versions_for db book_ids =
       k (book_id, content_index) (version, version_params)
     )
 
-let get_content_for ~user_id db book_ids =
+let get_content_for ~actor_id db book_ids =
   let%lwt dance_devisers_for = get_dance_devisers_for db book_ids in
   let%lwt tunes_for = get_set_tunes_for db book_ids in
   let%lwt set_conceptors_for = get_set_conceptors_for db book_ids in
   let%lwt content_versions_for = get_content_versions_for db book_ids in
   Utils.fold_to_get_list
-    (Book_sql.Fold.get_content_for db ~user_id ~book_ids)
+    (Book_sql.Fold.get_content_for db ~actor_id ~book_ids)
     (fun
         k
         ~book_id
@@ -106,9 +106,9 @@ let get_content_for ~user_id db book_ids =
         ~set_id
         ~set_name
         ~set_kind
-        ~set_is_public
+        ~set_entry_is_public
         ~set_actor_role
-        ~set_user_is_omniscient_administrator
+        ~set_actor_is_omniscient_administrator
         ~set_parameter_display_name
         ~set_parameter_display_conceptor
         ~set_parameter_display_kind
@@ -154,15 +154,15 @@ let get_content_for ~user_id db book_ids =
       let set =
         Option.map
           (fun set_id ->
-            match set_is_public, (* set_actor_role, *) set_user_is_omniscient_administrator with
+            match set_entry_is_public, (* set_actor_role, *) set_actor_is_omniscient_administrator with
             | None, (* None, *) None -> Forbidden
-            | Some set_is_public, (* Some set_actor_role, *) Some set_user_is_omniscient_administrator ->
+            | Some set_entry_is_public, (* Some set_actor_role, *) Some set_actor_is_omniscient_administrator ->
               Allowed (
                 set_sql_to_row
                   ~id: set_id
-                  ~is_public: set_is_public
+                  ~entry_is_public: set_entry_is_public
                   ~actor_role: set_actor_role
-                  ~user_is_omniscient_administrator: set_user_is_omniscient_administrator
+                  ~actor_is_omniscient_administrator: set_actor_is_omniscient_administrator
                   ~name: (Option.get set_name)
                   ~kind: (Option.get set_kind)
                   ~conceptors: (set_conceptors_for set_id)
@@ -185,31 +185,31 @@ let get_content_for ~user_id db book_ids =
       k book_id page
     )
 
-let get_row_for ~user_id ids : (Book_id.t -> Book_row.t option) Lwt.t =
+let get_row_for ~actor_id ids : (Book_id.t -> Book_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt authors_for = get_authors_for db (`One_of ids) in
   Utils.fold_to_get_single
-    (Book_sql.Fold.get_rows db ~ids ~user_id)
+    (Book_sql.Fold.get_rows db ~ids ~actor_id)
     (fun k ~id -> book_sql_to_row ~id ~authors: (authors_for id) ~k: (k id))
 
-let get_view ~user_id id : Book_view.t option Lwt.t =
+let get_view ~actor_id id : Book_view.t option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt authors = (fun f -> f id) <$> get_authors_for db (`One_of [id]) in
   let%lwt sources = (fun f -> f id) <$> get_sources_for db (`One_of [id]) in
-  let%lwt content = (fun f -> f id) <$> get_content_for ~user_id db (`One_of [id]) in
+  let%lwt content = (fun f -> f id) <$> get_content_for ~actor_id db (`One_of [id]) in
   Book_sql.Single.get_view
     db
-    ~user_id
+    ~actor_id
     ~id
     (book_sql_to_view ~authors ~sources ~content ~k: Fun.id)
 
-let search ~user_id query : (Book_row.t * float) list Lwt.t =
+let search ~actor_id query : (Book_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Book_query.author; contains_version; contains_tune; contains_set}} = query in
   Connection.with_ @@ fun db ->
   let%lwt authors_for = get_authors_for db `All in
   Book_sql.List.search
     db
-    ~user_id
+    ~actor_id
     ~terms
     ~author: (Utils.option_to_sql author)
     ~contains_version: (Utils.option_to_sql contains_version)

@@ -6,21 +6,29 @@ module Log = (val Logs.src_log @@ Logs.Src.create "server.environment": Logs.LOG
 let session_max_age = 43200 (* 43200 seconds = 12 hours *)
 let remember_me_token_max_age = 15552000 (* 15552000 seconds = 6 * 30 days *)
 
+type actor =
+  | Anonymous
+  | Signed_in of Database.User.entry
+[@@deriving variants]
+
 type session = {
-  user: Database.User.entry option;
+  actor: actor;
   expires: Datetime.t;
 }
-[@@deriving fields]
 
 let make_new_session () =
-  lwt {user = None; expires = Datetime.make_in_the_future (float_of_int session_max_age)}
+  lwt {actor = Anonymous; expires = Datetime.make_in_the_future (float_of_int session_max_age)}
 
 (** Refresh the session by getting the user again from the database
     and bumping the expiry date. *)
 let refresh_session session =
-  let%lwt user = Option.fold session.user ~none: lwt_none ~some: (Database.User.get % Entry.id) in
+  let%lwt actor =
+    match session.actor with
+    | Anonymous -> lwt Anonymous
+    | Signed_in actor -> signed_in % Option.get <$> Database.User.get (Entry.id actor)
+  in
   let expires = Datetime.make_in_the_future (float_of_int session_max_age) in
-  lwt {user; expires}
+  lwt {actor; expires}
 
 type t = {
   session_id: string;
@@ -34,15 +42,20 @@ let pp fmt env =
     fmt
     "%s [%s, expires %a]"
     (
-      match !(env.session).user with
-      | None -> "<anynomous>"
-      | Some user -> Entry.id_as_string user
+      match !(env.session).actor with
+      | Anonymous -> "<anynomous>"
+      | Signed_in actor -> Entry.id_as_string actor
     )
     env.session_id
     Datetime.pp
     !(env.session).expires
 
-let user env = user !(env.session)
+let actor env = (!(env.session)).actor
+
+let actor_id env =
+  match actor env with
+  | Anonymous -> None
+  | Signed_in actor -> Some (Entry.id actor)
 
 let register_response_cookie env cookie =
   env.response_cookies := cookie :: !(env.response_cookies)
@@ -64,8 +77,8 @@ let delete_cookie ?path key headers =
 (* A hash table linking session ids to sessions. *)
 let sessions : (string, session) Hashtbl.t = Hashtbl.create 8
 
-let set_user env user =
-  env.session := {!(env.session) with user = Some user};
+let set_actor env actor =
+  env.session := {!(env.session) with actor = Signed_in actor};
   Hashtbl.replace sessions env.session_id !(env.session)
 
 (* Given an environment, check whether we should log in a user via their
@@ -89,26 +102,26 @@ let process_remember_me_cookie env remember_me_cookie =
         Log.info (fun m -> m "Rejecting because of wrong username.");
         register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
         lwt_unit
-      | Some user ->
-        match%lwt Database.User.find_remember_me_token (Entry.id user) key with
+      | Some actor ->
+        match%lwt Database.User.find_remember_me_token (Entry.id actor) key with
         | None ->
           Log.info (fun m -> m "Rejecting because user does not have the “remember me” key `%a`." Database.User.Remember_me_key.pp key);
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
           lwt_unit
         | Some (_, token_max_date) when Datetime.in_the_past token_max_date ->
           Log.info (fun m -> m "Rejecting because token is too old.");
-          Database.User.remove_one_remember_me_token (Entry.id user) key;%lwt
+          Database.User.remove_one_remember_me_token (Entry.id actor) key;%lwt
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
           lwt_unit
         | Some (hashed_token, _) when not @@ HashedSecret.is ~clear: (Database.User.Remember_me_token_clear.project token) (Database.User.Remember_me_token_hashed.project hashed_token) ->
           Log.info (fun m -> m "Rejecting because tokens do not match.");
           (* someone got their hand on a "remember me" key - invalidate all known tokens *)
           (* NOTE: Similar to password reset tokens, we should be able to compare directly but need to project. *)
-          Database.User.remove_all_remember_me_tokens (Entry.id user);%lwt
+          Database.User.remove_all_remember_me_tokens (Entry.id actor);%lwt
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
           lwt_unit
         | Some _ ->
-          set_user env user;
+          set_actor env actor;
           Log.info (fun m -> m "Accepted sign in for %a." pp env);
           lwt_unit
 
@@ -136,13 +149,13 @@ let from_request request =
   let response_cookies = ref [] in
   let env = {session_id; session; response_cookies} in
   (
-    match !session.user, List.assoc_opt "rememberMe" cookies with
-    | None, Some remember_me_cookie ->
+    match !session.actor, List.assoc_opt "rememberMe" cookies with
+    | Anonymous, Some remember_me_cookie ->
       Log.debug (fun m -> m "Processing “remember me” cookie.");
       process_remember_me_cookie env remember_me_cookie
     | _ -> lwt_unit
   );%lwt
-  Log.debug (fun m -> m "Environment.from_request done; user is: %a." pp env);
+  Log.debug (fun m -> m "Environment.from_request done; actor is: %a." pp env);
   Hashtbl.replace sessions session_id !session;
   lwt env
 
@@ -182,8 +195,8 @@ let with_' request f =
   let%lwt (sca, resp) = f env in
   lwt @@ to_response sca env resp
 
-let sign_in env user ~remember_me =
-  set_user env user;
+let sign_in env actor ~remember_me =
+  set_actor env actor;
   Lwt.if_' remember_me (fun () ->
     let key = uid () in
     let token = uid () in
@@ -196,7 +209,7 @@ let sign_in env user ~remember_me =
          will be sent as cookie, to be sure not to lie to our clients *)
       let max_date = Datetime.make_in_the_future (float_of_int @@ 60 + remember_me_token_max_age) in
       (* let remember_me_token = Some (hashed_token, max_date) in *)
-      Database.User.add_remember_me_token (Entry.id user) key_typed hashed_token max_date
+      Database.User.add_remember_me_token (Entry.id actor) key_typed hashed_token max_date
     );%lwt
     register_response_cookie
       env
@@ -206,23 +219,23 @@ let sign_in env user ~remember_me =
           ~secure: true
           ~httpOnly: true
           "rememberMe"
-          (Entry.id_as_string user ^ ":" ^ key ^ ":" ^ token)
+          (Entry.id_as_string actor ^ ":" ^ key ^ ":" ^ token)
           ~max_age: remember_me_token_max_age
       );
     lwt_unit
   )
 
-let sign_out env user =
-  let session = {!(env.session) with user = None} in
+let sign_out env actor =
+  let session = {!(env.session) with actor = Anonymous} in
   Hashtbl.replace sessions env.session_id session;
   env.session := session;
-  Database.User.remove_all_remember_me_tokens (Entry.id user);%lwt
+  Database.User.remove_all_remember_me_tokens (Entry.id actor);%lwt
   register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
   lwt_unit
 
 type cache_key = {
   session_id: string;
-  user: Database.User.entry option;
+  actor: actor;
 }
 [@@ocaml.warning "-69"]
 (* NOTE: We disable warning 69, “unused record field”, because the goal is to
@@ -231,5 +244,5 @@ type cache_key = {
 
 let cache_key env : cache_key =
   let {session_id; session; response_cookies = _} : t = env in
-  let {user; expires = _} : session = !session in
-    {session_id; user}
+  let {actor; expires = _} : session = !session in
+    {session_id; actor}

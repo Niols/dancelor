@@ -311,9 +311,9 @@ SELECT
     "set_id",
     "set"."name" AS "set_name",
     "set"."kind" AS "set_kind",
-    "set_permissions"."is_public" AS "set_is_public",
+    "set_permissions"."entry_is_public" AS "set_entry_is_public",
     "set_permissions"."actor_role" AS "set_actor_role",
-    "set_permissions"."user_is_omniscient_administrator" AS "set_user_is_omniscient_administrator",
+    "set_permissions"."actor_is_omniscient_administrator" AS "set_actor_is_omniscient_administrator",
     -- set parameters
     "set_parameter_display_name",
     "set_parameter_display_conceptor",

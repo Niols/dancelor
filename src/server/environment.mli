@@ -34,8 +34,15 @@ val with_' :
 
 (** {2 Interface for controllers} *)
 
-(** Returns the user that is signed-in in the current session. *)
-val user : t -> Database.User.entry option
+type actor =
+  | Anonymous
+  | Signed_in of Database.User.entry
+
+(** Returns the actor that is signed-in in the current session. *)
+val actor : t -> actor
+
+(** Same as {!actor} for use in the database directly. *)
+val actor_id : t -> Dancelor_common.Model_new.User_id.t option
 
 (** Set the user as signed in for the current session. Subsequent calls to
     {!user} (across requests) will return that user. If the [~remember_me] flag

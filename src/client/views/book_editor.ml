@@ -288,7 +288,7 @@ let editor user =
         ~model_name: "user"
         ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
         ~make_result: (Any_result_new.make_user_result ?in_search: None)
-        ~results_when_no_search: (Option.to_list <$> Environment.user_new)
+        ~results_when_no_search: (Option.to_list <$> Environment.actor_new)
         ~search: (fun slice input ->
           match User_query.parse input with
           | Error msg -> lwt_error msg
@@ -393,7 +393,7 @@ let disassemble (book, access) =
   lwt (name, (authors, (date, (contents, (remark, (sources, (scddb_id, (owners, (visibility, ())))))))))
 
 let create mode =
-  let%lwt user = Option.map Entry.id <$> Environment.user in
+  let%lwt user = Option.map Entry.id <$> Environment.actor in
   let make_editor = fun ?pre_body () ->
     Editor.make_page
       ~key: "book"

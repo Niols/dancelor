@@ -121,7 +121,7 @@ let header_item =
       R.a_class
         (
           S.from_lwt ["nav-item"] @@
-          Lwt.flip_map Environment.user @@ function
+          Lwt.flip_map Environment.actor @@ function
           | None -> ["nav-item"]
           | Some _ -> ["nav-item"; "dropdown"]
         );
@@ -134,7 +134,7 @@ let header_item =
           ~classes: ["disabled"; "placeholder"]
           ()
       ] @@
-      Lwt.flip_map Environment.user @@ function
+      Lwt.flip_map Environment.actor @@ function
       | None ->
         [
           Button.make
@@ -144,10 +144,10 @@ let header_item =
             ~onclick: open_sign_in_dialog
             ()
         ]
-      | Some user ->
+      | Some actor ->
         [
           Button.make
-            ~label: (Username.to_string @@ Model.User.username' user)
+            ~label: (Username.to_string @@ Model.User.username' actor)
             ~icon: (Model User)
             ~classes: ["text-white"; "dropdown-toggle"]
             ~more_a: [a_user_data "bs-toggle" "dropdown"; a_aria "expanded" ["false"]]
@@ -158,7 +158,7 @@ let header_item =
               List.flatten
                 [
                   (
-                    if Model.User.is_administrator' user then
+                    if Model.User.is_administrator' actor then
                       [
                         li [
                           Button.make_a
@@ -177,7 +177,7 @@ let header_item =
                             ()
                         ];
                         li [
-                          if Model.User.is_omniscient_administrator' user then
+                          if Model.User.is_omniscient_administrator' actor then
                             Button.make
                               ~label: "Disable omniscience"
                               ~icon: (Access Omniscient_administrator)

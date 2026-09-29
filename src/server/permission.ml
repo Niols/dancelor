@@ -11,7 +11,7 @@ include With_reason
 
 (** {3 Tests} *)
 
-let can can = fun env -> lwt (can (Environment.user env) <> None)
+let can can = fun env -> lwt (can (match Environment.actor env with Anonymous -> None | Signed_in x -> Some x) <> None)
 
 let can_get_public env entry = can (flip can_get_public entry) env
 let can_get_public_new env entry = can (flip can_get_public_new entry) env
@@ -118,7 +118,7 @@ let assert_can_delete_private env entry =
 
 (** {2 Ad-hoc tests and assertions} *)
 
-let is_connected env = lwt (Environment.user env <> None)
+let is_connected env = lwt (Environment.actor env <> Anonymous)
 
 let assert_is_connected env =
   if%lwt is_connected env then
@@ -133,22 +133,21 @@ let assert_is_connected env =
     )
 
 let can_administrate env =
-  lwt @@ Option.fold (Environment.user env) ~none: false ~some: Model.User.is_administrator'
+  lwt @@
+    match Environment.actor env with
+    | Anonymous -> false
+    | Signed_in actor -> Model.User.is_administrator' actor
 
 let assert_can_administrate env f =
-  Option.fold
-    (Environment.user env)
-    ~none: (fun () ->
-      Log.info (fun m -> m "Refusing admin access to %a." Environment.pp env);
-      Madge_server.shortcut_forbidden "You do not have permission to administrate this instance."
-    )
-    ~some: (fun user () ->
-      if Model.User.is_administrator' user then
-        f user
-      else
-        (
-          Log.info (fun m -> m "Refusing admin access to %a." Environment.pp env);
-          Madge_server.shortcut_forbidden "You do not have permission to administrate this instance."
-        )
-    )
-    ()
+  match Environment.actor env with
+  | Anonymous ->
+    Log.info (fun m -> m "Refusing admin access to %a." Environment.pp env);
+    Madge_server.shortcut_forbidden "You do not have permission to administrate this instance."
+  | Signed_in actor ->
+    if Model.User.is_administrator' actor then
+      f actor
+    else
+      (
+        Log.info (fun m -> m "Refusing admin access to %a." Environment.pp env);
+        Madge_server.shortcut_forbidden "You do not have permission to administrate this instance."
+      )

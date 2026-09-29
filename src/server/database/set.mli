@@ -2,9 +2,9 @@ open Dancelor_common
 open Model_new
 open Search_new
 
-val get_row_for : user_id: User_id.t option -> Set_id.t list -> (Set_id.t -> Set_row.t option) Lwt.t
-val get_view : user_id: User_id.t option -> Set_id.t -> Set_view.t option Lwt.t
-val search : user_id: User_id.t option -> Set_query.t -> (Set_row.t * float) list Lwt.t
+val get_row_for : actor_id: User_id.t option -> Set_id.t list -> (Set_id.t -> Set_row.t option) Lwt.t
+val get_view : actor_id: User_id.t option -> Set_id.t -> Set_view.t option Lwt.t
+val search : actor_id: User_id.t option -> Set_query.t -> (Set_row.t * float) list Lwt.t
 
 (** {2 Legacy} *)
 

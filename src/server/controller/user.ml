@@ -24,20 +24,24 @@ let get env id =
     Permission.assert_can_get_public env user;%lwt
     lwt user
 
-let status = lwt % Environment.user
+let status env =
+  lwt @@
+    match Environment.actor env with
+    | Anonymous -> None
+    | Signed_in actor -> Some actor
 
 let status_new env =
-  match Environment.user env with
+  match Environment.actor_id env with
   | None -> lwt_none
-  | Some user -> some <$> get_row env (Entry.id user)
+  | Some actor_id -> some <$> get_row env actor_id
 
 let sign_in env username password remember_me =
   Log.info (fun m -> m "Attempt to sign in with username `%s`." (Username.to_string username));
-  match Environment.user env with
-  | Some _user ->
+  match Environment.actor env with
+  | Signed_in _actor ->
     Log.info (fun m -> m "Rejecting because already signed in.");
     lwt_none
-  | None ->
+  | Anonymous ->
     (* FIXME: should be included in [get_password_from_username] except we return a user  *)
     match%lwt Database.User.get_from_username username with
     | None ->
@@ -58,9 +62,9 @@ let sign_in env username password remember_me =
         lwt_some user
 
 let sign_out env =
-  match Environment.user env with
-  | None -> lwt_unit
-  | Some user -> Environment.sign_out env user
+  match Environment.actor env with
+  | Anonymous -> lwt_unit
+  | Signed_in actor -> Environment.sign_out env actor
 
 let create env user =
   Permission.assert_can_administrate env @@ fun _admin ->

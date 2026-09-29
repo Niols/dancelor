@@ -15,13 +15,13 @@ val server_status : server_status S.t
 
 (** The user that is currently logged in. This queries the server the first time
     it is needed, hence the promise. *)
-val user : Model.User.entry option Lwt.t
-val user_new : User_row.t option Lwt.t
+val actor : Model.User.entry option Lwt.t
+val actor_new : User_row.t option Lwt.t
 
 (** For places where we don't want to wait for the promise to resolve, we can
     use {!user_now}. This might however answer [None] even though we are
     connected, if {!user} didn't have time to resolve. *)
-val user_now : unit -> Model.User.entry option
+val actor_now : unit -> Model.User.entry option
 
 (** The person corresponding to the user that is currently logged in. *)
 val person_id : Person_id.t option Lwt.t
