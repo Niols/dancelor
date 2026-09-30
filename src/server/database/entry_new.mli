@@ -26,6 +26,9 @@ val make_public : Connection.t -> type_ -> 'any Entry.Id.t Lwt.t
 val make_private : Connection.t -> type_ -> Entry.Access.Private.t -> 'any Entry.Id.t Lwt.t
 (** Make a private entry, handling its access, and return the new id. *)
 
+val make_private_new : Connection.t -> type_ -> User_id.t -> 'any Entry.Id.t Lwt.t
+(** Make a private entry, handling its access, and return the new id. *)
+
 val touch : Connection.t -> 'any Entry.Id.t -> unit Lwt.t
 (** Bumps the `updated_at` field of the entry. *)
 

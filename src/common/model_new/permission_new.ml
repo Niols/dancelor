@@ -1,7 +1,7 @@
 type actor_role =
   | Owner
   | Viewer
-[@@deriving yojson]
+[@@deriving eq, yojson]
 
 let actor_role_of_poly = function
   | `Owner -> Owner
@@ -12,7 +12,7 @@ type t = {
   actor_role: actor_role option;
   actor_is_omniscient_administrator: bool;
 }
-[@@deriving yojson]
+[@@deriving eq, yojson]
 
 let make ~entry_is_public ~actor_role ~actor_is_omniscient_administrator =
   {entry_is_public; actor_role; actor_is_omniscient_administrator}

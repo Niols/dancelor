@@ -142,3 +142,23 @@ module Version_form = struct
     content = content_to_row_content content;
   }
 end
+
+module Set_form = struct
+  type t = {
+    name: NEString.t;
+    kind: Kind.Dance.t;
+    conceptors: Person_row.t list;
+    contents: (Version_row.t * Model_builder.Core.Version_parameters.t) list;
+    order: Model_builder.Core.Set_order.t;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {name; _} : Set_name.t =
+    {id; name = NEString.to_string name}
+
+  let to_row id {name; kind; conceptors; contents; _} : Set_row.t =
+    let tunes = List.map (Version_row.to_name % fst) contents in
+    (* FIXME: grab proper permissions from somewhere, maybe pass to [to_row] *)
+    let permission = {Permission_new.entry_is_public = false; actor_role = None; actor_is_omniscient_administrator = false} in
+      {id; name = NEString.to_string name; kind; conceptors; tunes; permission}
+end

@@ -83,6 +83,13 @@ let make_private db type_ access =
   insert_or_update_private db access @@ fun ~is_public ->
   insert_to_entry_table db type_ ~is_public
 
+let make_private_new db type_ owner =
+  assert (classify_type type_ = `Private);
+  (* FIXME: instead of making an access value, we should directly pass whatever is necessary *)
+  let access = Entry.Access.Private.make ~owners: [owner] () in
+  insert_or_update_private db access @@ fun ~is_public ->
+  insert_to_entry_table db type_ ~is_public
+
 let update_private_access db id access =
   ignore
   <$> insert_or_update_private db access @@ fun ~is_public ->

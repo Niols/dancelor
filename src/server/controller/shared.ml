@@ -74,27 +74,27 @@ end)
 (* NOTE: Extended version that also handles forms and create/update/delete. This
    should become the only version once we are down integrating the forms. *)
 
-let assert_permission ~access_type ~pp_reason env reason =
+let assert_permission ~access_type ~pp_reason env reason k =
   match reason with
   | None ->
     Log.info (fun m -> m "Refusing %s access to %a." access_type Environment.pp env);
     Madge_server.shortcut_forbidden "You do not have permission to %s this entry" access_type
   | Some reason ->
     Log.debug (fun m -> m "Granting %s access to %a because %a" access_type Environment.pp env pp_reason reason);
-    lwt_unit
+    k reason
 
 let assert_can_create _db env =
   assert_permission
     ~access_type: "create"
-    ~pp_reason: (fun _fmt () -> ())
+    ~pp_reason: (fun _fmt _actor -> ())
     env
     (
       match Environment.actor env with
       | Anonymous -> None
-      | Signed_in _actor -> Some ()
+      | Signed_in actor -> Some actor
     )
 
-let assert_can_update db env id =
+let assert_can_update db env id k =
   let actor_id = Environment.actor_id env in
   let%lwt permission = Database.Entry.get_permission db ~actor_id id in
   assert_permission
@@ -102,8 +102,9 @@ let assert_can_update db env id =
     ~pp_reason: Permission_new.pp_edit_reason
     env
     (Option.bind permission Permission_new.edit_reason)
+    (fun _reason -> k ())
 
-let assert_can_delete db env id =
+let assert_can_delete db env id k =
   let actor_id = Environment.actor_id env in
   let%lwt permission = Database.Entry.get_permission db ~actor_id id in
   assert_permission
@@ -111,6 +112,7 @@ let assert_can_delete db env id =
     ~pp_reason: Permission_new.pp_delete_reason
     env
     (Option.bind permission Permission_new.delete_reason)
+    (fun _reason -> k ())
 
 module type Db_private_full = sig
   type entry
@@ -125,7 +127,7 @@ module type Db_private_full = sig
   val get_form : actor_id: User_id.t option -> id -> form option Lwt.t
   val search : actor_id: User_id.t option -> query -> (row * float) list Lwt.t
 
-  val create : Database.t -> form -> id Lwt.t
+  val create : Database.t -> owner_id: User_id.t -> form -> id Lwt.t
   val update : Database.t -> id -> form -> unit Lwt.t
   val delete : Database.t -> id -> unit Lwt.t
 end
@@ -168,17 +170,17 @@ module Make_private_full (Db : Db_private_full) = struct
 
   let create env form =
     Database.with_ @@ fun db ->
-    assert_can_create db env;%lwt
-    Db.create db form
+    assert_can_create db env @@ fun actor ->
+    Db.create db ~owner_id: (Entry.id actor) form
 
   let update env id form =
     Database.with_ @@ fun db ->
-    assert_can_update db env id;%lwt
+    assert_can_update db env id @@ fun () ->
     Db.update db id form
 
   let delete env id =
     Database.with_ @@ fun db ->
-    assert_can_delete db env id;%lwt
+    assert_can_delete db env id @@ fun () ->
     Db.delete db id
 end
 
@@ -206,4 +208,5 @@ module Make_public_full (Db : Db_public_full) = Make_private_full(struct
   let get_view ~actor_id: _ = get_view
   let get_form ~actor_id: _ = get_form
   let search ~actor_id: _ = search
+  let create db ~owner_id: _ = create db
 end)

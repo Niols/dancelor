@@ -8,6 +8,8 @@ module Person_row = struct
     name: string;
   }
   [@@deriving eq, yojson, fields]
+
+  let to_name = Fun.id
 end
 
 module User_row = struct
@@ -15,7 +17,7 @@ module User_row = struct
     id: User_id.t;
     username: Username.t;
   }
-  [@@deriving yojson, fields]
+  [@@deriving eq, yojson, fields]
 end
 
 module Dance_row = struct
@@ -60,7 +62,7 @@ module Version_row = struct
     | No_content
     | Destructured
     | Monolithic of {bars: int; structure: Model_builder.Core.Version.Structure.t}
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   type t = {
     id: Version_id.t;
@@ -70,7 +72,7 @@ module Version_row = struct
     arrangers: Person_name.t list; [@default []]
     content: content;
   }
-  [@@deriving yojson, fields]
+  [@@deriving eq, yojson, fields]
 
   let to_name : t -> Version_name.t = fun {id; tune; _} -> {id; name = tune.name}
 end
@@ -84,7 +86,7 @@ module Set_row = struct
     tunes: Version_name.t list; [@default []]
     permission: Permission_new.t;
   }
-  [@@deriving yojson, fields]
+  [@@deriving eq, yojson, fields]
 
   let to_name : t -> Set_name.t = fun {id; name; _} -> {id; name}
 end
@@ -97,7 +99,7 @@ module Book_row = struct
     authors: Person_name.t list; [@default []]
     permission: Permission_new.t;
   }
-  [@@deriving yojson, fields]
+  [@@deriving eq, yojson, fields]
 end
 
 module Any_row = struct
@@ -110,7 +112,7 @@ module Any_row = struct
     | Set of Set_row.t
     | Book of Book_row.t
     | User of User_row.t
-  [@@deriving yojson, variants]
+  [@@deriving eq, yojson, variants]
 
   let to_id : t -> Any_id.t = function
     | Person p -> Person p.id

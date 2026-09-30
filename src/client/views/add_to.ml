@@ -63,6 +63,62 @@ let dialog
       ~results_when_no_search
       quick_search
 
+let dialog_new
+  ~source_type
+  ~target_type
+  ~target_icon
+  ~source_format
+  ~target_format
+  ~target_href
+  ~(target_result : ?onclick: 'a -> ?in_search: 'b -> 'c -> 'd)
+  ~target_search
+  ~target_history
+  ~target_add_source_to_content
+= fun source ->
+  let make_result ?in_search ~return target =
+    target_result
+      ?in_search
+      target
+      ~onclick: (fun () ->
+        let%lwt () = target_add_source_to_content target source in
+        Toast.open_
+          ~title: (spf "Added to %s" target_type)
+          [txtf "The %s " source_type;
+          source_format source;
+          txtf " has been added to %s " target_type;
+          target_format target;
+          txt " successfully.";
+          ]
+          ~buttons: [
+            Button.make_a
+              ~label: ("Go to " ^ target_type)
+              ~icon: target_icon
+              ~classes: ["btn-primary"]
+              ~href: (S.const @@ target_href target)
+              ();
+          ];
+        return (Some ());
+        lwt_unit
+      )
+  in
+  let quick_search =
+    (* FIXME: filter only on the items that the user owns / is allowed to edit *)
+    Components.Search.Quick.make ~search: target_search ()
+  in
+  let%lwt results_when_no_search =
+    (* FIXME: filter only on the items that the user owns / is allowed to edit *)
+    let%lwt targets = target_history () in
+    lwt @@ List.take 10 @@ List.deduplicate targets
+  in
+  ignore
+  <$> Page.open_dialog ~hide_body_overflow_y: true @@ fun return ->
+    Components.Search.Quick.render
+      ~return
+      ~dialog_title: (lwt @@ spf "Add to %s" target_type)
+      ~make_result: (make_result ~return)
+      ~results_when_no_search
+      quick_search
+
 (** {!dialog} specialised for when the target is a book. *)
 let dialog_to_book ~source_type ~source_format source source_page =
   dialog

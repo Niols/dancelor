@@ -245,6 +245,16 @@ SELECT
 FROM "set"
 JOIN "entries" USING ("id");
 
+-- @get_set_forms | include: reuse
+WITH entries AS &get_entry_permissions
+SELECT
+    "id",
+    "name",
+    "kind",
+    "order"
+FROM "set"
+JOIN "entries" USING ("id");
+
 -- @get_set_contents | include: reuse
 SELECT
     -- ids

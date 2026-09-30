@@ -111,3 +111,21 @@ let version_sql_to_form
     arrangers;
     content;
   }
+
+let set_sql_to_form
+    ~id: _
+    ~name
+    ~kind
+    ~conceptors
+    ~contents
+    ~order
+    ~(k : Set_form.t -> 'w)
+    : 'w
+  =
+  k {
+    name = NEString.of_string_exn name;
+    kind = Kind_dance.of_string kind;
+    conceptors;
+    contents;
+    order = Model_builder.Core.Set_order.of_string order;
+  }

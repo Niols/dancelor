@@ -340,17 +340,6 @@ let submit mode version =
 
 let unsubmit = lwt % With_id.form
 
-(* let unsubmit {With_id.id; form = version} = *)
-(*   (\* NOTE: The API erases the LilyPond from versions, so we need to pull the *)
-(*      full content ourselves and re-insert it in the version. *\) *)
-(*   let%lwt content = Api.call_exn (Version Content) id in *)
-(*   let content = *)
-(*     match content with *)
-(*     | Endpoints.Version.Protected -> assert false *)
-(*     | Endpoints.Version.Granted {payload; _} -> payload *)
-(*   in *)
-(*   lwt ({version with content} : Version_form.t) *)
-
 let prepare () =
   Editor.prepare
     ~key: "version"

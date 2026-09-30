@@ -27,7 +27,19 @@ let dance_form_to_sql query id {Dance_form.names; kind; two_chords; scddb_id; di
     ~disambiguation: (Option.map NEString.to_string disambiguation)
     ~date: (Option.map PartialDate.to_string date)
 
-let tune_form_to_sql query id {Tune_form.names; kind; remark; scddb_id; date; composers = _; dances = _} =
+let tune_form_to_sql
+    query
+    id
+    {
+      Tune_form.names;
+      kind;
+      remark;
+      scddb_id;
+      date;
+      composers = _;
+      dances = _;
+    }
+  =
   query
     ~id
     ~name: (NEString.to_string @@ NEList.hd names)
@@ -42,11 +54,11 @@ let version_form_to_sql
     {
       Version_form.tune;
       key;
-      sources = _;
-      arrangers = _;
       remark;
       disambiguation;
       content;
+      sources = _;
+      arrangers = _;
     }
   =
   let (monolithic_lilypond, monolithic_bars, monolithic_or_default_structure, destructured_as_2_4) =
@@ -65,3 +77,20 @@ let version_form_to_sql
     ~monolithic_bars
     ~monolithic_or_default_structure
     ~destructured_as_2_4
+
+let set_form_to_sql
+    query
+    id
+    {
+      Set_form.name;
+      kind;
+      order;
+      conceptors = _;
+      contents = _;
+    }
+  =
+  query
+    ~id
+    ~name: (NEString.to_string name)
+    ~kind: (Kind_dance.to_string kind)
+    ~order: (Model_builder.Core.Set_order.to_string order)

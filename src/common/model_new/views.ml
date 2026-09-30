@@ -52,6 +52,9 @@ module Source_view = struct
     date: PartialDate.t option; [@default None]
   }
   [@@deriving yojson, fields]
+
+  let to_short_name : t -> Source_short_name.t = fun {id; name; short_name; _} ->
+    {id; short_name = Option.value short_name ~default: name}
 end
 
 module Tune_view = struct

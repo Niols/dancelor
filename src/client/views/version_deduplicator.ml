@@ -18,8 +18,43 @@ let make_change_trackers () =
     )
   )
 
+let version_model_to_version_row : Model.Version.entry -> Version_row.t Lwt.t = fun version ->
+  let {Model_builder.Core.Version.tune; sources; arrangers; disambiguation; content; _} = Entry.value version in
+  let%lwt tune = Api.call_exn (Tune Get_row) tune in
+  let%lwt sources =
+    Lwt_list.map_p
+      (fun {Model_builder.Core.Version.source; _} ->
+        Source_view.to_short_name <$> Api.call_exn (Source Get_view) source
+      )
+      sources
+  in
+  let%lwt arrangers =
+    Lwt_list.map_p
+      (fun arranger ->
+        Person_row.to_name <$> Api.call_exn (Person Get_row) arranger
+      )
+      arrangers
+  in
+  let content : Version_row.content =
+    match content with
+    | No_content -> No_content
+    | Destructured _ -> Destructured
+    | Monolithic {bars; structure; _} -> Monolithic {bars; structure}
+  in
+  lwt {
+    Version_row.id =
+    Entry.id version;
+    tune;
+    sources;
+    disambiguation = Option.map NEString.to_string disambiguation;
+    arrangers;
+    content;
+  }
+
 (* /!\ deduplicate this version INTO the other version *)
 let confirmation_dialog ~this_version ~other_version =
+  let%lwt this_version_row : Version_row.t = version_model_to_version_row this_version in
+  let%lwt other_version_row : Version_row.t = version_model_to_version_row other_version in
   let (get_changes_actions, get_changes_html, add_changes) = make_change_trackers () in
 
   (* changes to other version *)
@@ -171,26 +206,35 @@ let confirmation_dialog ~this_version ~other_version =
       a_version
   in
 
+  (* how to update a version from a set or a book *)
+  let replace_version_new (a_version : Version_row.t) =
+    if Entry.Id.equal' a_version.id this_version_row.id then
+      other_version_row
+    else
+      a_version
+  in
+
   (* changes to sets *)
   let%lwt sets =
     Search_result.items
     <$> Api.call_exn (Set Search) Slice.everything @@
         Query.make ~specific: (Set_query.make_specific ~contains_version: (Some [Entry.id this_version]) ()) ()
   in
-  let%lwt sets = Lwt_list.map_p (fun set -> Option.get <$> Model.Set.get set.Set_row.id) sets in
+  let%lwt sets =
+    Lwt_list.map_p
+      (fun {Set_row.id; _} ->
+        Pair.cons id <$> Api.call_exn (Set Get_form) id
+      )
+      sets
+  in
   List.iter
-    (fun set ->
+    (fun (id, set) ->
       add_changes
         ~action: (fun () ->
-          let contents = List.map (Pair.map_fst replace_version) (Model.Set.contents' set) in
-          ignore
-          <$> Api.call_exn
-              (Set Update)
-              (Entry.id set)
-              (Model.Set.set_contents contents (Entry.value set))
-              (Entry.access set)
+          let contents = List.map (Pair.map_fst replace_version_new) set.Set_form.contents in
+          ignore <$> Api.call_exn (Set Update) id {set with contents}
         )
-        [txt "replace the version in set "; Formatters.Set.name' set; txt "."]
+        [txt "replace the version in set "; Formatters_new.Set.name (Set_form.to_name id set); txt "."]
     )
     sets;
 
