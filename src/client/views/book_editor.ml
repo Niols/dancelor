@@ -60,9 +60,11 @@ let set_and_parameters ?(label = "Set") () =
 
 let dance_and_dance_page =
   let open Bundle in
-  group
-    ~wrap: (fun (dance, (page, ())) -> (dance, page))
-    ~unwrap: (fun (dance, page) -> (dance, (page, ())))
+  pair
+    ~label: "Dance"
+    ~stacking: No_label
+    ~wrap: Fun.id
+    ~unwrap: Fun.id
     (
       Selector.prepare
         ~make_descr: (lwt % Dance_row.name)
@@ -75,32 +77,31 @@ let dance_and_dance_page =
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Dance_row.id
         ~unserialise: (Api.call_or_option @@ Dance Get_row)
-        () ^::
-      (
-        let open Plus.Tuple_elt in
-        Plus.prepare
-          ~label: "Dance page"
-          ~cast: (function
-            | Zero() -> Book_form.Dance_only
-            | Succ Zero versions_and_params -> Book_form.Dance_versions versions_and_params
-            | Succ Succ Zero (set, params) -> Book_form.Dance_set (set, params)
-            | _ -> assert false (* types guarantee this is not reachable *)
-          )
-          ~uncast: (function
-            | Book_form.Dance_only -> Zero ()
-            | Book_form.Dance_versions versions_and_params -> one versions_and_params
-            | Book_form.Dance_set (set, params) -> two (set, params)
-          )
-          ~selected_when_empty: 0
-          (
-            let open Plus.Bundle in
-            Nil.prepare ~label: "Dance only" () ^::
-            versions_and_parameters ~label: "+Versions" () ^::
-            set_and_parameters ~label: "+Set" () ^::
-            nil
-          )
-      ) ^::
-      nil
+        ()
+    )
+    (
+      let open Plus.Tuple_elt in
+      Plus.prepare
+        ~label: "Dance page"
+        ~cast: (function
+          | Zero() -> Book_form.Dance_only
+          | Succ Zero versions_and_params -> Book_form.Dance_versions versions_and_params
+          | Succ Succ Zero (set, params) -> Book_form.Dance_set (set, params)
+          | _ -> assert false (* types guarantee this is not reachable *)
+        )
+        ~uncast: (function
+          | Book_form.Dance_only -> Zero ()
+          | Book_form.Dance_versions versions_and_params -> one versions_and_params
+          | Book_form.Dance_set (set, params) -> two (set, params)
+        )
+        ~selected_when_empty: 0
+        (
+          let open Plus.Bundle in
+          Nil.prepare ~label: "Dance only" () ^::
+          versions_and_parameters ~label: "+Versions" () ^::
+          set_and_parameters ~label: "+Set" () ^::
+          nil
+        )
     )
 
 let editor =

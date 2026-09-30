@@ -3,9 +3,15 @@ open Html
 
 exception Non_convertible
 
+type stacking_mode =
+  | Default
+  | No_label
+  | Input_group
+
 type ('value, 'state) t = Bundle of ('value, 'state) Component.s
 
 let cons (type value1)(type state1)(type value2)(type state2)
+    ?(stacking = Default)
     ((module C1): (value1, state1) Component.s)
     (Bundle(module C2): (value2, state2) t)
     : (value1 * value2, state1 * state2) t
@@ -58,13 +64,26 @@ let cons (type value1)(type state1)(type value2)(type state2)
       C2.clear pair.c2
 
     let inner_html pair =
-      div [
-        Component.html' (module C1) pair.c1;
-        C2.inner_html pair.c2;
-      ]
+      match stacking with
+      | Default ->
+        div [
+          Component.html' (module C1) pair.c1;
+          C2.inner_html pair.c2;
+        ]
+      | No_label ->
+        div [
+          div [C1.inner_html pair.c1] ~a: [a_class ["mb-1"]];
+          div [C2.inner_html pair.c2];
+        ]
+      | Input_group ->
+        div ~a: [a_class ["input-group"]] [
+          span ~a: [a_class ["input-group-text"]] [txt C1.label];
+          C1.inner_html pair.c1;
+          span ~a: [a_class ["input-group-text"]] [txt C2.label];
+          C2.inner_html pair.c2;
+        ]
 
-    let actions _ =
-      failwith "Bundles of components do not implement `actions` because there is no obvious way how to do that."
+    let actions _ = S.const []
 
     let initialise (initial_value1, initial_value2) =
       let%lwt c1 = C1.initialise initial_value1 in
@@ -76,7 +95,12 @@ let (^::) = cons
 
 let nil : (unit, unit) t = Bundle (Nil.prepare ())
 
+(* FIXME: from a consumer's perspective, the [?stacking] argument should belong
+   to [group], but that supposes we have a way to apply [cons] later, which does
+   sound doable but isn't trivial right now *)
+
 let group (type value)(type value_wrapped)(type state)
+    ?label
     ~(wrap : value -> value_wrapped)
     ~(unwrap : value_wrapped -> value)
     ?(check : (value_wrapped -> value_wrapped -> bool) option)
@@ -96,10 +120,10 @@ let group (type value)(type value_wrapped)(type state)
         v
       )
   in
+  let the_label = Option.value label ~default: "<placeholder group label>" in
   (module struct
     include C
-
-    let label = "Group"
+    let label = the_label
     type value = value_wrapped
     let value_to_string w = C.value_to_string (unwrap w)
     let value_to_state w = C.value_to_state (unwrap w)
@@ -107,3 +131,24 @@ let group (type value)(type value_wrapped)(type state)
     let set b w = C.set b (unwrap w)
     let initialise initial_value = C.initialise initial_value
   end)
+
+let pair ?label ?stacking ~wrap ~unwrap c1 c2 =
+  group
+    ?label
+    ~wrap: (fun (v1, (v2, ())) -> wrap (v1, v2))
+    ~unwrap: (fun x -> let (v1, v2) = unwrap x in (v1, (v2, ())))
+    (cons ?stacking c1 (cons ?stacking c2 nil))
+
+let triplet ?label ?stacking ~wrap ~unwrap c1 c2 c3 =
+  group
+    ?label
+    ~wrap: (fun (v1, (v2, (v3, ()))) -> wrap (v1, v2, v3))
+    ~unwrap: (fun x -> let (v1, v2, v3) = unwrap x in (v1, (v2, (v3, ()))))
+    (cons ?stacking c1 (cons ?stacking c2 (cons ?stacking c3 nil)))
+
+let quadruplet ?label ?stacking ~wrap ~unwrap c1 c2 c3 c4 =
+  group
+    ?label
+    ~wrap: (fun (v1, (v2, (v3, (v4, ())))) -> wrap (v1, v2, v3, v4))
+    ~unwrap: (fun x -> let (v1, v2, v3, v4) = unwrap x in (v1, (v2, (v3, (v4, ())))))
+    (cons ?stacking c1 (cons ?stacking c2 (cons ?stacking c3 (cons ?stacking c4 nil))))

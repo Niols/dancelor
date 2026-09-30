@@ -19,6 +19,7 @@ let structure =
 let content_monolithic () =
   let open Bundle in
   group
+    ~label: "Monolithic"
     ~wrap: (fun (bars, (structure, (lilypond, ()))) ->
       {Model_builder.Core.Version.Content.bars; structure; lilypond}
     )
@@ -53,6 +54,7 @@ let content_monolithic () =
 let content_destructured () =
   let open Bundle in
   group
+    ~label: "Destructured"
     ~wrap: (fun (default_structure, (as_2_4, (parts, (transitions, ())))) ->
       {Model_builder.Core.Version.Content.default_structure; as_2_4; parts; transitions}
     )
@@ -64,7 +66,7 @@ let content_destructured () =
       (
         let open Plus.Tuple_elt in
         Plus.prepare
-          ~label: "As 2/4"
+          ~label: "How this reel should be written"
           ~cast: (function
             | Zero() -> false
             | Succ Zero() -> true
@@ -88,26 +90,37 @@ let content_destructured () =
           ~make_header: (fun n -> div [txtf "Part %c" @@ Model.Version.Part_name.(to_char % of_int) n])
           (
             group
+              ~label: "Part"
               ~wrap: (fun (melody, (chords, ())) -> {Model_builder.Core.Version.Voices.melody; chords})
               ~unwrap: (fun {Model_builder.Core.Version.Voices.melody; chords} -> (melody, (chords, ())))
               (
-                Input.prepare
-                  ~type_: (Textarea {rows = 11})
-                  ~font: Monospace
-                  ~label: "Melody"
-                  ~serialise: id
-                  ~validate: (S.const % ok)
-                  ~placeholder: "\\partial 4 a4 |\nd,4 fis8 a b4 a |\nb8 a b cis d4 d8 cis |\nb4 d8 fis b a g fis |\ne d cis b a g fis e |\n\\break\n\nd4 fis8 a b4 a |\nb8 a b cis d4 d8 cis |\nb4 d8 fis b a g fis |\ne d e fis d4"
-                  () ^::
-                Input.prepare
-                  ~type_: (Textarea {rows = 2})
-                  ~font: Monospace
-                  ~label: "Chords"
-                  ~serialise: id
-                  ~validate: (S.const % ok)
-                  ~placeholder: "s4 | d2 g | a d | b:m e:m | a2 a:7 |\nd2 g | a d | b:m e:m | a2:7 d4"
-                  () ^::
-                nil
+                cons
+                  ~stacking: No_label
+                  (
+                    Input.prepare
+                      ~type_: (Textarea {rows = 11})
+                      ~font: Monospace
+                      ~label: "Melody"
+                      ~serialise: id
+                      ~validate: (S.const % ok)
+                      ~placeholder: "\\partial 4 a4 |\nd,4 fis8 a b4 a |\nb8 a b cis d4 d8 cis |\nb4 d8 fis b a g fis |\ne d cis b a g fis e |\n\\break\n\nd4 fis8 a b4 a |\nb8 a b cis d4 d8 cis |\nb4 d8 fis b a g fis |\ne d e fis d4"
+                      ()
+                  )
+                  (
+                    cons
+                      ~stacking: No_label
+                      (
+                        Input.prepare
+                          ~type_: (Textarea {rows = 2})
+                          ~font: Monospace
+                          ~label: "Chords"
+                          ~serialise: id
+                          ~validate: (S.const % ok)
+                          ~placeholder: "s4 | d2 g | a d | b:m e:m | a2 a:7 |\nd2 g | a d | b:m e:m | a2:7 d4"
+                          ()
+                      )
+                      nil
+                  )
               )
           )
       ) ^::
@@ -116,45 +129,68 @@ let content_destructured () =
           ~label: "Transitions"
           ~make_header: (fun n -> div [txtf "Transition #%d" (n + 1)])
           (
-            group
-              ~wrap: (fun (from_parts, (to_parts, (melody, (chords, ())))) ->
-                (from_parts, to_parts, {Model_builder.Core.Version.Voices.melody; chords})
+            pair
+              ~label: "Transition"
+              ~stacking: No_label
+              ~wrap: (fun ((from_parts, to_parts), voices) ->
+                (from_parts, to_parts, voices)
               )
-              ~unwrap: (fun (from_parts, to_parts, {Model_builder.Core.Version.Voices.melody; chords}) ->
-                (from_parts, (to_parts, (melody, (chords, ()))))
+              ~unwrap: (fun (from_parts, to_parts, voices) ->
+                ((from_parts, to_parts), voices)
               )
               (
-                Input.prepare
-                  ~type_: Text
-                  ~serialise: Model.Version.Part_name.opens_to_string
-                  ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Model.Version.Part_name.opens_of_string)
-                  ~label: "from"
-                  ~placeholder: "eg. “A”, “B” or “start”"
-                  () ^::
-                Input.prepare
-                  ~type_: Text
-                  ~serialise: Model.Version.Part_name.opens_to_string
-                  ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Model.Version.Part_name.opens_of_string)
-                  ~label: "to"
-                  ~placeholder: "eg. “A”, “B” or “end”"
-                  () ^::
-                Input.prepare
-                  ~type_: (Textarea {rows = 1})
-                  ~font: Monospace
-                  ~label: "Melody"
-                  ~serialise: id
-                  ~validate: (S.const % ok)
-                  ~placeholder: "\\relative f' { e8 d e f d4 }"
-                  () ^::
-                Input.prepare
-                  ~type_: (Textarea {rows = 1})
-                  ~font: Monospace
-                  ~label: "Chords"
-                  ~serialise: id
-                  ~validate: (S.const % ok)
-                  ~placeholder: "a2:7 d4"
-                  () ^::
-                nil
+                pair
+                  ~stacking: Input_group
+                  ~wrap: Fun.id
+                  ~unwrap: Fun.id
+                  (
+                    Input.prepare
+                      ~type_: Text
+                      ~serialise: Model.Version.Part_name.opens_to_string
+                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Model.Version.Part_name.opens_of_string)
+                      ~label: "from"
+                      ~placeholder: "eg. “A”, “B” or “start”"
+                      ()
+                  )
+                  (
+                    Input.prepare
+                      ~type_: Text
+                      ~serialise: Model.Version.Part_name.opens_to_string
+                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Model.Version.Part_name.opens_of_string)
+                      ~label: "to"
+                      ~placeholder: "eg. “A”, “B” or “end”"
+                      ()
+                  )
+              )
+              (
+                pair
+                  ~stacking: No_label
+                  ~wrap: (fun (melody, chords) ->
+                    {Model_builder.Core.Version.Voices.melody; chords}
+                  )
+                  ~unwrap: (fun {Model_builder.Core.Version.Voices.melody; chords} ->
+                    (melody, chords)
+                  )
+                  (
+                    Input.prepare
+                      ~type_: (Textarea {rows = 1})
+                      ~font: Monospace
+                      ~label: "Melody"
+                      ~serialise: id
+                      ~validate: (S.const % ok)
+                      ~placeholder: "\\relative f' { e8 d e f d4 }"
+                      ()
+                  )
+                  (
+                    Input.prepare
+                      ~type_: (Textarea {rows = 1})
+                      ~font: Monospace
+                      ~label: "Chords"
+                      ~serialise: id
+                      ~validate: (S.const % ok)
+                      ~placeholder: "a2:7 d4"
+                      ()
+                  )
               )
           )
       ) ^::
@@ -247,30 +283,45 @@ let editor =
         ~label: "Sources"
         (
           group
+            ~label: "Source"
             ~wrap: (fun (source, (structure, (details, ()))) -> {Version_form.source; structure; details})
             ~unwrap: (fun {Version_form.source; structure; details} -> (source, (structure, (details, ()))))
             (
-              Selector.prepare
-                ~make_descr: (lwt % Source_row.name)
-                ~make_result: (Any_result_new.make_source_result ?in_search: None)
-                ~label: "Source"
-                ~model_name: "source"
-                ~create_dialog_content: Source_editor.create_row
-                ~search: Api.source_search
-                ~id_to_yojson: Entry.Id.to_yojson'
-                ~id_of_yojson: Entry.Id.of_yojson'
-                ~serialise: Source_row.id
-                ~unserialise: (Api.call_or_option @@ Source Get_row)
-                () ^::
-              structure ~label: "Structure in that particular source" () ^::
-              Input.prepare_option
-                ~type_: Text
-                ~label: "FIXME"
-                ~placeholder: "eg. “for The Eightsome Reel” or “as a 2/4 reel”"
-                ~serialise: id
-                ~validate: (S.const % ok)
-                () ^::
-              nil
+              cons
+                ~stacking: No_label
+                (
+                  Selector.prepare
+                    ~make_descr: (lwt % Source_row.name)
+                    ~make_result: (Any_result_new.make_source_result ?in_search: None)
+                    ~label: "Source"
+                    ~model_name: "source"
+                    ~create_dialog_content: Source_editor.create_row
+                    ~search: Api.source_search
+                    ~id_to_yojson: Entry.Id.to_yojson'
+                    ~id_of_yojson: Entry.Id.of_yojson'
+                    ~serialise: Source_row.id
+                    ~unserialise: (Api.call_or_option @@ Source Get_row)
+                    ()
+                )
+                (
+                  cons
+                    ~stacking: No_label
+                    (structure ~label: "Structure in that particular source" ())
+                    (
+                      cons
+                        ~stacking: No_label
+                        (
+                          Input.prepare_option
+                            ~type_: Text
+                            ~label: "FIXME"
+                            ~placeholder: "eg. “for The Eightsome Reel” or “as a 2/4 reel”"
+                            ~serialise: id
+                            ~validate: (S.const % ok)
+                            ()
+                        )
+                        nil
+                    )
+                )
             )
         ) ^::
       Input.prepare_option

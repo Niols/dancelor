@@ -35,11 +35,13 @@ let editor =
             Kind.Base.all
         ) ^::
       Star.prepare
-        ~label: "Composer"
+        ~label: "Composers"
         (
-          group
-            ~wrap: (fun (composer, (details, ())) -> {Tune_form.composer; details})
-            ~unwrap: (fun {Tune_form.composer; details} -> (composer, (details, ())))
+          pair
+            ~label: "Composer"
+            ~stacking: No_label
+            ~wrap: (fun (composer, details) -> {Tune_form.composer; details})
+            ~unwrap: (fun {Tune_form.composer; details} -> (composer, details))
             (
               Selector.prepare
                 ~make_descr: (lwt % Person_row.name)
@@ -53,15 +55,16 @@ let editor =
                 ~id_of_yojson: Entry.Id.of_yojson'
                 ~serialise: Person_row.id
                 ~unserialise: (Api.call_or_option @@ Person Get_row)
-                () ^::
+                ()
+            )
+            (
               Input.prepare_option
                 ~type_: Text
                 ~label: "Details"
                 ~placeholder: "eg. “chords only”"
                 ~serialise: id
                 ~validate: (S.const % ok)
-                () ^::
-              nil
+                ()
             )
         ) ^::
       Input.prepare
