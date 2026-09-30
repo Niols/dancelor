@@ -254,7 +254,15 @@ module Set = struct
 end
 
 module Book = struct
-  let name ?(link = true) ?in_search (book : Book_row.t) =
+  let name ?(link = true) ?in_search (book : Book_name.t) =
+    if link then
+      a
+        ~a: [R.a_href @@ S.map (fun in_search -> Endpoints.Page.href_book ?in_search book.id) (switch_signal_option in_search)]
+        [txt book.name]
+    else
+      txt book.name
+
+  let name_row ?(link = true) ?in_search (book : Book_row.t) =
     if link then
       a
         ~a: [R.a_href @@ S.map (fun in_search -> Endpoints.Page.href_book ?in_search book.id) (switch_signal_option in_search)]

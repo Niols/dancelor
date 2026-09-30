@@ -283,7 +283,7 @@ let for_set ~this_page in_set =
 let for_book (book : Book_view.t) pageno =
   let parent_page = S.const @@ Endpoints.Page.href_book book.id in
   let this_page =
-    match List.nth book.content pageno with
+    match List.nth book.contents pageno with
     | Book_view.Part _ -> None
     | Dance (_, Dance_set _) -> None (* because it's unclear which it would lead to *)
     | Dance (dance, _) -> Some (Endpoints.Page.(href @@ Dance View) None dance.id)
@@ -292,7 +292,7 @@ let for_book (book : Book_view.t) pageno =
     | Set (Allowed set, _) -> Some (Endpoints.Page.(href @@ Set View) None set.id)
     | Set (Forbidden, _) -> None
   in
-  let total = List.length book.content in
+  let total = List.length book.contents in
   let index_total_category_name_lwt =
     lwt (Some pageno, Some total, "book", Some book.name)
   in
@@ -304,7 +304,7 @@ let for_book (book : Book_view.t) pageno =
   let page_href index = lwt @@ Endpoints.Page.(href @@ Book Preview) book.id index in
   let page_descr index = spf "page %d" index in
   let versions_in_page page =
-    match List.nth book.content page with
+    match List.nth book.contents page with
     | Part _ | Dance (_, Dance_only) -> lwt_nil
     | Set (set, _) | Dance (_, Dance_set (set, _)) ->
       (

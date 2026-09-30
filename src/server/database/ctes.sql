@@ -302,3 +302,14 @@ SELECT
     "scddb_id"
 FROM "book"
 JOIN "entries" USING ("id");
+
+-- @get_book_forms | include: reuse
+WITH "entries" AS &get_entry_permissions
+SELECT
+    "id",
+    "name",
+    "date",
+    "remark",
+    "scddb_id"
+FROM "book"
+JOIN "entries" USING ("id");

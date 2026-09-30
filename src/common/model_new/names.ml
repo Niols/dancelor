@@ -67,3 +67,11 @@ module Set_name = struct
   }
   [@@deriving eq, yojson, fields]
 end
+
+module Book_name = struct
+  type t = {
+    id: Book_id.t;
+    name: string
+  }
+  [@@deriving eq, yojson, fields]
+end

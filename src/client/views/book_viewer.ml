@@ -150,7 +150,7 @@ let view in_search id =
       );
       div [
         h3 [txt "Contents"];
-        table_contents ~this_id: id book.content;
+        table_contents ~this_id: id book.contents;
       ];
     ]
 
@@ -224,7 +224,7 @@ let body = function
 
 let preview id pageno =
   Main_page.madge_call_or_404 (Book Get_view) id @@ fun book ->
-  let page = List.nth book.content pageno in
+  let page = List.nth book.contents pageno in
   let (parent_title, title) = parent_title_and_title page in
   let%lwt subtitles = subtitles page in
   let%lwt body = body page in

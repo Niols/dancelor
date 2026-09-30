@@ -94,3 +94,23 @@ let set_form_to_sql
     ~name: (NEString.to_string name)
     ~kind: (Kind_dance.to_string kind)
     ~order: (Model_builder.Core.Set_order.to_string order)
+
+let book_form_to_sql
+    query
+    id
+    {
+      Book_form.name;
+      date;
+      remark;
+      scddb_id;
+      authors = _;
+      contents = _;
+      sources = _;
+    }
+  =
+  query
+    ~id
+    ~name: (NEString.to_string name)
+    ~date: (Option.map PartialDate.to_string date)
+    ~remark: (Option.map NEString.to_string remark)
+    ~scddb_id: (Option.map Int64.of_int scddb_id)

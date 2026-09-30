@@ -129,3 +129,25 @@ let set_sql_to_form
     contents;
     order = Model_builder.Core.Set_order.of_string order;
   }
+
+let book_sql_to_form
+    ~id: _
+    ~name
+    ~date
+    ~authors
+    ~contents
+    ~remark
+    ~sources
+    ~scddb_id
+    ~(k : Book_form.t -> 'w)
+    : 'w
+  =
+  k {
+    name = NEString.of_string_exn name;
+    date = Option.map (Option.get % PartialDate.from_string) date;
+    authors;
+    contents;
+    remark = Option.map NEString.of_string_exn remark;
+    sources;
+    scddb_id = Option.map Int64.to_int scddb_id;
+  }

@@ -100,6 +100,9 @@ module Book_row = struct
     permission: Permission_new.t;
   }
   [@@deriving eq, yojson, fields]
+
+  let to_name : t -> Book_name.t = fun {id; name; _} ->
+    {id; name}
 end
 
 module Any_row = struct

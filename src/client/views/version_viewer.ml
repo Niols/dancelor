@@ -41,7 +41,7 @@ let show_lilypond_dialog (version : Version_view.t) =
       ]
 
 let add_to_set_dialog =
-  Add_to.dialog_new
+  Add_to.dialog
     ~source_type: "version"
     ~source_format: (txt % Version_name.name)
     ~target_type: "set"
@@ -110,9 +110,10 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
         (
           Add_to.button_to_book
             ~source_type: "version"
+            ~source_id: Version_name.id
             ~source_format: (txt % Version_name.name)
+            Endpoints.Book.Add_version_to_contents
             (Version_view.to_name version)
-            (Model.Book.versions @@ NEList.singleton (version.id, Model.Version_parameters.none))
         )
   );
   (

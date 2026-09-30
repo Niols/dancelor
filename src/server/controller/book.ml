@@ -3,13 +3,45 @@ open Dancelor_common
 open Model_new
 open Search_new
 
-include Shared.Make_private(struct
+include Shared.Make_private_full(struct
+  type entry = Model_builder.Core.Book.t
   type id = Book_id.t
   type row = Book_row.t
   type view = Book_view.t
+  type form = Book_form.t
   type query = Book_query.t
   include Database.Book
 end)
+
+let add_version_to_contents env id version_id =
+  (* FIXME: make all the database endpoints take the database such that
+     endpoints like this one can share a transaction *)
+  (* A bit stupid to have to get a whole version row to put back into the form
+     when updating the database doesn't need the row at all. On the other hand,
+     updating the database doesn't happen this often. *)
+  let%lwt form = get_form env id in
+  let%lwt version_row = Version.get_row env version_id in
+  update env id {form with contents = form.contents @ [Versions (NEList.singleton (version_row, Model_builder.Core.Version_parameters.none))]}
+
+let add_set_to_contents env id set_id =
+  (* FIXME: make all the database endpoints take the database such that
+     endpoints like this one can share a transaction *)
+  (* A bit stupid to have to get a whole set row to put back into the form
+     when updating the database doesn't need the row at all. On the other hand,
+     updating the database doesn't happen this often. *)
+  let%lwt form = get_form env id in
+  let%lwt set_row = Set.get_row env set_id in
+  update env id {form with contents = form.contents @ [Set (set_row, Model_builder.Core.Set_parameters.none)]}
+
+let add_dance_to_contents env id dance_id =
+  (* FIXME: make all the database endpoints take the database such that
+     endpoints like this one can share a transaction *)
+  (* A bit stupid to have to get a whole dance row to put back into the form
+     when updating the database doesn't need the row at all. On the other hand,
+     updating the database doesn't happen this often. *)
+  let%lwt form = get_form env id in
+  let%lwt dance_row = Dance.get_row env dance_id in
+  update env id {form with contents = form.contents @ [Dance (dance_row, Dance_only)]}
 
 (* Bit of a hack *)
 
@@ -20,7 +52,7 @@ module Warnings = struct
       book. The {!all} function then gathers all these warnings in a
       common list. *)
 
-  let empty (book : Book_view.t) = if book.content = [] then [Book_view.Empty] else []
+  let empty (book : Book_view.t) = if book.contents = [] then [Book_view.Empty] else []
 
   let tunes_from_content (book : Book_view.t) : Tune_name.t list =
     List.concat_map
@@ -28,7 +60,7 @@ module Warnings = struct
         | Book_view.Versions versions_and_params -> List.map (Tune_row.to_name % Version_row.tune % fst) versions_and_params
         | _ -> []
       )
-      book.content
+      book.contents
 
   let sets_from_content ~actor_id (book : Book_view.t) : Set_view.t list Lwt.t =
     let set_rows : Set_row.t list =
@@ -37,7 +69,7 @@ module Warnings = struct
           | Book_view.Dance (_, Dance_set (Allowed set, _)) | Set (Allowed set, _) -> Some set
           | Part _ | Dance (_, Dance_only) | Dance (_, Dance_versions _) | Dance (_, Dance_set (Forbidden, _)) | Versions _ | Set (Forbidden, _) -> None
         )
-        book.content
+        book.contents
     in
     (* FIXME: Ugly as hell, and very inefficient, especially since
        this is only to grab the versions. SQL would do that much better. *)
@@ -116,7 +148,7 @@ module Warnings = struct
             None
         | _ -> None
       )
-      book.content
+      book.contents
 
   let all ~actor_id book =
     Lwt_list.fold_left_s
@@ -148,18 +180,6 @@ let get env id =
     Permission.assert_can_get_private env book;%lwt
     lwt book
 
-let create env book access =
-  Permission.assert_can_create_private env;%lwt
-  Database.Book.create book access
-
-let update env id book access =
-  Permission.assert_can_update_private env =<< get env id;%lwt
-  Database.Book.update id book access
-
-let delete env id =
-  Permission.assert_can_delete_private env =<< get env id;%lwt
-  Database.Book.delete id
-
 let build_pdf env id book_params rendering_params =
   get env id >>= fun book ->
   let%lwt book = Model_to_renderer.book_to_renderer_book' book book_params in
@@ -188,10 +208,14 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Book.t -> a 
   | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
+  | Get_form -> get_form env
   | Get_rows -> get_rows env
   | Search -> search env
   | Create -> create env
   | Update -> update env
+  | Add_version_to_contents -> add_version_to_contents env
+  | Add_set_to_contents -> add_set_to_contents env
+  | Add_dance_to_contents -> add_dance_to_contents env
   | Delete -> delete env
   | Build_pdf -> build_pdf env
   | Build_zip -> build_zip env

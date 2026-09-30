@@ -162,3 +162,32 @@ module Set_form = struct
     let permission = {Permission_new.entry_is_public = false; actor_role = None; actor_is_omniscient_administrator = false} in
       {id; name = NEString.to_string name; kind; conceptors; tunes; permission}
 end
+
+module Book_form = struct
+  type dance_page =
+    | Dance_only
+    | Dance_versions of (Version_row.t * Model_builder.Core.Version_parameters.t) NEList.t
+    | Dance_set of Set_row.t * Model_builder.Core.Set_parameters.t
+  [@@deriving eq, yojson]
+
+  type page =
+    | Part of NEString.t
+    | Dance of Dance_row.t * dance_page
+    | Versions of (Version_row.t * Model_builder.Core.Version_parameters.t) NEList.t
+    | Set of Set_row.t * Model_builder.Core.Set_parameters.t
+  [@@deriving eq, yojson]
+
+  type t = {
+    name: NEString.t;
+    authors: Person_row.t list;
+    date: PartialDate.t option;
+    contents: page list;
+    remark: NEString.t option;
+    sources: Source_row.t list;
+    scddb_id: int option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {name; _} : Book_name.t =
+    {id; name = NEString.to_string name}
+end

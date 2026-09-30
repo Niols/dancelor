@@ -199,15 +199,7 @@ let confirmation_dialog ~this_version ~other_version =
   in
 
   (* how to update a version from a set or a book *)
-  let replace_version a_version =
-    if Entry.Id.equal' a_version (Entry.id this_version) then
-      Entry.id other_version
-    else
-      a_version
-  in
-
-  (* how to update a version from a set or a book *)
-  let replace_version_new (a_version : Version_row.t) =
+  let replace_version (a_version : Version_row.t) =
     if Entry.Id.equal' a_version.id this_version_row.id then
       other_version_row
     else
@@ -231,7 +223,7 @@ let confirmation_dialog ~this_version ~other_version =
     (fun (id, set) ->
       add_changes
         ~action: (fun () ->
-          let contents = List.map (Pair.map_fst replace_version_new) set.Set_form.contents in
+          let contents = List.map (Pair.map_fst replace_version) set.Set_form.contents in
           ignore <$> Api.call_exn (Set Update) id {set with contents}
         )
         [txt "replace the version in set "; Formatters_new.Set.name (Set_form.to_name id set); txt "."]
@@ -244,32 +236,31 @@ let confirmation_dialog ~this_version ~other_version =
     <$> Api.call_exn (Book Search) Slice.everything @@
         Query.make ~specific: (Book_query.make_specific ~contains_version: (Some [Entry.id this_version]) ()) ()
   in
-  let%lwt books = Lwt_list.map_p (fun book -> Option.get <$> Model.Book.get book.Book_row.id) books in
+  let%lwt books =
+    Lwt_list.map_p
+      (fun {Book_row.id; _} -> Pair.cons id <$> Api.call_exn (Book Get_form) id)
+      books
+  in
   List.iter
-    (fun book ->
+    (fun (id, book) ->
       add_changes
         ~action: (fun () ->
           let contents =
             List.map
               (function
-                | Model.Book.Dance (dance, Dance_versions versions_and_params) ->
-                  Model.Book.Dance (dance, Model.Book.Dance_versions (NEList.map (Pair.map_fst replace_version) versions_and_params))
-                | Model.Book.Versions versions_and_params ->
-                  Model.Book.Versions (NEList.map (Pair.map_fst replace_version) versions_and_params)
+                | Book_form.Dance (dance, Dance_versions versions_and_params) ->
+                  Book_form.Dance (dance, Dance_versions (NEList.map (Pair.map_fst replace_version) versions_and_params))
+                | Book_form.Versions versions_and_params ->
+                  Book_form.Versions (NEList.map (Pair.map_fst replace_version) versions_and_params)
                 | page -> page
               )
-              (Model.Book.contents' book)
+              book.Book_form.contents
           in
-          ignore
-          <$> Api.call_exn
-              (Book Update)
-              (Entry.id book)
-              (Model.Book.set_contents contents (Entry.value book))
-              (Entry.access book)
+          ignore <$> Api.call_exn (Book Update) id {book with contents}
         )
         [
           txt "replace the version in book ";
-          Formatters.Book.name' book;
+          Formatters_new.Book.name (Book_form.to_name id book);
           txt "."
         ]
     )
