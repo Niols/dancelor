@@ -9,12 +9,10 @@ let editor =
   let open Bundle in
   group
     ~wrap: (fun (names, (kind, (composers, (date, (dances, (remark, (scddb_id, ()))))))) ->
-      let composers = List.map (fun (composer, details) -> {Tune_form.composer; details}) composers in
-        {Tune_form.names; kind; composers; date; dances; remark; scddb_id}
+      {Tune_form.names; kind; composers; date; dances; remark; scddb_id}
     )
     ~unwrap: (fun {Tune_form.names; kind; composers; date; dances; remark; scddb_id} ->
-      let composers = List.map (fun {Tune_form.composer; details} -> (composer, details)) composers in
-        (names, (kind, (composers, (date, (dances, (remark, (scddb_id, ())))))))
+      (names, (kind, (composers, (date, (dances, (remark, (scddb_id, ())))))))
     )
     ~check: Tune_form.equal
     (
@@ -39,8 +37,9 @@ let editor =
       Star.prepare
         ~label: "Composer"
         (
-          Cpair.prepare
-            ~label: "Composer"
+          group
+            ~wrap: (fun (composer, (details, ())) -> {Tune_form.composer; details})
+            ~unwrap: (fun {Tune_form.composer; details} -> (composer, (details, ())))
             (
               Selector.prepare
                 ~make_descr: (lwt % Person_row.name)
@@ -54,16 +53,15 @@ let editor =
                 ~id_of_yojson: Entry.Id.of_yojson'
                 ~serialise: Person_row.id
                 ~unserialise: (Api.call_or_option @@ Person Get_row)
-                ()
-            )
-            (
+                () ^::
               Input.prepare_option
                 ~type_: Text
                 ~label: "Details"
                 ~placeholder: "eg. “chords only”"
                 ~serialise: id
                 ~validate: (S.const % ok)
-                ()
+                () ^::
+              nil
             )
         ) ^::
       Input.prepare

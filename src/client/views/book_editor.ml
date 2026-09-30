@@ -8,24 +8,6 @@ open Utils
 let (show_preview, set_show_preview) = S.create false
 let flip_show_preview () = set_show_preview (not (S.value show_preview))
 
-let model_content_to_content =
-  List.map @@ function
-    | Book_form.Part title -> `Part title
-    | Dance (dance, Dance_only) -> `Dance (dance, `Dance_only)
-    | Dance (dance, Dance_versions versions_and_params) -> `Dance (dance, `Dance_versions versions_and_params)
-    | Dance (dance, Dance_set (set, params)) -> `Dance (dance, `Dance_set (set, params))
-    | Versions versions_and_params -> `Versions versions_and_params
-    | Set (set, params) -> `Set (set, params)
-
-let content_to_model_content =
-  List.map @@ function
-    | `Part title -> Book_form.Part title
-    | `Dance (dance, `Dance_only) -> Dance (dance, Dance_only)
-    | `Dance (dance, `Dance_versions versions_and_params) -> Dance (dance, Dance_versions versions_and_params)
-    | `Dance (dance, `Dance_set (set, params)) -> Dance (dance, Dance_set (set, params))
-    | `Versions versions_and_params -> Versions versions_and_params
-    | `Set (set, params) -> Set (set, params)
-
 let versions_and_parameters ?(label = "Versions") () =
   Star.prepare_non_empty
     ~label: "Versions"
@@ -77,9 +59,10 @@ let set_and_parameters ?(label = "Set") () =
     Set_parameters_editor.e
 
 let dance_and_dance_page =
-  let open Plus.Bundle in
-  Cpair.prepare
-    ~label: "Dance"
+  let open Bundle in
+  group
+    ~wrap: (fun (dance, (page, ())) -> (dance, page))
+    ~unwrap: (fun (dance, page) -> (dance, (page, ())))
     (
       Selector.prepare
         ~make_descr: (lwt % Dance_row.name)
@@ -92,42 +75,42 @@ let dance_and_dance_page =
         ~id_of_yojson: Entry.Id.of_yojson'
         ~serialise: Dance_row.id
         ~unserialise: (Api.call_or_option @@ Dance Get_row)
-        ()
-    )
-    (
-      let open Plus.Tuple_elt in
-      Plus.prepare
-        ~label: "Dance page"
-        ~cast: (function
-          | Zero() -> `Dance_only
-          | Succ Zero versions_and_params -> `Dance_versions versions_and_params
-          | Succ Succ Zero (set, params) -> `Dance_set (set, params)
-          | _ -> assert false (* types guarantee this is not reachable *)
-        )
-        ~uncast: (function
-          | `Dance_only -> Zero ()
-          | `Dance_versions versions_and_params -> one versions_and_params
-          | `Dance_set (set, params) -> two (set, params)
-        )
-        ~selected_when_empty: 0
-        (
-          Nil.prepare ~label: "Dance only" () ^::
-          versions_and_parameters ~label: "+Versions" () ^::
-          set_and_parameters ~label: "+Set" () ^::
-          nil
-        )
+        () ^::
+      (
+        let open Plus.Tuple_elt in
+        Plus.prepare
+          ~label: "Dance page"
+          ~cast: (function
+            | Zero() -> Book_form.Dance_only
+            | Succ Zero versions_and_params -> Book_form.Dance_versions versions_and_params
+            | Succ Succ Zero (set, params) -> Book_form.Dance_set (set, params)
+            | _ -> assert false (* types guarantee this is not reachable *)
+          )
+          ~uncast: (function
+            | Book_form.Dance_only -> Zero ()
+            | Book_form.Dance_versions versions_and_params -> one versions_and_params
+            | Book_form.Dance_set (set, params) -> two (set, params)
+          )
+          ~selected_when_empty: 0
+          (
+            let open Plus.Bundle in
+            Nil.prepare ~label: "Dance only" () ^::
+            versions_and_parameters ~label: "+Versions" () ^::
+            set_and_parameters ~label: "+Set" () ^::
+            nil
+          )
+      ) ^::
+      nil
     )
 
 let editor =
   let open Bundle in
   group
     ~wrap: (fun (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ()))))))) ->
-      let contents = content_to_model_content contents in
-        {Book_form.name; authors; date; contents; remark; sources; scddb_id}
+      {Book_form.name; authors; date; contents; remark; sources; scddb_id}
     )
     ~unwrap: (fun {Book_form.name; authors; date; contents; remark; sources; scddb_id} ->
-      let contents = model_content_to_content contents in
-        (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ())))))))
+      (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ())))))))
     )
     ~check: Book_form.equal
     (
@@ -174,17 +157,17 @@ let editor =
           Plus.prepare
             ~label: "Page"
             ~cast: (function
-              | Zero title -> `Part title
-              | Succ Zero (dance, dance_page) -> `Dance (dance, dance_page)
-              | Succ Succ Zero versions_and_params -> `Versions versions_and_params
-              | Succ Succ Succ Zero (set, params) -> `Set (set, params)
+              | Zero title -> Book_form.Part title
+              | Succ Zero (dance, dance_page) -> Book_form.Dance (dance, dance_page)
+              | Succ Succ Zero versions_and_params -> Book_form.Versions versions_and_params
+              | Succ Succ Succ Zero (set, params) -> Book_form.Set (set, params)
               | _ -> assert false (* types guarantee this is not reachable *)
             )
             ~uncast: (function
-              | `Part title -> Zero title
-              | `Dance (dance, dance_page) -> one (dance, dance_page)
-              | `Versions versions_and_params -> two versions_and_params
-              | `Set (set, params) -> three (set, params)
+              | Book_form.Part title -> Zero title
+              | Book_form.Dance (dance, dance_page) -> one (dance, dance_page)
+              | Book_form.Versions versions_and_params -> two versions_and_params
+              | Book_form.Set (set, params) -> three (set, params)
             )
             (
               let open Plus.Bundle in
@@ -204,9 +187,7 @@ let editor =
             Button.make
               ~classes: ["btn-info"]
               ~icon
-              ~tooltip: "Toggle the preview of sets and versions. This can take a \
-                     lot of space on the page and is therefore disabled by \
-                     default."
+              ~tooltip: "Toggle the preview of sets and versions. This can take a lot of space on the page and is therefore disabled by default."
               ~onclick: (fun _ -> flip_show_preview (); lwt_unit)
               ()
           in

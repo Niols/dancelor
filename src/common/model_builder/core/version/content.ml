@@ -8,10 +8,17 @@ type destructured = {
 }
 [@@deriving eq, ord, yojson, show {with_path = false}]
 
+type monolithic = {
+  lilypond: string;
+  bars: int;
+  structure: Structure.t;
+}
+[@@deriving eq, ord, yojson, show {with_path = false}]
+
 type t =
   | No_content
   | Destructured of destructured
-  | Monolithic of {lilypond: string; bars: int; structure: Structure.t}
+  | Monolithic of monolithic
 [@@deriving eq, ord, yojson, show {with_path = false}, variants]
 
 let erase_lilypond = function
