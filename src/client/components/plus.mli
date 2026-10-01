@@ -8,7 +8,7 @@ module Tuple_elt : sig
     | Succ : 'b t -> ('a * 'b) t
   (** A type for elements of a tuple. For the use case of this component, it is
       not necessary for this type to be as general as it could.
-  
+
       For instance, if we consider the tuple [(1, (2., ("3", ())))], of type [int
       * (float * (string * unit))], its elements would be [Zero 1], [Succ (Zero
       2.)], and [Succ (Succ (Zero "3"))], all of type [(int * (float * (string *

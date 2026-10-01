@@ -6,77 +6,80 @@ open Html
 open Utils
 
 let editor =
-  let open Editor in
-  Input.prepare_non_empty
-    ~type_: Text
-    ~label: "Name"
-    ~placeholder: "eg. The Paris Book of Scottish Country Dances, volume 2"
-    () ^::
-  Input.prepare_option
-    ~type_: Text
-    ~label: "Short name"
-    ~placeholder: "eg. Paris Book 2"
-    ~serialise: id
-    ~validate: (S.const % ok)
-    () ^::
-  Star.prepare
-    ~label: "Editors"
+  let open Bundle in
+  group
+    ~wrap: (fun (name, (short_name, (editors, (date, (scddb_id, (description, ())))))) ->
+      {Source_form.name; short_name; editors; scddb_id; description; date}
+    )
+    ~unwrap: (fun {Source_form.name; short_name; editors; date; scddb_id; description} ->
+      (name, (short_name, (editors, (date, (scddb_id, (description, ()))))))
+    )
+    ~check: Source_form.equal
     (
-      Selector.prepare
-        ~label: "Editor"
-        ~search: Api.person_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
-        ~serialise: Person_row.id
-        ~unserialise: (Api.call_or_option @@ Person Get_row)
-        ~make_descr: (lwt % Person_row.name)
-        ~make_result: (Any_result_new.make_person_result ?in_search: None)
-        ~results_when_no_search: (Option.to_list <$> Environment.person_row)
-        ~model_name: "person"
-        ~create_dialog_content: Person_editor.create_row
-        ()
-    ) ^::
-  Input.prepare
-    ~type_: Text
-    ~label: "Date of publication"
-    ~placeholder: "eg. 2019 or 2012-03-14"
-    ~serialise: (Option.fold ~none: "" ~some: PartialDate.to_string)
-    ~validate: (
-      S.const %
-        Option.fold
-          ~none: (Ok None)
-          ~some: (Result.map some % Option.to_result ~none: "Not a valid date" % PartialDate.from_string) %
-        Option.of_string_nonempty
+      Input.prepare_non_empty
+        ~type_: Text
+        ~label: "Name"
+        ~placeholder: "eg. The Paris Book of Scottish Country Dances, volume 2"
+        () ^::
+      Input.prepare_option
+        ~type_: Text
+        ~label: "Short name"
+        ~placeholder: "eg. Paris Book 2"
+        ~serialise: id
+        ~validate: (S.const % ok)
+        () ^::
+      Star.prepare
+        ~label: "Editors"
+        (
+          Selector.prepare
+            ~label: "Editor"
+            ~search: Api.person_search
+            ~id_to_yojson: Entry.Id.to_yojson'
+            ~id_of_yojson: Entry.Id.of_yojson'
+            ~serialise: Person_row.id
+            ~unserialise: (Api.call_or_option @@ Person Get_row)
+            ~make_descr: (lwt % Person_row.name)
+            ~make_result: (Any_result_new.make_person_result ?in_search: None)
+            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~model_name: "person"
+            ~create_dialog_content: Person_editor.create_row
+            ()
+        ) ^::
+      Input.prepare
+        ~type_: Text
+        ~label: "Date of publication"
+        ~placeholder: "eg. 2019 or 2012-03-14"
+        ~serialise: (Option.fold ~none: "" ~some: PartialDate.to_string)
+        ~validate: (
+          S.const %
+            Option.fold
+              ~none: (Ok None)
+              ~some: (Result.map some % Option.to_result ~none: "Not a valid date" % PartialDate.from_string) %
+            Option.of_string_nonempty
+        )
+        () ^::
+      Input.prepare
+        ~type_: Text
+        ~label: "SCDDB ID"
+        ~placeholder: "eg. 9999 or https://my.strathspey.org/dd/publication/9999/"
+        ~serialise: (Option.fold ~none: "" ~some: string_of_int)
+        ~validate: (
+          S.const %
+            Option.fold
+              ~none: (Ok None)
+              ~some: (Result.map some % SCDDB.entry_from_string SCDDB.Publication) %
+            Option.of_string_nonempty
+        )
+        () ^::
+      Input.prepare
+        ~type_: (Textarea {rows = 10})
+        ~label: "Description"
+        ~placeholder: "eg. Book provided by the RSCDS and containing almost all of the original tunes for the RSCDS dances. New editions come every now and then to add tunes for newly introduced RSCDS dances."
+        ~serialise: (Option.value ~default: "")
+        ~validate: (S.const % function "" -> Ok None | s -> Ok (Some s))
+        () ^::
+      nil
     )
-    () ^::
-  Input.prepare
-    ~type_: Text
-    ~label: "SCDDB ID"
-    ~placeholder: "eg. 9999 or https://my.strathspey.org/dd/publication/9999/"
-    ~serialise: (Option.fold ~none: "" ~some: string_of_int)
-    ~validate: (
-      S.const %
-        Option.fold
-          ~none: (Ok None)
-          ~some: (Result.map some % SCDDB.entry_from_string SCDDB.Publication) %
-        Option.of_string_nonempty
-    )
-    () ^::
-  Input.prepare
-    ~type_: (Textarea {rows = 10})
-    ~label: "Description"
-    ~placeholder: "eg. Book provided by the RSCDS and containing almost all of the original tunes for the RSCDS dances. New editions come every now and then to add tunes for newly introduced RSCDS dances."
-    ~serialise: (Option.value ~default: "")
-    ~validate: (S.const % function "" -> Ok None | s -> Ok (Some s))
-    () ^::
-  nil
-
-let assemble (name, (short_name, (editors, (date, (scddb_id, (description, ())))))) =
-  {Source_form.name; short_name; editors; scddb_id; description; date}
-
-let disassemble source =
-  let {Source_form.name; short_name; editors; date; scddb_id; description} = source in
-  lwt (name, (short_name, (editors, (date, (scddb_id, (description, ()))))))
 
 let submit mode source =
   let%lwt id =
@@ -96,11 +99,8 @@ let create mode =
     ~icon: (Model Source)
     editor
     ~mode
-    ~assemble
     ~submit
     ~unsubmit
-    ~disassemble
-    ~check_product: Source_form.equal
     ~format: (Formatters_new.Source.name ~link: true % With_id.map Source_form.to_name)
     ~href: (Endpoints.Page.href_source % With_id.id)
 

@@ -8,24 +8,6 @@ open Utils
 let (show_preview, set_show_preview) = S.create false
 let flip_show_preview () = set_show_preview (not (S.value show_preview))
 
-let model_content_to_content =
-  List.map @@ function
-    | Book_form.Part title -> `Part title
-    | Dance (dance, Dance_only) -> `Dance (dance, `Dance_only)
-    | Dance (dance, Dance_versions versions_and_params) -> `Dance (dance, `Dance_versions versions_and_params)
-    | Dance (dance, Dance_set (set, params)) -> `Dance (dance, `Dance_set (set, params))
-    | Versions versions_and_params -> `Versions versions_and_params
-    | Set (set, params) -> `Set (set, params)
-
-let content_to_model_content =
-  List.map @@ function
-    | `Part title -> Book_form.Part title
-    | `Dance (dance, `Dance_only) -> Dance (dance, Dance_only)
-    | `Dance (dance, `Dance_versions versions_and_params) -> Dance (dance, Dance_versions versions_and_params)
-    | `Dance (dance, `Dance_set (set, params)) -> Dance (dance, Dance_set (set, params))
-    | `Versions versions_and_params -> Versions versions_and_params
-    | `Set (set, params) -> Set (set, params)
-
 let versions_and_parameters ?(label = "Versions") () =
   Star.prepare_non_empty
     ~label: "Versions"
@@ -77,9 +59,12 @@ let set_and_parameters ?(label = "Set") () =
     Set_parameters_editor.e
 
 let dance_and_dance_page =
-  let open Plus.Bundle in
-  Cpair.prepare
+  let open Bundle in
+  pair
     ~label: "Dance"
+    ~stacking: No_label
+    ~wrap: Fun.id
+    ~unwrap: Fun.id
     (
       Selector.prepare
         ~make_descr: (lwt % Dance_row.name)
@@ -99,18 +84,19 @@ let dance_and_dance_page =
       Plus.prepare
         ~label: "Dance page"
         ~cast: (function
-          | Zero() -> `Dance_only
-          | Succ Zero versions_and_params -> `Dance_versions versions_and_params
-          | Succ Succ Zero (set, params) -> `Dance_set (set, params)
+          | Zero() -> Book_form.Dance_only
+          | Succ Zero versions_and_params -> Book_form.Dance_versions versions_and_params
+          | Succ Succ Zero (set, params) -> Book_form.Dance_set (set, params)
           | _ -> assert false (* types guarantee this is not reachable *)
         )
         ~uncast: (function
-          | `Dance_only -> Zero ()
-          | `Dance_versions versions_and_params -> one versions_and_params
-          | `Dance_set (set, params) -> two (set, params)
+          | Book_form.Dance_only -> Zero ()
+          | Book_form.Dance_versions versions_and_params -> one versions_and_params
+          | Book_form.Dance_set (set, params) -> two (set, params)
         )
         ~selected_when_empty: 0
         (
+          let open Plus.Bundle in
           Nil.prepare ~label: "Dance only" () ^::
           versions_and_parameters ~label: "+Versions" () ^::
           set_and_parameters ~label: "+Set" () ^::
@@ -119,135 +105,135 @@ let dance_and_dance_page =
     )
 
 let editor =
-  let open Editor in
-  Input.prepare_non_empty
-    ~type_: Text
-    ~label: "Name"
-    ~placeholder: "eg. The Dusty Miller Book"
-    () ^::
-  Star.prepare
-    ~label: "Editors"
-    (
-      Selector.prepare
-        ~label: "Editor"
-        ~search: Api.person_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
-        ~serialise: Person_row.id
-        ~unserialise: (Api.call_or_option @@ Person Get_row)
-        ~make_descr: (lwt % Person_row.name)
-        ~make_result: (Any_result_new.make_person_result ?in_search: None)
-        ~results_when_no_search: (Option.to_list <$> Environment.person_row)
-        ~model_name: "person"
-        ~create_dialog_content: Person_editor.create_row
-        ()
-    ) ^::
-  Input.prepare
-    ~type_: Text
-    ~label: "Date of publication"
-    ~placeholder: "eg. 2019 or 2012-03-14"
-    ~serialise: (Option.fold ~none: "" ~some: PartialDate.to_string)
-    ~validate: (
-      S.const %
-        Option.fold
-          ~none: (Ok None)
-          ~some: (Result.map some % Option.to_result ~none: "Not a valid date" % PartialDate.from_string) %
-        Option.of_string_nonempty
+  let open Bundle in
+  group
+    ~wrap: (fun (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ()))))))) ->
+      {Book_form.name; authors; date; contents; remark; sources; scddb_id}
     )
-    () ^::
-  Star.prepare
-    ~label: "Contents"
-    ~make_header: (fun n -> div ~a: [a_class (if n = 0 then [] else ["pt-1"; "mt-1"; "border-top"])] [txtf "Page %d" (n + 1)])
+    ~unwrap: (fun {Book_form.name; authors; date; contents; remark; sources; scddb_id} ->
+      (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ())))))))
+    )
+    ~check: Book_form.equal
     (
-      let open Plus.Tuple_elt in
-      Plus.prepare
-        ~label: "Page"
-        ~cast: (function
-          | Zero title -> `Part title
-          | Succ Zero (dance, dance_page) -> `Dance (dance, dance_page)
-          | Succ Succ Zero versions_and_params -> `Versions versions_and_params
-          | Succ Succ Succ Zero (set, params) -> `Set (set, params)
-          | _ -> assert false (* types guarantee this is not reachable *)
-        )
-        ~uncast: (function
-          | `Part title -> Zero title
-          | `Dance (dance, dance_page) -> one (dance, dance_page)
-          | `Versions versions_and_params -> two versions_and_params
-          | `Set (set, params) -> three (set, params)
-        )
+      Input.prepare_non_empty
+        ~type_: Text
+        ~label: "Name"
+        ~placeholder: "eg. The Dusty Miller Book"
+        () ^::
+      Star.prepare
+        ~label: "Editors"
         (
-          let open Plus.Bundle in
-          Input.prepare_non_empty
-            ~type_: Text
-            ~label: "Part"
-            ~placeholder: "eg. Part CMXCVII"
-            () ^::
-          dance_and_dance_page ^::
-          versions_and_parameters () ^::
-          set_and_parameters () ^::
-          nil
+          Selector.prepare
+            ~label: "Editor"
+            ~search: Api.person_search
+            ~id_to_yojson: Entry.Id.to_yojson'
+            ~id_of_yojson: Entry.Id.of_yojson'
+            ~serialise: Person_row.id
+            ~unserialise: (Api.call_or_option @@ Person Get_row)
+            ~make_descr: (lwt % Person_row.name)
+            ~make_result: (Any_result_new.make_person_result ?in_search: None)
+            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~model_name: "person"
+            ~create_dialog_content: Person_editor.create_row
+            ()
+        ) ^::
+      Input.prepare
+        ~type_: Text
+        ~label: "Date of publication"
+        ~placeholder: "eg. 2019 or 2012-03-14"
+        ~serialise: (Option.fold ~none: "" ~some: PartialDate.to_string)
+        ~validate: (
+          S.const %
+            Option.fold
+              ~none: (Ok None)
+              ~some: (Result.map some % Option.to_result ~none: "Not a valid date" % PartialDate.from_string) %
+            Option.of_string_nonempty
         )
+        () ^::
+      Star.prepare
+        ~label: "Contents"
+        ~make_header: (fun n -> div ~a: [a_class (if n = 0 then [] else ["pt-1"; "mt-1"; "border-top"])] [txtf "Page %d" (n + 1)])
+        (
+          let open Plus.Tuple_elt in
+          Plus.prepare
+            ~label: "Page"
+            ~cast: (function
+              | Zero title -> Book_form.Part title
+              | Succ Zero (dance, dance_page) -> Book_form.Dance (dance, dance_page)
+              | Succ Succ Zero versions_and_params -> Book_form.Versions versions_and_params
+              | Succ Succ Succ Zero (set, params) -> Book_form.Set (set, params)
+              | _ -> assert false (* types guarantee this is not reachable *)
+            )
+            ~uncast: (function
+              | Book_form.Part title -> Zero title
+              | Book_form.Dance (dance, dance_page) -> one (dance, dance_page)
+              | Book_form.Versions versions_and_params -> two versions_and_params
+              | Book_form.Set (set, params) -> three (set, params)
+            )
+            (
+              let open Plus.Bundle in
+              Input.prepare_non_empty
+                ~type_: Text
+                ~label: "Part"
+                ~placeholder: "eg. Part CMXCVII"
+                () ^::
+              dance_and_dance_page ^::
+              versions_and_parameters () ^::
+              set_and_parameters () ^::
+              nil
+            )
+        )
+        ~more_actions: (
+          let flip_show_preview_button ~icon =
+            Button.make
+              ~classes: ["btn-info"]
+              ~icon
+              ~tooltip: "Toggle the preview of sets and versions. This can take a lot of space on the page and is therefore disabled by default."
+              ~onclick: (fun _ -> flip_show_preview (); lwt_unit)
+              ()
+          in
+          S.flip_map show_preview @@ function
+            | true -> [flip_show_preview_button ~icon: (Action Preview)]
+            | false -> [flip_show_preview_button ~icon: (Action No_preview)]
+        ) ^::
+      Input.prepare_option
+        ~type_: Text
+        ~label: "Remark"
+        ~placeholder: "eg. Dusty Miller"
+        ~serialise: Fun.id
+        ~validate: (S.const % ok)
+        () ^::
+      Star.prepare
+        ~label: "Sources"
+        (
+          Selector.prepare
+            ~make_descr: (lwt % Source_row.name)
+            ~make_result: (Any_result_new.make_source_result ?in_search: None)
+            ~label: "Source"
+            ~model_name: "source"
+            ~create_dialog_content: Source_editor.create_row
+            ~search: Api.source_search
+            ~id_to_yojson: Entry.Id.to_yojson'
+            ~id_of_yojson: Entry.Id.of_yojson'
+            ~serialise: Source_row.id
+            ~unserialise: (Api.call_or_option @@ Source Get_row)
+            ()
+        ) ^::
+      Input.prepare
+        ~type_: Text
+        ~label: "SCDDB ID"
+        ~placeholder: "eg. 9999 or https://my.strathspey.org/dd/publication/9999/"
+        ~serialise: (Option.fold ~none: "" ~some: string_of_int)
+        ~validate: (
+          S.const %
+            Option.fold
+              ~none: (Ok None)
+              ~some: (Result.map some % SCDDB.entry_from_string SCDDB.Publication) %
+            Option.of_string_nonempty
+        )
+        () ^::
+      nil
     )
-    ~more_actions: (
-      let flip_show_preview_button ~icon =
-        Button.make
-          ~classes: ["btn-info"]
-          ~icon
-          ~tooltip: "Toggle the preview of sets and versions. This can take a \
-                     lot of space on the page and is therefore disabled by \
-                     default."
-          ~onclick: (fun _ -> flip_show_preview (); lwt_unit)
-          ()
-      in
-      S.flip_map show_preview @@ function
-        | true -> [flip_show_preview_button ~icon: (Action Preview)]
-        | false -> [flip_show_preview_button ~icon: (Action No_preview)]
-    ) ^::
-  Input.prepare_option
-    ~type_: Text
-    ~label: "Remark"
-    ~placeholder: "eg. Dusty Miller"
-    ~serialise: Fun.id
-    ~validate: (S.const % ok)
-    () ^::
-  Star.prepare
-    ~label: "Sources"
-    (
-      Selector.prepare
-        ~make_descr: (lwt % Source_row.name)
-        ~make_result: (Any_result_new.make_source_result ?in_search: None)
-        ~label: "Source"
-        ~model_name: "source"
-        ~create_dialog_content: Source_editor.create_row
-        ~search: Api.source_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
-        ~serialise: Source_row.id
-        ~unserialise: (Api.call_or_option @@ Source Get_row)
-        ()
-    ) ^::
-  Input.prepare
-    ~type_: Text
-    ~label: "SCDDB ID"
-    ~placeholder: "eg. 9999 or https://my.strathspey.org/dd/publication/9999/"
-    ~serialise: (Option.fold ~none: "" ~some: string_of_int)
-    ~validate: (
-      S.const %
-        Option.fold
-          ~none: (Ok None)
-          ~some: (Result.map some % SCDDB.entry_from_string SCDDB.Publication) %
-        Option.of_string_nonempty
-    )
-    () ^::
-  nil
-
-let assemble (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ()))))))) =
-  let contents = content_to_model_content contents in
-    {Book_form.name; authors; date; contents; remark; sources; scddb_id}
-
-let disassemble {Book_form.name; authors; date; contents; remark; sources; scddb_id} =
-  let contents = model_content_to_content contents in
-  lwt (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ())))))))
 
 let submit mode book =
   let%lwt id =
@@ -271,11 +257,8 @@ let create mode =
     ~mode
     ~format: (Formatters_new.Book.name % With_id.map Book_form.to_name)
     ~href: (Endpoints.Page.href_book % With_id.id)
-    ~assemble
     ~submit
     ~unsubmit
-    ~disassemble
-    ~check_product: Book_form.equal
 
 (* match mode with *)
 (* | Create _ | Create_with_local_storage | Quick_create _ -> *)
