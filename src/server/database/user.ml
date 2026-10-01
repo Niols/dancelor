@@ -2,6 +2,7 @@ open NesUnix
 open Dancelor_common
 open Model_new
 open Search_new
+open Sql_to_row
 
 module User_sql = User_sql.Sqlgg(Sqlgg_postgresql)
 module Password_hashed = Fresh.Make(HashedSecret)
@@ -10,12 +11,9 @@ module Remember_me_key = Fresh.Make(String)
 module Remember_me_token_clear = Fresh.Make(String)
 module Remember_me_token_hashed = Fresh.Make(HashedSecret)
 
-let sql_to_row ~id ~username ~(k : User_row.t -> 'w) : 'w =
-  k {id; username = Username.of_string_exn username}
-
 let get_row_for ids : (User_id.t -> User_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
-  Utils.fold_to_get_single (User_sql.Fold.get_rows db ~ids) (fun k ~id -> sql_to_row ~id ~k: (k id))
+  Utils.fold_to_get_single (User_sql.Fold.get_rows db ~ids) (fun k ~id -> user_sql_to_row ~id ~k: (k id))
 
 let search query : (User_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = ()} = query in
@@ -23,7 +21,7 @@ let search query : (User_row.t * float) list Lwt.t =
   User_sql.List.search
     db
     ~terms
-    (fun ~score -> sql_to_row ~k: (Pair.snoc score))
+    (fun ~score -> user_sql_to_row ~k: (Pair.snoc score))
 
 (* Legacy *)
 

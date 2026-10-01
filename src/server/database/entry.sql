@@ -75,3 +75,17 @@ WITH "entry_permissions" AS &get_entry_permissions
 SELECT "entry_is_public", "actor_role", "actor_is_omniscient_administrator"
 FROM "entry_permissions"
 WHERE "id" = @id;
+
+-- @get_actor_roles
+WITH "users" AS &get_user_rows
+SELECT
+    "entry_actors"."role",
+    "users".*
+FROM "entry_actors"
+JOIN "users" ON "entry_actors"."user_id" = "users"."id"
+WHERE "entry_id" = @entry_id;
+
+-- @set_is_public
+UPDATE "entry"
+SET "is_public" = @is_public
+WHERE "id" = @id;

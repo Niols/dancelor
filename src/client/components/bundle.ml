@@ -7,6 +7,7 @@ type stacking_mode =
   | Default
   | No_label
   | Input_group
+  | Horizontal
 
 type ('value, 'state) t = Bundle of ('value, 'state) Component.s
 
@@ -80,6 +81,11 @@ let cons (type value1)(type state1)(type value2)(type state2)
           span ~a: [a_class ["input-group-text"]] [txt C1.label];
           C1.inner_html pair.c1;
           span ~a: [a_class ["input-group-text"]] [txt C2.label];
+          C2.inner_html pair.c2;
+        ]
+      | Horizontal ->
+        div [
+          C1.inner_html pair.c1;
           C2.inner_html pair.c2;
         ]
 

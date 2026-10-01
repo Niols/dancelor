@@ -11,6 +11,7 @@ type stacking_mode =
   | Default
   | No_label
   | Input_group
+  | Horizontal
 
 val nil : (unit, unit) t
 

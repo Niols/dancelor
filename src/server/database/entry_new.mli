@@ -46,3 +46,9 @@ val get_newest : actor_id: User_id.t option -> limit: int -> Any_id.t list Lwt.t
     has access to. *)
 
 val get_permission : Connection.t -> actor_id: User_id.t option -> 'any Entry.Id.t -> Permission_new.t option Lwt.t
+
+val get_actor_roles : Connection.t -> 'any Entry.Id.t -> (User_row.t * Permission_new.actor_role) list Lwt.t
+
+val set_is_public : Connection.t -> 'any Entry.Id.t -> bool -> unit Lwt.t
+
+val set_actor_roles : Connection.t -> 'any Entry.Id.t -> (User_row.t * Permission_new.actor_role) list -> unit Lwt.t

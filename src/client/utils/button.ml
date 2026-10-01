@@ -48,7 +48,7 @@ let make_content
         (
           Option.flip_map badge @@ fun badge ->
           [
-            span ~a: [a_class ["badge"; "text-bg-secondary"; "ms-2"]] [txt badge];
+            span ~a: [a_class ["badge"; "text-bg-secondary"; "ms-2"; "me-n1"]] [txt badge];
           ]
         );
       ]
