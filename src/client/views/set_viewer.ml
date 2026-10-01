@@ -40,7 +40,12 @@ let actions (set : Set_view.t) = [
       ~dropdown: true
       ();
   ];
-  (Add_to.button_to_book ~source_type: "set" ~source_format: Formatters_new.Set.name (Set_view.to_name set) (Model.Book.Set (set.id, Model.Set_parameters.none)));
+  Add_to.button_to_book
+    ~source_type: "set"
+    ~source_id: Set_name.id
+    ~source_format: Formatters_new.Set.name
+    Endpoints.Book.Add_set_to_contents
+    (Set_view.to_name set);
   (
     lwt @@
       match Permission_new.edit_reason set.permission with

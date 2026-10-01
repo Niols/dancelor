@@ -40,33 +40,19 @@ let show_lilypond_dialog (version : Version_view.t) =
           ()
       ]
 
-let add_to_set_dialog (version : Version_name.t) =
+let add_to_set_dialog =
   Add_to.dialog
-    version
     ~source_type: "version"
     ~source_format: (txt % Version_name.name)
     ~target_type: "set"
     ~target_icon: Icon.(Model Set)
-    ~target_format: Formatters.Set.name'
-    ~target_href: Endpoints.Page.href_set
-    ~target_result: (Any_result.make_set_result ?classes: None ?prefix: None ?suffix: None ?params: None)
-    ~target_search: (fun slice query ->
-      Monadise_lwt.lift_1_1
-        Result.map
-        (fun (sets : Set_row.t Search_result.t) ->
-          let%lwt items = Lwt_list.map_p (fun set -> Option.get <$> Model.Set.get set.Set_row.id) sets.items in
-          lwt {sets with items}
-        )
-      =<< Api.set_search slice query
-    )
-    ~target_update: (Api.call_exn (Set Update))
-    ~target_history: (fun () ->
-      let%lwt sets = History.get_sets () in
-      Lwt_list.map_p (fun set -> Option.get <$> Model.Set.get set.Set_row.id) sets
-    )
-    ~target_add_source_to_content: (fun set ->
-      let contents = Model.Set.contents set in
-      Model.Set.set_contents (contents @ [(version.id, Model.Version_parameters.none)]) set
+    ~target_format: (Formatters_new.Set.name % Set_row.to_name)
+    ~target_href: (Endpoints.Page.href_set % Set_row.id)
+    ~target_result: (Any_result_new.make_set_result ?classes: None ?params: None ?prefix: None ?suffix: None)
+    ~target_search: (fun slice query -> Api.set_search slice query)
+    ~target_history: History.get_sets
+    ~target_add_source_to_content: (fun (set : Set_row.t) (version : Version_name.t) ->
+      Api.call_exn (Set Add_version_to_contents) set.id version.id
     )
 
 let madge_call_tune_or_version tune_or_version_id f =
@@ -124,9 +110,10 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
         (
           Add_to.button_to_book
             ~source_type: "version"
+            ~source_id: Version_name.id
             ~source_format: (txt % Version_name.name)
+            Endpoints.Book.Add_version_to_contents
             (Version_view.to_name version)
-            (Model.Book.versions @@ NEList.singleton (version.id, Model.Version_parameters.none))
         )
   );
   (

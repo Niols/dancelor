@@ -18,8 +18,43 @@ let make_change_trackers () =
     )
   )
 
+let version_model_to_version_row : Model.Version.entry -> Version_row.t Lwt.t = fun version ->
+  let {Model_builder.Core.Version.tune; sources; arrangers; disambiguation; content; _} = Entry.value version in
+  let%lwt tune = Api.call_exn (Tune Get_row) tune in
+  let%lwt sources =
+    Lwt_list.map_p
+      (fun {Model_builder.Core.Version.source; _} ->
+        Source_view.to_short_name <$> Api.call_exn (Source Get_view) source
+      )
+      sources
+  in
+  let%lwt arrangers =
+    Lwt_list.map_p
+      (fun arranger ->
+        Person_row.to_name <$> Api.call_exn (Person Get_row) arranger
+      )
+      arrangers
+  in
+  let content : Version_row.content =
+    match content with
+    | No_content -> No_content
+    | Destructured _ -> Destructured
+    | Monolithic {bars; structure; _} -> Monolithic {bars; structure}
+  in
+  lwt {
+    Version_row.id =
+    Entry.id version;
+    tune;
+    sources;
+    disambiguation = Option.map NEString.to_string disambiguation;
+    arrangers;
+    content;
+  }
+
 (* /!\ deduplicate this version INTO the other version *)
 let confirmation_dialog ~this_version ~other_version =
+  let%lwt this_version_row : Version_row.t = version_model_to_version_row this_version in
+  let%lwt other_version_row : Version_row.t = version_model_to_version_row other_version in
   let (get_changes_actions, get_changes_html, add_changes) = make_change_trackers () in
 
   (* changes to other version *)
@@ -106,23 +141,51 @@ let confirmation_dialog ~this_version ~other_version =
       | changes ->
         add_changes
           ~action: (fun () ->
-            (* FIXME: it would in fact be better if [make] didn't have any
-               optional arguments. This would ensure that we cannot forget
-               things. We use it so rarely anyway that the convenience isn't
-               really anything we care about. *)
+            (* FIXME: we should clearly not be reconstructing anything here but
+               have the right data right away *)
+            let%lwt other_composers =
+              Lwt_list.map_p
+                (fun {Tune.composer; _} ->
+                  Api.call_exn (Person Get_row) composer
+                )
+                (Model.Tune.composers' other_tune)
+            in
+            let%lwt other_sources =
+              Lwt_list.map_p
+                (fun {Version.source; structure; details} ->
+                  let%lwt source = Api.call_exn (Source Get_row) source in
+                  lwt {Version_form.source; structure; details}
+                )
+                other_sources
+            in
+            let other_arrangers =
+              List.map
+                (fun arranger ->
+                  {
+                    Person_row.id = Entry.id arranger;
+                    name = NEString.to_string @@ Model.Person.name' arranger;
+                  }
+                )
+                other_arrangers
+            in
             ignore
             <$> Api.call_exn
                 (Version Update)
-                (Entry.id other_version) @@
-                Model.Version.make
-                  ~tune: (Entry.id other_tune)
-                  ~key: other_key
-                  ~sources: other_sources
-                  ~arrangers: (List.map Entry.id other_arrangers)
-                  ~remark: other_remark
-                  ~disambiguation: other_disambiguation
-                  ~content: other_content
-                  ()
+                (Entry.id other_version)
+                {
+                  Version_form.tune = {
+                    Tune_row.id = Entry.id other_tune;
+                    name = NEString.to_string @@ NEList.hd @@ Model.Tune.names' other_tune;
+                    kind = Model.Tune.kind' other_tune;
+                    composers = other_composers;
+                  };
+                  key = other_key;
+                  sources = other_sources;
+                  arrangers = other_arrangers;
+                  remark = other_remark;
+                  disambiguation = other_disambiguation;
+                  content = other_content;
+                }
           (* FIXME: we should report nicely if things fail *)
           )
           [
@@ -136,9 +199,9 @@ let confirmation_dialog ~this_version ~other_version =
   in
 
   (* how to update a version from a set or a book *)
-  let replace_version a_version =
-    if Entry.Id.equal' a_version (Entry.id this_version) then
-      Entry.id other_version
+  let replace_version (a_version : Version_row.t) =
+    if Entry.Id.equal' a_version.id this_version_row.id then
+      other_version_row
     else
       a_version
   in
@@ -149,20 +212,21 @@ let confirmation_dialog ~this_version ~other_version =
     <$> Api.call_exn (Set Search) Slice.everything @@
         Query.make ~specific: (Set_query.make_specific ~contains_version: (Some [Entry.id this_version]) ()) ()
   in
-  let%lwt sets = Lwt_list.map_p (fun set -> Option.get <$> Model.Set.get set.Set_row.id) sets in
+  let%lwt sets =
+    Lwt_list.map_p
+      (fun {Set_row.id; _} ->
+        Pair.cons id <$> Api.call_exn (Set Get_form) id
+      )
+      sets
+  in
   List.iter
-    (fun set ->
+    (fun (id, set) ->
       add_changes
         ~action: (fun () ->
-          let contents = List.map (Pair.map_fst replace_version) (Model.Set.contents' set) in
-          ignore
-          <$> Api.call_exn
-              (Set Update)
-              (Entry.id set)
-              (Model.Set.set_contents contents (Entry.value set))
-              (Entry.access set)
+          let contents = List.map (Pair.map_fst replace_version) set.Set_form.contents in
+          ignore <$> Api.call_exn (Set Update) id {set with contents}
         )
-        [txt "replace the version in set "; Formatters.Set.name' set; txt "."]
+        [txt "replace the version in set "; Formatters_new.Set.name (Set_form.to_name id set); txt "."]
     )
     sets;
 
@@ -172,32 +236,31 @@ let confirmation_dialog ~this_version ~other_version =
     <$> Api.call_exn (Book Search) Slice.everything @@
         Query.make ~specific: (Book_query.make_specific ~contains_version: (Some [Entry.id this_version]) ()) ()
   in
-  let%lwt books = Lwt_list.map_p (fun book -> Option.get <$> Model.Book.get book.Book_row.id) books in
+  let%lwt books =
+    Lwt_list.map_p
+      (fun {Book_row.id; _} -> Pair.cons id <$> Api.call_exn (Book Get_form) id)
+      books
+  in
   List.iter
-    (fun book ->
+    (fun (id, book) ->
       add_changes
         ~action: (fun () ->
           let contents =
             List.map
               (function
-                | Model.Book.Dance (dance, Dance_versions versions_and_params) ->
-                  Model.Book.Dance (dance, Model.Book.Dance_versions (NEList.map (Pair.map_fst replace_version) versions_and_params))
-                | Model.Book.Versions versions_and_params ->
-                  Model.Book.Versions (NEList.map (Pair.map_fst replace_version) versions_and_params)
+                | Book_form.Dance (dance, Dance_versions versions_and_params) ->
+                  Book_form.Dance (dance, Dance_versions (NEList.map (Pair.map_fst replace_version) versions_and_params))
+                | Book_form.Versions versions_and_params ->
+                  Book_form.Versions (NEList.map (Pair.map_fst replace_version) versions_and_params)
                 | page -> page
               )
-              (Model.Book.contents' book)
+              book.Book_form.contents
           in
-          ignore
-          <$> Api.call_exn
-              (Book Update)
-              (Entry.id book)
-              (Model.Book.set_contents contents (Entry.value book))
-              (Entry.access book)
+          ignore <$> Api.call_exn (Book Update) id {book with contents}
         )
         [
           txt "replace the version in book ";
-          Formatters.Book.name' book;
+          Formatters_new.Book.name (Book_form.to_name id book);
           txt "."
         ]
     )

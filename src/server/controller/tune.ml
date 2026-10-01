@@ -3,10 +3,12 @@ open Dancelor_common
 open Model_new
 open Search_new
 
-include Shared.Make_public(struct
+include Shared.Make_public_full(struct
+  type entry = Model_builder.Core.Tune.t
   type id = Tune_id.t
   type row = Tune_row.t
   type view = Tune_view.t
+  type form = Tune_form.t
   type query = Tune_query.t
   include Database.Tune
 end)
@@ -20,18 +22,6 @@ let get env id =
     Permission.assert_can_get_public env tune;%lwt
     lwt tune
 
-let create env tune =
-  Permission.assert_can_create_public env;%lwt
-  Database.Tune.create tune
-
-let update env id tune =
-  Permission.assert_can_update_public env =<< get env id;%lwt
-  ignore <$> Database.Tune.update id tune
-
-let delete env id =
-  Permission.assert_can_delete_public env =<< get env id;%lwt
-  Database.Tune.delete id
-
 (* Dispatch *)
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Tune.t -> a = fun env endpoint ->
@@ -39,6 +29,7 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Tune.t -> a 
   | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
+  | Get_form -> get_form env
   | Search -> search env
   | Create -> create env
   | Update -> update env

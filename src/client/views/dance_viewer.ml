@@ -10,7 +10,12 @@ let subtitles dance = [
 ]
 
 let actions (dance : Dance_view.t) = [
-  (Add_to.button_to_book ~source_type: "dance" ~source_format: Formatters_new.Dance.name (Dance_view.to_name dance) (Model.Book.Dance (dance.id, Dance_only)));
+  Add_to.button_to_book
+    ~source_type: "dance"
+    ~source_id: Dance_name.id
+    ~source_format: Formatters_new.Dance.name
+    Endpoints.Book.Add_dance_to_contents
+    (Dance_view.to_name dance);
   (
     match%lwt Permission.can_update_public_new dance with
     | None -> lwt_nil

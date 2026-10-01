@@ -37,6 +37,13 @@ SELECT
     "published_tunes_are_public"
 FROM "person";
 
+-- @get_person_forms | include: reuse
+SELECT
+    "id",
+    "name",
+    "scddb_id"
+FROM "person";
+
 --------------------------------- [ Sources ] ----------------------------------
 
 -- @get_source_rows | include: reuse
@@ -47,6 +54,16 @@ SELECT
 FROM "source";
 
 -- @get_source_views | include: reuse
+SELECT
+    "id",
+    "name",
+    "short_name",
+    "scddb_id",
+    "description",
+    "date"
+FROM "source";
+
+-- @get_source_forms | include: reuse
 SELECT
     "id",
     "name",
@@ -90,6 +107,17 @@ SELECT
     "two_chords"
 FROM "dance";
 
+-- @get_dance_forms | include: reuse
+SELECT
+    "id",
+    "name",
+    "kind",
+    "scddb_id",
+    "disambiguation",
+    "date",
+    "two_chords"
+FROM "dance";
+
 ---------------------------------- [ Users ] -----------------------------------
 
 -- @get_user_rows | include: reuse
@@ -108,6 +136,17 @@ SELECT
 FROM "tune";
 
 -- @get_tune_views | include: reuse
+SELECT
+    "id",
+    "name",
+    "kind",
+    "remark",
+    "scddb_id",
+    "date"
+FROM "tune";
+
+
+-- @get_tune_forms | include: reuse
 SELECT
     "id",
     "name",
@@ -162,6 +201,25 @@ SELECT
 FROM "version"
 JOIN "tune" ON "version"."tune_id" = "tune"."id";
 
+-- @get_version_forms | include: reuse
+SELECT
+    -- ids
+    "version"."id",
+    "tune"."id" AS "tune_id",
+    -- version
+    "version"."disambiguation",
+    "version"."key",
+    "version"."remark",
+    "version"."monolithic_bars",
+    "version"."monolithic_or_default_structure",
+    "version"."monolithic_lilypond",
+    "version"."destructured_as_2_4",
+    -- tune
+    "tune"."name" AS "tune_name",
+    "tune"."kind" AS "tune_kind"
+FROM "version"
+JOIN "tune" ON "version"."tune_id" = "tune"."id";
+
 -- @get_version_names | include: reuse
 SELECT
     "version"."id",
@@ -184,6 +242,16 @@ SELECT
     "kind",
     "order",
     "remark"
+FROM "set"
+JOIN "entries" USING ("id");
+
+-- @get_set_forms | include: reuse
+WITH entries AS &get_entry_permissions
+SELECT
+    "id",
+    "name",
+    "kind",
+    "order"
 FROM "set"
 JOIN "entries" USING ("id");
 
@@ -228,6 +296,17 @@ JOIN "entries" USING ("id");
 WITH "entries" AS &get_entry_permissions
 SELECT
     "entries".*,
+    "name",
+    "date",
+    "remark",
+    "scddb_id"
+FROM "book"
+JOIN "entries" USING ("id");
+
+-- @get_book_forms | include: reuse
+WITH "entries" AS &get_entry_permissions
+SELECT
+    "id",
     "name",
     "date",
     "remark",

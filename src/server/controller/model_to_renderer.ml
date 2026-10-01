@@ -5,6 +5,7 @@
 
 open NesUnix
 open Dancelor_common
+open Model_new
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.model_to_renderer": Logs.LOG)
 
@@ -14,7 +15,14 @@ let format_persons_list =
 let format_persons =
   String.concat ", " ~last: " and " % format_persons_list
 
+let format_persons_list_new =
+  List.map Person_row.name
+
+let format_persons_new =
+  String.concat ", " ~last: " and " % format_persons_list_new
+
 let version_to_lilypond_content ~version_params version =
+  (* FIXME: old version to remove; keep in sync with newer version below *)
   (* get a LilyPond from the potentially-destructured content *)
   let structure =
     match Model.Version_parameters.structure version_params with
@@ -62,7 +70,58 @@ let version_to_lilypond_content ~version_params version =
     (* done *)
     lwt_some (content, instructions)
 
+let version_to_lilypond_content_new ~version_params version =
+  let {Version_form.tune = {kind; _}; key; content; _} = version in
+  (* FIXME: keep in sync with old version above *)
+  (* get a LilyPond from the potentially-destructured content *)
+  let structure =
+    match Model.Version_parameters.structure version_params with
+    | Some Force_no_structure -> None
+    | Some Structure structure -> Some structure
+    | None ->
+      match content with
+      | No_content -> None
+      | Monolithic {structure; _} -> Some structure
+      | Destructured {default_structure; _} -> Some default_structure
+  in
+  match Model.Version.Content.lilypond ?structure ~kind ~key content with
+  | None -> None
+  | Some lilypond ->
+    let instructions =
+      (* if the version is destructured, and the user asked for a structure, but
+         we could not find a fold for this structure, then at least we produce the
+         instruction to play that structure as we generate a destructured output *)
+      match content with
+      | No_content -> None
+      | Monolithic _ -> None
+      | Destructured _ ->
+        match structure with
+        | None -> None
+        | Some structure ->
+          match Model.Version.Structure.best_fold_for structure with
+          | Some _ -> None
+          | None -> Some ("Play " ^ NEString.to_string (Model.Version.Structure.to_string structure))
+    in
+    (* update the clef *)
+    let lilypond =
+      match Model.Version_parameters.clef version_params with
+      | None -> lilypond
+      | Some clef_parameter ->
+        let clef_regex = Str.regexp "\\\\clef *\"?[a-z]*\"?" in
+        Str.global_replace clef_regex ("\\clef " ^ Music.Clef.to_string clef_parameter) lilypond
+    in
+    (* add transposition *)
+    let lilypond =
+      let source = Music.Key.pitch key in
+      let target = Transposition.target_pitch ~source @@ Option.value ~default: Transposition.identity @@ Model.Version_parameters.transposition version_params in
+      let (source, target) = Pair.map_both Music.Pitch.to_lilypond_string (source, target) in
+      spf "\\transpose %s %s { %s }" source target lilypond
+    in
+    (* done *)
+    Some (lilypond, instructions)
+
 let version_to_renderer_tune ?(version_params = Model.Version_parameters.none) version =
+  (* FIXME: to be replaced by the new version below; keep in sync *)
   let%lwt slug = NesSlug.to_string <$> Model.Version.slug version in
   let%lwt name =
     let%lwt default = Model.Version.one_name version in
@@ -128,6 +187,55 @@ let version_to_renderer_tune ?(version_params = Model.Version_parameters.none) v
 
 let version_to_renderer_tune' ?version_params version =
   version_to_renderer_tune ?version_params (Entry.value version)
+
+let version_to_renderer_tune_new ?(version_params = Model.Version_parameters.none) version =
+  (* FIXME: keep in sync with old version above *)
+  let {Version_form.tune = {name; kind; composers; _}; content; _} = version in
+  let name = Option.fold ~none: name ~some: NEString.to_string (Model.Version_parameters.display_name version_params) in
+  let slug = NesSlug.to_string @@ NesSlug.of_string name in
+  let composer =
+    Option.fold
+      ~none: (format_persons_new composers)
+      ~some: NEString.to_string
+      (Model.Version_parameters.display_composer version_params)
+  in
+  let (lilypond, instructions) =
+    match version_to_lilypond_content_new ~version_params version with
+    | Some (lilypond, instructions) -> (lilypond, Option.value instructions ~default: "")
+    | None -> ("", "")
+  in
+  let first_bar = Model.Version_parameters.first_bar' version_params in
+  let (tempo_unit, tempo_value) =
+    match kind with
+    | Jig | March_6_8 -> ("4.", 104)
+    | Reel | Hornpipe | Polka | March_2_4 | March_4_4 ->
+      let as_2_4 =
+        match content with
+        | No_content | Monolithic _ -> false
+        | Destructured {as_2_4; _} -> as_2_4
+      in
+        ((if as_2_4 then "4" else "2"), 108)
+    | Jig_9_8 -> ("4.", 104)
+    | Strathspey | Air | Schottische -> ("2", 60)
+    | Two_step -> ("4", 130)
+    | Waltz -> ("2.", 60)
+    | Other -> ("2", 108)
+  in
+  let chords_kind =
+    match kind with
+    | Jig | March_6_8 -> "jig"
+    | Reel | Hornpipe | Polka | March_2_4 | March_4_4 -> "reel"
+    | Air | Strathspey | Schottische | Two_step -> "strathspey"
+    | Waltz -> "waltz"
+    | Other | Jig_9_8 -> "other"
+  in
+  let show_bar_numbers =
+    Model.Version.Content.is_monolithic content
+    || Model.Version_parameters.structure version_params <> Some Force_no_structure
+  in
+  let show_time_signatures = kind = Other in
+  (* only show time signatures if “Other” *)
+  Renderer.{slug; name; instructions; composer; content = lilypond; first_bar; tempo_unit; tempo_value; chords_kind; show_bar_numbers; show_time_signatures}
 
 let part_to_renderer_part name =
   Renderer.{name = NEString.to_string name}

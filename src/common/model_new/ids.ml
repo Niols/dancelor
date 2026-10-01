@@ -1,6 +1,6 @@
 module Person_id = struct
   type t = Model_builder.Core.Person.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string
@@ -9,7 +9,7 @@ end
 
 module User_id = struct
   type t = Model_builder.Core.User.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string
@@ -18,7 +18,7 @@ end
 
 module Dance_id = struct
   type t = Model_builder.Core.Dance.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string
@@ -27,7 +27,7 @@ end
 
 module Source_id = struct
   type t = Model_builder.Core.Source.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string
@@ -36,7 +36,7 @@ end
 
 module Tune_id = struct
   type t = Model_builder.Core.Tune.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string
@@ -45,7 +45,7 @@ end
 
 module Version_id = struct
   type t = Model_builder.Core.Version.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string
@@ -54,7 +54,7 @@ end
 
 module Set_id = struct
   type t = Model_builder.Core.Set.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string
@@ -63,7 +63,7 @@ end
 
 module Book_id = struct
   type t = Model_builder.Core.Book.t Entry.id
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   (* For URI serialisation *)
   let to_string = Entry.Id.to_string

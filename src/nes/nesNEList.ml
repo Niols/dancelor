@@ -1,3 +1,4 @@
+(* FIXME: type 'a t = (::) of 'a * 'a list and expose it *)
 type 'a t = L of 'a list [@@deriving eq, ord, show]
 
 let to_list (L xs) = xs

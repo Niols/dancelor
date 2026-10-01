@@ -69,3 +69,9 @@ SELECT "id", "type"
 FROM "entry" JOIN "entry_permissions" USING ("id")
 ORDER BY "created_at" DESC
 LIMIT @limit;
+
+-- @get_permission
+WITH "entry_permissions" AS &get_entry_permissions
+SELECT "entry_is_public", "actor_role", "actor_is_omniscient_administrator"
+FROM "entry_permissions"
+WHERE "id" = @id;

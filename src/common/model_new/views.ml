@@ -6,7 +6,11 @@ open Rows
 type 'a or_forbidden =
   | Forbidden
   | Allowed of 'a
-[@@deriving yojson]
+[@@deriving eq, yojson]
+
+let get_allowed = function
+  | Allowed x -> x
+  | Forbidden -> failwith "get_allowed"
 
 module Person_view = struct
   type t = {
@@ -17,6 +21,9 @@ module Person_view = struct
     published_tunes_are_public: bool; [@default false]
   }
   [@@deriving yojson, fields]
+
+  let to_name : t -> Person_name.t = fun {id; name; _} ->
+    {id; name}
 end
 
 module Dance_view = struct
@@ -49,6 +56,9 @@ module Source_view = struct
     date: PartialDate.t option; [@default None]
   }
   [@@deriving yojson, fields]
+
+  let to_short_name : t -> Source_short_name.t = fun {id; name; short_name; _} ->
+    {id; short_name = Option.value short_name ~default: name}
 end
 
 module Tune_view = struct
@@ -155,21 +165,21 @@ module Book_view = struct
     | Dance_only
     | Dance_versions of (Version_row.t * Model_builder.Core.Version_parameters.t) list
     | Dance_set of Set_row.t or_forbidden * Model_builder.Core.Set_parameters.t
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   type page =
     | Part of string
     | Dance of Dance_row.t * dance_page
     | Versions of (Version_row.t * Model_builder.Core.Version_parameters.t) list
     | Set of Set_row.t or_forbidden * Model_builder.Core.Set_parameters.t
-  [@@deriving yojson]
+  [@@deriving eq, yojson]
 
   type t = {
     id: Book_id.t;
     name: string;
     authors: Person_name.t list; [@default []]
     date: PartialDate.t option; [@default None]
-    content: page list;
+    contents: page list;
     remark: string option; [@default None]
     sources: Source_name.t list; [@default []]
     scddb_id: int option; [@default None]

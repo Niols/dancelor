@@ -87,28 +87,21 @@ let editor =
   nil
 
 let assemble (names, (kind, (devisers, (date, (disambiguation, (two_chords, (scddb_id, ()))))))) =
-  let devisers = List.map Person_row.id devisers in
-  Model.Dance.make ~names ~kind ~devisers ~two_chords ~scddb_id ~disambiguation ~date ()
+  {Dance_form.names; kind; devisers; two_chords; scddb_id; disambiguation; date}
+
+let disassemble dance =
+  let {Dance_form.names; kind; devisers; two_chords; scddb_id; disambiguation; date} = dance in
+  lwt (names, (kind, (devisers, (date, (disambiguation, (two_chords, (scddb_id, ())))))))
 
 let submit mode dance =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_dance -> Api.call_exn (Dance Update) (Entry.id prev_dance) dance;%lwt lwt (Entry.id prev_dance)
+    | Editor.Edit {With_id.id; _} -> Api.call_exn (Dance Update) id dance;%lwt lwt id
     | _ -> Api.call_exn (Dance Create) dance
   in
-  Option.get <$> Model.Dance.get id
+  lwt {With_id.id; form = dance}
 
-let unsubmit = lwt % Entry.value
-
-let disassemble dance =
-  let names = Model.Dance.names dance in
-  let kind = Model.Dance.kind dance in
-  let%lwt devisers = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Dance.devisers dance) in
-  let date = Model.Dance.date dance in
-  let disambiguation = Model.Dance.disambiguation dance in
-  let two_chords = Model.Dance.two_chords dance in
-  let scddb_id = Model.Dance.scddb_id dance in
-  lwt (names, (kind, (devisers, (date, (disambiguation, (two_chords, (scddb_id, ())))))))
+let unsubmit = lwt % With_id.form
 
 let create mode =
   (* FIXME: if [mode] is an edition, then we should assert_can_update_public *)
@@ -118,16 +111,16 @@ let create mode =
     ~icon: (Model Dance)
     ~mode
     editor
-    ~format: (Formatters.Dance.name' ~link: true)
-    ~href: (Endpoints.Page.href_dance % Entry.id)
+    ~format: (Formatters_new.Dance.name ~link: true % With_id.map Dance_form.to_name)
+    ~href: (Endpoints.Page.href_dance % With_id.id)
     ~assemble
     ~submit
     ~unsubmit
     ~disassemble
-    ~check_product: Model.Dance.equal
+    ~check_product: Dance_form.equal
 
 let create_row (mode : (Dance_row.t, 'a) Editor.mode) =
-  let%lwt (mode : (Model.Dance.entry, 'a) Editor.mode) =
+  let%lwt (mode : ((Dance_id.t, Dance_form.t) With_id.t, 'a) Editor.mode) =
     match mode with
     | Create state -> lwt @@ Editor.Create state
     | Create_with_local_storage -> lwt Editor.Create_with_local_storage
@@ -135,23 +128,11 @@ let create_row (mode : (Dance_row.t, 'a) Editor.mode) =
       lwt @@
         Editor.Quick_create (
           init,
-          (fun dance ->
-            let%lwt devisers = Lwt_list.map_p (Option.get <%> Model.Person.get) @@ Model.Dance.devisers' dance in
-            let devisers = List.map Person_editor.to_name devisers in
-            let dance = {
-              Dance_row.id = Entry.id dance;
-              name = NEString.to_string @@ NEList.hd @@ Model.Dance.names' dance;
-              kind = Model.Dance.kind' dance;
-              devisers;
-              disambiguation = Option.map NEString.to_string @@ Model.Dance.disambiguation' dance;
-            }
-            in
-            callback dance
-          )
+          (callback % With_id.map Dance_form.to_row)
         )
-    | Edit result ->
-      let%lwt result = Option.get <$> Model.Dance.get (Dance_row.id result) in
-      lwt @@ Editor.Edit result
+    | Edit {Dance_row.id; _} ->
+      let%lwt form = Api.call_exn (Dance Get_form) id in
+      lwt @@ Editor.Edit {With_id.id; form}
     | Quick_edit state -> lwt @@ Editor.Quick_edit state
   in
   create mode
@@ -160,5 +141,5 @@ let add () =
   create Create_with_local_storage
 
 let edit id =
-  let%lwt dance = Option.get <$> Model.Dance.get id in
-  create (Edit dance)
+  let%lwt form = Api.call_exn (Dance Get_form) id in
+  create @@ Edit {With_id.id; form}

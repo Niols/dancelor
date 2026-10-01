@@ -9,41 +9,22 @@ let (show_preview, set_show_preview) = S.create false
 let flip_show_preview () = set_show_preview (not (S.value show_preview))
 
 let model_content_to_content =
-  Lwt_list.map_p @@ function
-    | Model.Book.Part title ->
-      lwt @@ `Part title
-    | Dance (dance, Dance_only) ->
-      let%lwt dance = Api.call_exn (Dance Get_row) dance in
-      lwt @@ `Dance (dance, `Dance_only)
-    | Dance (dance, Dance_versions versions_and_params) ->
-      let%lwt dance = Api.call_exn (Dance Get_row) dance in
-      let%lwt versions_and_params =
-        Monadise_lwt.run @@ fun () ->
-        NEList.map (Pair.map_fst (Monadise_lwt.yield % Api.call_exn (Version Get_row))) versions_and_params
-      in
-      lwt @@ `Dance (dance, `Dance_versions versions_and_params)
-    | Dance (dance, Dance_set (set, params)) ->
-      let%lwt dance = Api.call_exn (Dance Get_row) dance in
-      let%lwt set = Api.call_exn (Set Get_row) set in
-      lwt @@ `Dance (dance, `Dance_set (set, params))
-    | Versions versions_and_params ->
-      let%lwt versions_and_params =
-        Monadise_lwt.run @@ fun () ->
-        NEList.map (Pair.map_fst (Monadise_lwt.yield % Api.call_exn (Version Get_row))) versions_and_params
-      in
-      lwt @@ `Versions versions_and_params
-    | Set (set, params) ->
-      let%lwt set = Api.call_exn (Set Get_row) set in
-      lwt @@ `Set (set, params)
+  List.map @@ function
+    | Book_form.Part title -> `Part title
+    | Dance (dance, Dance_only) -> `Dance (dance, `Dance_only)
+    | Dance (dance, Dance_versions versions_and_params) -> `Dance (dance, `Dance_versions versions_and_params)
+    | Dance (dance, Dance_set (set, params)) -> `Dance (dance, `Dance_set (set, params))
+    | Versions versions_and_params -> `Versions versions_and_params
+    | Set (set, params) -> `Set (set, params)
 
 let content_to_model_content =
   List.map @@ function
-    | `Part title -> Model.Book.Part title
-    | `Dance (dance, `Dance_only) -> Model.Book.Dance (Dance_row.id dance, Dance_only)
-    | `Dance (dance, `Dance_versions versions_and_params) -> Model.Book.Dance (Dance_row.id dance, Dance_versions (NEList.map (Pair.map_fst Version_row.id) versions_and_params))
-    | `Dance (dance, `Dance_set (set, params)) -> Model.Book.Dance (Dance_row.id dance, Dance_set (Set_row.id set, params))
-    | `Versions versions_and_params -> Model.Book.Versions (NEList.map (Pair.map_fst Version_row.id) versions_and_params)
-    | `Set (set, params) -> Model.Book.Set (Set_row.id set, params)
+    | `Part title -> Book_form.Part title
+    | `Dance (dance, `Dance_only) -> Dance (dance, Dance_only)
+    | `Dance (dance, `Dance_versions versions_and_params) -> Dance (dance, Dance_versions versions_and_params)
+    | `Dance (dance, `Dance_set (set, params)) -> Dance (dance, Dance_set (set, params))
+    | `Versions versions_and_params -> Versions versions_and_params
+    | `Set (set, params) -> Set (set, params)
 
 let versions_and_parameters ?(label = "Versions") () =
   Star.prepare_non_empty
@@ -137,7 +118,7 @@ let dance_and_dance_page =
         )
     )
 
-let editor user =
+let editor =
   let open Editor in
   Input.prepare_non_empty
     ~type_: Text
@@ -258,145 +239,63 @@ let editor user =
         Option.of_string_nonempty
     )
     () ^::
-  Star.prepare
-    ~label: "Owners"
-    ~empty: [user]
-    (
-      Selector.prepare
-        ~label: "Owner"
-        ~model_name: "user"
-        ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
-        ~make_result: (Any_result_new.make_user_result ?in_search: None)
-        ~results_when_no_search: (Option.to_list <$> Environment.actor_new)
-        ~search: Api.user_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
-        ~serialise: User_row.id
-        ~unserialise: (Api.call_or_option @@ User Get_row)
-        ()
-    ) ^::
-  (
-    let open Plus.Bundle in
-    let open Plus.Tuple_elt in
-    Plus.prepare
-      ~label: "Visibility"
-      ~cast: (function
-        | Zero() -> `Owners_only
-        | Succ Zero() -> `Everyone
-        | Succ Succ Zero viewers -> `Select_viewers viewers
-        | _ -> assert false (* types guarantee this is not reachable *)
-      )
-      ~uncast: (function
-        | `Owners_only -> Zero ()
-        | `Everyone -> one ()
-        | `Select_viewers viewers -> two viewers
-      )
-      ~selected_when_empty: 0
-      (
-        Nil.prepare ~label: "Owners only" () ^::
-        Nil.prepare ~label: "Everyone" () ^::
-        (
-          Star.prepare_non_empty
-            ~label: "Viewers"
-            (
-              Selector.prepare
-                ~label: "Viewer"
-                ~model_name: "user"
-                ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
-                ~make_result: (Any_result_new.make_user_result ?in_search: None)
-                ~search: Api.user_search
-                ~id_to_yojson: Entry.Id.to_yojson'
-                ~id_of_yojson: Entry.Id.of_yojson'
-                ~serialise: User_row.id
-                ~unserialise: (Api.call_or_option @@ User Get_row)
-                ()
-            )
-        ) ^::
-        nil
-      )
-  ) ^::
   nil
 
-let assemble (name, (authors, (date, (contents, (remark, (sources, (scddb_id, (owners, (visibility, ()))))))))) =
-  let authors = List.map Person_row.id authors in
-  let sources = List.map Source_row.id sources in
+let assemble (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ()))))))) =
   let contents = content_to_model_content contents in
-  let (is_public, viewers) =
-    match visibility with
-    | `Everyone -> (true, [])
-    | `Owners_only -> (false, [])
-    | `Select_viewers viewers -> (false, NEList.to_list viewers)
-  in
-  (
-    Model.Book.make ~name ~authors ~date ~contents ~remark ~sources ~scddb_id (),
-    Entry.Access.Private.make ~owners: (List.map User_row.id owners) ~viewers: (List.map User_row.id viewers) ~is_public ()
-  )
+    {Book_form.name; authors; date; contents; remark; sources; scddb_id}
 
-let submit mode (book, access) =
+let disassemble {Book_form.name; authors; date; contents; remark; sources; scddb_id} =
+  let contents = model_content_to_content contents in
+  lwt (name, (authors, (date, (contents, (remark, (sources, (scddb_id, ())))))))
+
+let submit mode book =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_book -> Api.call_exn (Book Update) (Entry.id prev_book) book access;%lwt lwt (Entry.id prev_book)
-    | _ -> Api.call_exn (Book Create) book access
+    | Editor.Edit {With_id.id; _} -> Api.call_exn (Book Update) id book;%lwt lwt id
+    | _ -> Api.call_exn (Book Create) book
   in
-  Api.call_exn (Book Get) id
+  lwt {With_id.id; form = book}
 
-let unsubmit entry =
-  lwt (Entry.value entry, Entry.access entry)
-
-let disassemble (book, access) =
-  let name = Model.Book.name book in
-  let%lwt authors = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Book.authors book) in
-  let date = Model.Book.date book in
-  let%lwt contents = model_content_to_content @@ Model.Book.contents book in
-  let remark = Model.Book.remark book in
-  let%lwt sources = Lwt_list.map_p (Api.call_exn (Source Get_row)) (Model.Book.sources book) in
-  let scddb_id = Model.Book.scddb_id book in
-  let%lwt owners = Lwt_list.map_p (Api.call_exn (User Get_row)) (Entry.Access.Private.owners access) in
-  let%lwt viewers = Lwt_list.map_p (Api.call_exn (User Get_row)) (Entry.Access.Private.viewers access) in
-  let visibility =
-    match Entry.Access.Private.is_public access, NEList.of_list viewers with
-    | true, _ -> `Everyone
-    | false, None -> `Owners_only
-    | false, Some viewers -> `Select_viewers viewers
-  in
-  lwt (name, (authors, (date, (contents, (remark, (sources, (scddb_id, (owners, (visibility, ())))))))))
+let unsubmit = lwt % With_id.form
 
 let create mode =
-  let%lwt user = Option.map Entry.id <$> Environment.actor in
-  let make_editor = fun ?pre_body () ->
-    Editor.make_page
-      ~key: "book"
-      ~icon: (Model Book)
-      (editor user)
-      ~mode
-      ~format: Formatters.Book.name'
-      ~href: (Endpoints.Page.href_book % Entry.id)
-      ~assemble
-      ~submit
-      ~unsubmit
-      ~disassemble
-      ~check_product: (fun (book1, access1) (book2, access2) -> Model.Book.equal book1 book2 && Entry.Access.Private.equal access1 access2)
-      ?pre_body
-  in
-  match mode with
-  | Create _ | Create_with_local_storage | Quick_create _ ->
-    Main_page.assert_can_create_private make_editor
-  | Quick_edit _ ->
-    (* FIXME: I guess we should be able to check permissions like for Edit. *)
-    Main_page.assert_can_create_private make_editor
-  | Edit book ->
-    let%lwt permission = Set_editor.entry_permission_new book in
-    Main_page.assert_can_update permission @@ fun edit_reason ->
-    let pre_body =
-      match edit_reason with
-      | Owner -> []
-      | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this book as an omniscient administrator."]]]
-    in
-    make_editor ~pre_body ()
+  (* FIXME: if [mode] is an edition, then we should [assert_can_update_public] *)
+  (* FIXME: reintroduce the [?pre_body] explaining why the actor is allowed to
+     edit; maybe just via a helper [assert_can_create_private]? *)
+  Main_page.assert_can_create_public @@ fun () ->
+  Editor.make_page
+    ~key: "book"
+    ~icon: (Model Book)
+    editor
+    ~mode
+    ~format: (Formatters_new.Book.name % With_id.map Book_form.to_name)
+    ~href: (Endpoints.Page.href_book % With_id.id)
+    ~assemble
+    ~submit
+    ~unsubmit
+    ~disassemble
+    ~check_product: Book_form.equal
+
+(* match mode with *)
+(* | Create _ | Create_with_local_storage | Quick_create _ -> *)
+(*   Main_page.assert_can_create_private make_editor *)
+(* | Quick_edit _ -> *)
+(*   (\* FIXME: I guess we should be able to check permissions like for Edit. *\) *)
+(*   Main_page.assert_can_create_private make_editor *)
+(* | Edit book -> *)
+(*   let%lwt permission = Set_editor.entry_permission_new book in *)
+(*   Main_page.assert_can_update permission @@ fun edit_reason -> *)
+(*   let pre_body = *)
+(*     match edit_reason with *)
+(*     | Owner -> [] *)
+(*     | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this book as an omniscient administrator."]]] *)
+(*   in *)
+(*   make_editor ~pre_body () *)
 
 let add () =
   create Create_with_local_storage
 
-let edit book_id =
-  let%lwt book = Option.get <$> Model.Book.get book_id in
-  create (Edit book)
+let edit id =
+  let%lwt form = Api.call_exn (Book Get_form) id in
+  create @@ Edit {With_id.id; form}

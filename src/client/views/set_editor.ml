@@ -8,7 +8,7 @@ open Utils
 let (show_preview, set_show_preview) = S.create false
 let flip_show_preview () = set_show_preview (not (S.value show_preview))
 
-let editor user =
+let editor =
   let open Editor in
   Input.prepare_non_empty
     ~type_: Text
@@ -95,107 +95,23 @@ let editor user =
         Model.Set_order.of_string_opt
     )
     () ^::
-  Star.prepare
-    ~label: "Owners"
-    ~empty: [user]
-    (
-      Selector.prepare
-        ~label: "Owner"
-        ~model_name: "user"
-        ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
-        ~make_result: (Any_result_new.make_user_result ?in_search: None)
-        ~results_when_no_search: (Option.to_list <$> Environment.actor_new)
-        ~search: Api.user_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
-        ~serialise: User_row.id
-        ~unserialise: (Api.call_or_option @@ User Get_row)
-        ()
-    ) ^::
-  (
-    let open Plus.Bundle in
-    let open Plus.Tuple_elt in
-    Plus.prepare
-      ~label: "Visibility"
-      ~cast: (function
-        | Zero() -> `Owners_only
-        | Succ Zero() -> `Everyone
-        | Succ Succ Zero viewers -> `Select_viewers viewers
-        | _ -> assert false (* types guarantee this is not reachable *)
-      )
-      ~uncast: (function
-        | `Owners_only -> Zero ()
-        | `Everyone -> one ()
-        | `Select_viewers viewers -> two viewers
-      )
-      ~selected_when_empty: 0
-      (
-        Nil.prepare ~label: "Owners only" () ^::
-        Nil.prepare ~label: "Everyone" () ^::
-        (
-          Star.prepare_non_empty
-            ~label: "Viewers"
-            (
-              Selector.prepare
-                ~label: "Viewer"
-                ~model_name: "user"
-                ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
-                ~make_result: (Any_result_new.make_user_result ?in_search: None)
-                ~search: Api.user_search
-                ~id_to_yojson: Entry.Id.to_yojson'
-                ~id_of_yojson: Entry.Id.of_yojson'
-                ~serialise: User_row.id
-                ~unserialise: (Api.call_or_option @@ User Get_row)
-                ()
-            )
-        ) ^::
-        nil
-      )
-  ) ^::
   nil
 
-let assemble (name, (kind, (conceptors, (contents, (order, (owners, (visibility, ()))))))) =
-  let conceptors = List.map Person_row.id conceptors in
-  let contents = List.map (Pair.map_fst Version_row.id) contents in
-  let (is_public, viewers) =
-    match visibility with
-    | `Everyone -> (true, [])
-    | `Owners_only -> (false, [])
-    | `Select_viewers viewers -> (false, NEList.to_list viewers)
-  in
-  (
-    (* FIXME: This erases the existing remarks, or, most likely, tunes with
-       remarks will get a Non_convertible exception when we check for the roundtrip. *)
-    Model.Set.make ~name ~kind ~conceptors ~contents ~order ~remark: None (),
-    Entry.Access.Private.make ~owners: (List.map User_row.id owners) ~viewers: (List.map User_row.id viewers) ~is_public ()
-  )
+let assemble (name, (kind, (conceptors, (contents, (order, ()))))) =
+  {Set_form.name; kind; conceptors; contents; order}
 
-let submit mode (set, access) =
+let disassemble {Set_form.name; kind; conceptors; contents; order} =
+  lwt (name, (kind, (conceptors, (contents, (order, ())))))
+
+let submit mode set =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_set -> Api.call_exn (Set Update) (Entry.id prev_set) set access;%lwt lwt (Entry.id prev_set)
-    | _ -> Api.call_exn (Set Create) set access
+    | Editor.Edit {With_id.id; _} -> Api.call_exn (Set Update) id set;%lwt lwt id
+    | _ -> Api.call_exn (Set Create) set
   in
-  Api.call_exn (Set Get) id
+  lwt {With_id.id; form = set}
 
-let unsubmit entry =
-  lwt (Entry.value entry, Entry.access entry)
-
-let disassemble (set, access) =
-  let name = Model.Set.name set in
-  let kind = Model.Set.kind set in
-  let%lwt conceptors = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Set.conceptors set) in
-  let%lwt contents = Lwt_list.map_p (fun (version, params) -> let%lwt version = Api.call_exn (Version Get_row) version in lwt (version, params)) (Model.Set.contents set) in
-  let order = Model.Set.order set in
-  let%lwt owners = Lwt_list.map_p (Api.call_exn (User Get_row)) (Entry.Access.Private.owners access) in
-  let%lwt viewers = Lwt_list.map_p (Api.call_exn (User Get_row)) (Entry.Access.Private.viewers access) in
-  let visibility =
-    match Entry.Access.Private.is_public access, NEList.of_list viewers with
-    | true, _ -> `Everyone
-    | false, None -> `Owners_only
-    | false, Some viewers -> `Select_viewers viewers
-  in
-  lwt (name, (kind, (conceptors, (contents, (order, (owners, (visibility, ())))))))
+let unsubmit = lwt % With_id.form
 
 let entry_permission_new entry =
   let access = Entry.access entry in
@@ -219,37 +135,38 @@ let entry_permission_new entry =
   lwt @@ Permission_new.make ~entry_is_public ~actor_role ~actor_is_omniscient_administrator
 
 let create mode =
-  let%lwt user = Option.map Entry.id <$> Environment.actor in
-  let make_editor = fun ?pre_body () ->
-    Editor.make_page
-      ~key: "set"
-      ~icon: (Model Set)
-      ~mode
-      (editor user)
-      ~assemble
-      ~submit
-      ~unsubmit
-      ~disassemble
-      ~format: (Formatters.Set.name' ~link: true)
-      ~href: (Endpoints.Page.href_set % Entry.id)
-      ~check_product: (fun (set1, access1) (set2, access2) -> Model.Set.equal set1 set2 && Entry.Access.Private.equal access1 access2)
-      ?pre_body
-  in
-  match mode with
-  | Create _ | Create_with_local_storage | Quick_create _ ->
-    Main_page.assert_can_create_private make_editor
-  | Quick_edit _ ->
-    (* FIXME: I guess we should be able to check permissions like for Edit. *)
-    Main_page.assert_can_create_private make_editor
-  | Edit set ->
-    let%lwt permission = entry_permission_new set in
-    Main_page.assert_can_update permission @@ fun edit_reason ->
-    let pre_body =
-      match edit_reason with
-      | Owner -> []
-      | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this set as an omniscient administrator."]]]
-    in
-    make_editor ~pre_body ()
+  (* FIXME: if [mode] is an edition, then we should [assert_can_update_public] *)
+  (* FIXME: reintroduce the [?pre_body] explaining why the actor is allowed to
+     edit; maybe just via a helper [assert_can_create_private]? *)
+  Main_page.assert_can_create_public @@ fun () ->
+  Editor.make_page
+    ~key: "set"
+    ~icon: (Model Set)
+    ~mode
+    editor
+    ~assemble
+    ~submit
+    ~unsubmit
+    ~disassemble
+    ~format: (Formatters_new.Set.name ~link: true % With_id.map Set_form.to_name)
+    ~href: (Endpoints.Page.href_set % With_id.id)
+    ~check_product: Set_form.equal
+
+(* match mode with *)
+(* | Create _ | Create_with_local_storage | Quick_create _ -> *)
+(*   Main_page.assert_can_create_private make_editor *)
+(* | Quick_edit _ -> *)
+(*   (\* FIXME: I guess we should be able to check permissions like for Edit. *\) *)
+(*   Main_page.assert_can_create_private make_editor *)
+(* | Edit set -> *)
+(*   let%lwt permission = entry_permission_new set in *)
+(*   Main_page.assert_can_update permission @@ fun edit_reason -> *)
+(*   let pre_body = *)
+(*     match edit_reason with *)
+(*     | Owner -> [] *)
+(*     | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this set as an omniscient administrator."]]] *)
+(*   in *)
+(*   make_editor ~pre_body () *)
 
 let version_to_name (version : Model.Version.entry) : Version_name.t Lwt.t =
   let%lwt tune = Model.Version.tune' version in
@@ -274,7 +191,7 @@ let to_row (set : Model.Set.entry) : Set_row.t Lwt.t =
   }
 
 let create_row (mode : (Set_row.t, 'a) Editor.mode) =
-  let%lwt (mode : (Model.Set.entry, 'a) Editor.mode) =
+  let%lwt (mode : ((Set_id.t, Set_form.t) With_id.t, 'a) Editor.mode) =
     match mode with
     | Create state -> lwt @@ Editor.Create state
     | Create_with_local_storage -> lwt Editor.Create_with_local_storage
@@ -282,11 +199,11 @@ let create_row (mode : (Set_row.t, 'a) Editor.mode) =
       lwt @@
         Editor.Quick_create (
           init,
-          (fun set -> callback =<< to_row set)
+          (callback % With_id.map Set_form.to_row)
         )
-    | Edit result ->
-      let%lwt result = Option.get <$> Model.Set.get (Set_row.id result) in
-      lwt @@ Editor.Edit result
+    | Edit {Set_row.id; _} ->
+      let%lwt form = Api.call_exn (Set Get_form) id in
+      lwt @@ Editor.Edit {With_id.id; form}
     | Quick_edit state -> lwt @@ Editor.Quick_edit state
   in
   create mode
@@ -295,5 +212,5 @@ let add () =
   create Create_with_local_storage
 
 let edit id =
-  let%lwt set = Option.get <$> Model.Set.get id in
-  create (Edit set)
+  let%lwt form = Api.call_exn (Set Get_form) id in
+  create @@ Edit {With_id.id; form}

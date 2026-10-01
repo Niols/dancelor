@@ -117,6 +117,12 @@ SELECT *
 FROM "dances"
 WHERE "id" = @id;
 
+-- @get_form
+WITH "dances" AS &get_dance_forms
+SELECT *
+FROM "dances"
+WHERE "id" = @id;
+
 -- @search
 WITH "dance_rows" AS &get_dance_rows
 SELECT

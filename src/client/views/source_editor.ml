@@ -72,27 +72,21 @@ let editor =
   nil
 
 let assemble (name, (short_name, (editors, (date, (scddb_id, (description, ())))))) =
-  let editors = List.map Person_row.id editors in
-  Model.Source.make ~name ~short_name ~editors ~scddb_id ~description ~date ()
+  {Source_form.name; short_name; editors; scddb_id; description; date}
+
+let disassemble source =
+  let {Source_form.name; short_name; editors; date; scddb_id; description} = source in
+  lwt (name, (short_name, (editors, (date, (scddb_id, (description, ()))))))
 
 let submit mode source =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_source -> Api.call_exn (Source Update) (Entry.id prev_source) source;%lwt lwt (Entry.id prev_source)
+    | Editor.Edit {With_id.id; _} -> Api.call_exn (Source Update) id source;%lwt lwt id
     | _ -> Api.call_exn (Source Create) source
   in
-  Option.get <$> Model.Source.get id
+  lwt {With_id.id; form = source}
 
-let unsubmit = lwt % Entry.value
-
-let disassemble source =
-  let name = Model.Source.name source in
-  let short_name = Model.Source.short_name source in
-  let%lwt editors = Lwt_list.map_p (Api.call_exn (Person Get_row)) (Model.Source.editors source) in
-  let date = Model.Source.date source in
-  let scddb_id = Model.Source.scddb_id source in
-  let description = Model.Source.description source in
-  lwt (name, (short_name, (editors, (date, (scddb_id, (description, ()))))))
+let unsubmit = lwt % With_id.form
 
 let create mode =
   (* FIXME: if [mode] is an edition, then we should assert_can_update_public *)
@@ -106,9 +100,9 @@ let create mode =
     ~submit
     ~unsubmit
     ~disassemble
-    ~check_product: Model.Source.equal
-    ~format: (Formatters.Source.name' ~link: true)
-    ~href: (Endpoints.Page.href_source % Entry.id)
+    ~check_product: Source_form.equal
+    ~format: (Formatters_new.Source.name ~link: true % With_id.map Source_form.to_name)
+    ~href: (Endpoints.Page.href_source % With_id.id)
 
 let to_short_name (source : Model.Source.entry) : Source_short_name.t = {
   Source_short_name.id = Entry.id source;
@@ -121,7 +115,7 @@ let to_short_name (source : Model.Source.entry) : Source_short_name.t = {
 }
 
 let create_row (mode : (Source_row.t, 'a) Editor.mode) =
-  let%lwt (mode : (Model.Source.entry, 'a) Editor.mode) =
+  let%lwt (mode : ((Source_id.t, Source_form.t) With_id.t, 'a) Editor.mode) =
     match mode with
     | Create state -> lwt @@ Editor.Create state
     | Create_with_local_storage -> lwt Editor.Create_with_local_storage
@@ -129,22 +123,11 @@ let create_row (mode : (Source_row.t, 'a) Editor.mode) =
       lwt @@
         Editor.Quick_create (
           init,
-          (fun source ->
-            let%lwt editors = Lwt_list.map_p (Option.get <%> Model.Person.get) @@ Model.Source.editors' source in
-            let editors = List.map Person_editor.to_name editors in
-            let source = {
-              Source_row.id = Entry.id source;
-              name = NEString.to_string @@ Model.Source.name' source;
-              date = Model.Source.date' source;
-              editors;
-            }
-            in
-            callback source
-          )
+          (callback % With_id.map Source_form.to_row)
         )
-    | Edit result ->
-      let%lwt result = Option.get <$> Model.Source.get (Source_row.id result) in
-      lwt @@ Editor.Edit result
+    | Edit {Source_row.id; _} ->
+      let%lwt form = Api.call_exn (Source Get_form) id in
+      lwt @@ Editor.Edit {With_id.id; form}
     | Quick_edit state -> lwt @@ Editor.Quick_edit state
   in
   create mode
@@ -153,5 +136,5 @@ let add () =
   create Create_with_local_storage
 
 let edit id =
-  let%lwt source = Option.get <$> Model.Source.get id in
-  create (Edit source)
+  let%lwt form = Api.call_exn (Source Get_form) id in
+  create @@ Edit {With_id.id; form}

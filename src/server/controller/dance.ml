@@ -3,10 +3,12 @@ open Dancelor_common
 open Model_new
 open Search_new
 
-include Shared.Make_public(struct
+include Shared.Make_public_full(struct
+  type entry = Model_builder.Core.Dance.t
   type id = Dance_id.t
   type row = Dance_row.t
   type view = Dance_view.t
+  type form = Dance_form.t
   type query = Dance_query.t
   include Database.Dance
 end)
@@ -19,18 +21,6 @@ let get env id =
   | Some dance ->
     Permission.assert_can_get_public env dance;%lwt
     lwt dance
-
-let create env dance =
-  Permission.assert_can_create_public env;%lwt
-  Database.Dance.create dance
-
-let update env id dance =
-  Permission.assert_can_update_public env =<< get env id;%lwt
-  Database.Dance.update id dance
-
-let delete env id =
-  Permission.assert_can_delete_public env =<< get env id;%lwt
-  Database.Dance.delete id
 
 let tunes env id =
   let%lwt _ = get env id in
@@ -45,6 +35,7 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Dance.t -> a
   | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
+  | Get_form -> get_form env
   | Search -> search env
   | Create -> create env
   | Update -> update env

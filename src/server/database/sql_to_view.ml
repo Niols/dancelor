@@ -178,7 +178,7 @@ let book_sql_to_view
     ~name
     ~date
     ~authors
-    ~content
+    ~contents
     ~remark
     ~sources
     ~scddb_id
@@ -190,10 +190,10 @@ let book_sql_to_view
     name;
     date = Option.map (Option.get % PartialDate.from_string) date;
     authors;
-    content; (* Model_builder.Core.Book.page list *)
+    contents;
     remark;
-    sources; (* Source_name.t list *)
+    sources;
     scddb_id = Option.map Int64.to_int scddb_id;
-    warnings = []; (* a bit ugly *)
+    warnings = [];
     permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
   }

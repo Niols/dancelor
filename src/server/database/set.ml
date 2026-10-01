@@ -5,6 +5,8 @@ open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view
+open Sql_to_form
+open Form_to_sql
 
 module Entry_sql = Entry_sql.Sqlgg(Sqlgg_postgresql)
 module Set_sql = Set_sql.Sqlgg(Sqlgg_postgresql)
@@ -100,6 +102,16 @@ let get_view ~actor_id id : Set_view.t option Lwt.t =
     ~id
     (set_sql_to_view ~conceptors ~content ~k: Fun.id)
 
+let get_form ~actor_id id : Set_form.t option Lwt.t =
+  Connection.with_ @@ fun db ->
+  let%lwt conceptors = (fun f -> f id) <$> get_conceptors_for db (`One_of [id]) in
+  let%lwt contents = (fun f -> f id) <$> get_content_for db (`One_of [id]) in
+  Set_sql.Single.get_form
+    db
+    ~actor_id
+    ~id
+    (set_sql_to_form ~conceptors ~contents ~k: Fun.id)
+
 let search ~actor_id query : (Set_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Set_query.conceptor; contains_version; contains_tune}} = query in
   Connection.with_ @@ fun db ->
@@ -120,10 +132,54 @@ let search ~actor_id query : (Set_row.t * float) list Lwt.t =
         ~k: (Pair.snoc score)
     )
 
-(* Legacy *)
+let update_other_tables db ~set_id ~conceptors ~contents =
+  ignore <$> Set_sql.delete_all_conceptors db ~set_id;%lwt
+  Lwt_list.iter_s
+    (fun conceptor ->
+      ignore
+      <$> Set_sql.add_one_conceptor
+          db
+          ~set_id
+          ~conceptor_id: conceptor.Person_row.id
+    )
+    conceptors;%lwt
+  ignore <$> Set_sql.delete_all_content db ~set_id;%lwt
+  Lwt_list.iteri_s
+    (fun index (version, params) ->
+      ignore
+      <$> Set_sql.add_one_content_item
+          db
+          ~set_id
+          ~index: (Int64.of_int index)
+          ~version_id: version.Version_row.id
+          ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition params)
+          ~version_parameter_first_bar: (Option.map Int64.of_int @@ Model_builder.Core.Version_parameters.first_bar params)
+          ~version_parameter_clef: (Option.map Music.Clef.to_string @@ Model_builder.Core.Version_parameters.clef params)
+          ~version_parameter_structure: (Option.map (NEString.to_string % Model_builder.Core.Version_parameters.maybe_structure_to_string) @@ Model_builder.Core.Version_parameters.structure params)
+          ~version_parameter_trivia: (Model_builder.Core.Version_parameters.trivia params)
+          ~version_parameter_display_name: (Option.map NEString.to_string @@ Model_builder.Core.Version_parameters.display_name params)
+          ~version_parameter_display_composer: (Option.map NEString.to_string @@ Model_builder.Core.Version_parameters.display_composer params)
+    )
+    contents
 
-type t = Model_builder.Core.Set.t
-type entry = Model_builder.Core.Set.entry
+let create db ~owner_id set =
+  let%lwt id = Entry_new.make_private_new db `Set owner_id in
+  ignore <$> set_form_to_sql (Set_sql.create db) id set;%lwt
+  update_other_tables db ~set_id: id ~conceptors: set.conceptors ~contents: set.contents;%lwt
+  lwt id
+
+let update db id set =
+  Entry_new.touch db id;%lwt
+  ignore <$> set_form_to_sql (fun ~id -> Set_sql.update db ~id) id set;%lwt
+  update_other_tables db ~set_id: id ~conceptors: set.conceptors ~contents: set.contents
+
+let delete db id =
+  ignore <$> Set_sql.delete_all_conceptors db ~set_id: id;%lwt
+  ignore <$> Set_sql.delete_all_content db ~set_id: id;%lwt
+  ignore <$> Set_sql.delete db ~id;%lwt
+  Entry_new.delete db id
+
+(* Legacy *)
 
 let sql_to_set
     ~id
@@ -153,44 +209,6 @@ let sql_to_set
         ~remark: (Option.map NEString.of_string_exn remark)
         ()
     )
-
-let set_to_sql ~create_or_update db id set =
-  ignore
-  <$> create_or_update
-      db
-      ~id
-      ~name: (NEString.to_string @@ Model_builder.Core.Set.name set)
-      ~kind: (Kind_dance.to_string @@ Model_builder.Core.Set.kind set)
-      ~order: (Model_builder.Core.Set_order.to_string @@ Model_builder.Core.Set.order set)
-      ~remark: (Option.map NEString.to_string @@ Model_builder.Core.Set.remark set);%lwt
-  ignore <$> Set_sql.delete_all_conceptors db ~set_id: id;%lwt
-  Lwt_list.iter_s
-    (fun conceptor ->
-      ignore
-      <$> Set_sql.add_one_conceptor
-          db
-          ~set_id: id
-          ~conceptor_id: conceptor
-    )
-    (Model_builder.Core.Set.conceptors set);%lwt
-  ignore <$> Set_sql.delete_all_content db ~set_id: id;%lwt
-  Lwt_list.iteri_s
-    (fun index (version, params) ->
-      ignore
-      <$> Set_sql.add_one_content_item
-          db
-          ~set_id: id
-          ~index: (Int64.of_int index)
-          ~version_id: version
-          ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition params)
-          ~version_parameter_first_bar: (Option.map Int64.of_int @@ Model_builder.Core.Version_parameters.first_bar params)
-          ~version_parameter_clef: (Option.map Music.Clef.to_string @@ Model_builder.Core.Version_parameters.clef params)
-          ~version_parameter_structure: (Option.map (NEString.to_string % Model_builder.Core.Version_parameters.maybe_structure_to_string) @@ Model_builder.Core.Version_parameters.structure params)
-          ~version_parameter_trivia: (Model_builder.Core.Version_parameters.trivia params)
-          ~version_parameter_display_name: (Option.map NEString.to_string @@ Model_builder.Core.Version_parameters.display_name params)
-          ~version_parameter_display_composer: (Option.map NEString.to_string @@ Model_builder.Core.Version_parameters.display_composer params)
-    )
-    (Model_builder.Core.Set.contents set)
 
 let get id : Model_builder.Core.Set.entry option Lwt.t =
   Connection.with_ @@ fun db ->
@@ -225,22 +243,3 @@ let get id : Model_builder.Core.Set.entry option Lwt.t =
     )
   in
   Set_sql.Single.get db ~id (sql_to_set ~id ~conceptors ~viewers ~owners ~content)
-
-let create set access =
-  Connection.with_ @@ fun db ->
-  let%lwt id = Entry_new.make_private db `Set access in
-  set_to_sql ~create_or_update: Set_sql.create db id set;%lwt
-  lwt id
-
-let update id set access =
-  Connection.with_ @@ fun db ->
-  Entry_new.touch db id;%lwt
-  Entry_new.update_private_access db id access;%lwt
-  set_to_sql ~create_or_update: (fun db ~id -> Set_sql.update db ~id) db id set
-
-let delete id =
-  Connection.with_ @@ fun db ->
-  ignore <$> Set_sql.delete_all_conceptors db ~set_id: id;%lwt
-  ignore <$> Set_sql.delete_all_content db ~set_id: id;%lwt
-  ignore <$> Set_sql.delete db ~id;%lwt
-  Entry_new.delete db id

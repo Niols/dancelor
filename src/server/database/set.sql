@@ -17,14 +17,12 @@ INSERT INTO "set" (
     "id",
     "name",
     "kind",
-    "order",
-    "remark"
+    "order"
 ) VALUES (
     @id,
     @name,
     @kind,
-    @order,
-    @remark
+    @order
 );
 
 -- @update
@@ -32,8 +30,7 @@ UPDATE "set"
 SET
     "name" = @name,
     "kind" = @kind,
-    "order" = @order,
-    "remark" = @remark
+    "order" = @order
 WHERE "id" = @id;
 
 -- @delete
@@ -131,6 +128,12 @@ WHERE "sets"."id" IN @ids;
 
 -- @get_view
 WITH "sets" AS &get_set_views
+SELECT *
+FROM "sets"
+WHERE "sets"."id" = @id;
+
+-- @get_form
+WITH "sets" AS &get_set_forms
 SELECT *
 FROM "sets"
 WHERE "sets"."id" = @id;

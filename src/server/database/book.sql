@@ -88,7 +88,7 @@ INSERT INTO "book_sources" (
     @source_id
 );
 
--- @get_content
+-- @get_contents
 SELECT
     "index",
     "page_type",
@@ -109,7 +109,7 @@ FROM "book_content"
 WHERE "book_id" = @book_id
 ORDER BY "index";
 
--- @get_all_content
+-- @get_all_contents
 SELECT
     "book_id",
     "index",
@@ -130,7 +130,7 @@ SELECT
 FROM "book_content"
 ORDER BY "book_id", "index";
 
--- @delete_all_content
+-- @delete_all_contents
 DELETE FROM "book_content"
 WHERE "book_id" = @book_id;
 
@@ -246,6 +246,12 @@ SELECT *
 FROM "books"
 WHERE "books"."id" = @id;
 
+-- @get_form
+WITH "books" AS &get_book_forms
+SELECT *
+FROM "books"
+WHERE "books"."id" = @id;
+
 -- @search
 WITH "book_rows" AS &get_book_rows
 SELECT
@@ -285,8 +291,25 @@ FROM "book_authors"
 JOIN "persons" ON "book_authors"."author_id" = "persons"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
+-- @get_editors_for_sources_of
+WITH "persons" AS &get_person_rows
+SELECT "source_id", "persons".*
+FROM "book_sources"
+JOIN "source_editors" USING ("source_id")
+JOIN "persons" ON "source_editors"."person_id" = "persons"."id"
+WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
+
 -- @get_sources_for
 WITH "sources" AS &get_source_names
+SELECT
+    "book_id",
+    "sources".*
+FROM "book_sources"
+JOIN "sources" ON "book_sources"."source_id" = "sources"."id"
+WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
+
+-- @get_source_rows_for
+WITH "sources" AS &get_source_rows
 SELECT
     "book_id",
     "sources".*

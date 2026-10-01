@@ -5,6 +5,8 @@ open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view
+open Sql_to_form
+open Form_to_sql
 
 module Tune_sql = Tune_sql.Sqlgg(Sqlgg_postgresql)
 
@@ -29,6 +31,9 @@ let get_composers_for_tunes_of_dances db dance_ids =
 let get_composers_with_details_for db tune_ids =
   Utils.fold_to_get_list (Tune_sql.Fold.get_composers_with_details_for db ~tune_ids) (fun k ~tune_id -> person_sql_to_name_with_details ~k: (k tune_id))
 
+let get_composers_with_details_for' db tune_ids =
+  Utils.fold_to_get_list (Tune_sql.Fold.get_composers_with_details_for db ~tune_ids) (fun k ~tune_id -> person_sql_to_tune_composer ~k: (k tune_id))
+
 let get_row_for ids : (Tune_id.t -> Tune_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt composers_for = get_composers_for db (`One_of ids) in
@@ -50,6 +55,13 @@ let get_view id : Tune_view.t option Lwt.t =
   let%lwt composers = (fun f -> f id) <$> get_composers_with_details_for db (`One_of [id]) in
   Tune_sql.Single.get_view db ~id (tune_sql_to_view ~extra_names ~dances ~composers ~versions ~k: Fun.id)
 
+let get_form id : Tune_form.t option Lwt.t =
+  Connection.with_ @@ fun db ->
+  let%lwt extra_names = (fun f -> f id) <$> get_extra_names_for db (`One_of [id]) in
+  let%lwt dances = (fun f -> f id) <$> get_dances_for db (`One_of [id]) in
+  let%lwt composers = (fun f -> f id) <$> get_composers_with_details_for' db (`One_of [id]) in
+  Tune_sql.Single.get_form db ~id (tune_sql_to_form ~extra_names ~dances ~composers ~k: Fun.id)
+
 let search query : (Tune_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Tune_query.kind; composer}} = query in
   Connection.with_ @@ fun db ->
@@ -61,10 +73,51 @@ let search query : (Tune_row.t * float) list Lwt.t =
     ~composer: (Utils.option_to_sql composer)
     (fun ~score ~id -> tune_sql_to_row ~id ~composers: (composers_for id) ~k: (Pair.snoc score))
 
-(* Legacy *)
+let update_other_tables db ~tune_id ~extra_names ~composers ~dances =
+  ignore <$> Tune_sql.delete_all_extra_names db ~tune_id;%lwt
+  Lwt_list.iter_s
+    (fun extra_name ->
+      ignore <$> Tune_sql.add_one_extra_name db ~tune_id ~extra_name: (NEString.to_string extra_name)
+    )
+    extra_names;%lwt
+  ignore <$> Tune_sql.delete_all_composers db ~tune_id;%lwt
+  Lwt_list.iteri_s
+    (fun index {Tune_form.composer; details} ->
+      ignore
+      <$> Tune_sql.add_one_composer
+          db
+          ~tune_id
+          ~index: (Int64.of_int index)
+          ~composer_id: composer.id
+          ~details: (Option.map NEString.to_string details)
+    )
+    composers;%lwt
+  ignore <$> Tune_sql.delete_all_dances db ~tune_id;%lwt
+  Lwt_list.iter_s
+    (fun {Dance_row.id; _} ->
+      ignore <$> Tune_sql.add_one_dance db ~tune_id ~dance_id: id
+    )
+    dances
 
-type t = Model_builder.Core.Tune.t
-type entry = Model_builder.Core.Tune.entry
+let create db tune =
+  let%lwt id = Entry_new.make_public db `Tune in
+  ignore <$> tune_form_to_sql (Tune_sql.create db) id tune;%lwt
+  update_other_tables db ~tune_id: id ~extra_names: (NEList.tl tune.names) ~composers: tune.composers ~dances: tune.dances;%lwt
+  lwt id
+
+let update db id tune =
+  Entry_new.touch db id;%lwt
+  ignore <$> tune_form_to_sql (fun ~id -> Tune_sql.update db ~id) id tune;%lwt
+  update_other_tables db ~tune_id: id ~extra_names: (NEList.tl tune.names) ~composers: tune.composers ~dances: tune.dances
+
+let delete db id =
+  ignore <$> Tune_sql.delete_all_extra_names db ~tune_id: id;%lwt
+  ignore <$> Tune_sql.delete_all_composers db ~tune_id: id;%lwt
+  ignore <$> Tune_sql.delete_all_dances db ~tune_id: id;%lwt
+  ignore <$> Tune_sql.delete db ~id;%lwt
+  Entry_new.delete db id
+
+(* Legacy *)
 
 let sql_to_tune
     ~id
@@ -95,64 +148,9 @@ let sql_to_tune
         ()
     )
 
-let tune_to_sql ~create_or_update db id tune =
-  (* FIXME: transaction, maybe [Connection.with_transaction] *)
-  ignore
-  <$> create_or_update
-      db
-      ~id
-      ~name: (NEString.to_string @@ NEList.hd @@ Model_builder.Core.Tune.names tune)
-      ~kind: (Sql_types.kind_base_of_common @@ Model_builder.Core.Tune.kind tune)
-      ~remark: (Option.map NEString.to_string @@ Model_builder.Core.Tune.remark tune)
-      ~scddb_id: (Option.map Int64.of_int @@ Model_builder.Core.Tune.scddb_id tune)
-      ~date: (Option.map PartialDate.to_string @@ Model_builder.Core.Tune.date tune);%lwt
-  ignore <$> Tune_sql.delete_all_extra_names db ~tune_id: id;%lwt
-  Lwt_list.iter_s
-    (fun extra_name ->
-      ignore <$> Tune_sql.add_one_extra_name db ~tune_id: id ~extra_name: (NEString.to_string extra_name)
-    )
-    (NEList.tl @@ Model_builder.Core.Tune.names tune);%lwt
-  ignore <$> Tune_sql.delete_all_composers db ~tune_id: id;%lwt
-  Lwt_list.iteri_s
-    (fun index {Model_builder.Core.Tune.composer; details} ->
-      ignore
-      <$> Tune_sql.add_one_composer
-          db
-          ~tune_id: id
-          ~index: (Int64.of_int index)
-          ~composer_id: composer
-          ~details: (Option.map NEString.to_string details)
-    )
-    (Model_builder.Core.Tune.composers tune);%lwt
-  ignore <$> Tune_sql.delete_all_dances db ~tune_id: id;%lwt
-  Lwt_list.iter_s
-    (fun dance_id ->
-      ignore <$> Tune_sql.add_one_dance db ~tune_id: id ~dance_id
-    )
-    (Model_builder.Core.Tune.dances tune)
-
 let get id : Model_builder.Core.Tune.entry option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt extra_names = Tune_sql.List.get_extra_names db ~tune_id: id (fun ~extra_name -> NEString.of_string_exn extra_name) in
   let%lwt composers = Tune_sql.List.get_composers db ~tune_id: id (fun ~composer_id ~details -> (composer_id, Option.map NEString.of_string_exn details)) in
   let%lwt dances = Tune_sql.List.get_dances db ~tune_id: id (fun ~dance_id -> dance_id) in
   Tune_sql.Single.get db ~id (sql_to_tune ~id ~extra_names ~composers ~dances)
-
-let create tune =
-  Connection.with_ @@ fun db ->
-  let%lwt id = Entry_new.make_public db `Tune in
-  tune_to_sql ~create_or_update: Tune_sql.create db id tune;%lwt
-  lwt id
-
-let update id tune =
-  Connection.with_ @@ fun db ->
-  Entry_new.touch db id;%lwt
-  tune_to_sql ~create_or_update: (fun db ~id -> Tune_sql.update db ~id) db id tune
-
-let delete id =
-  Connection.with_ @@ fun db ->
-  ignore <$> Tune_sql.delete_all_extra_names db ~tune_id: id;%lwt
-  ignore <$> Tune_sql.delete_all_composers db ~tune_id: id;%lwt
-  ignore <$> Tune_sql.delete_all_dances db ~tune_id: id;%lwt
-  ignore <$> Tune_sql.delete db ~id;%lwt
-  Entry_new.delete db id

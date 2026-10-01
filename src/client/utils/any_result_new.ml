@@ -127,7 +127,7 @@ let make_book_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) 
     ?onclick
     (
       prefix @
-      [td [Formatters_new.Book.name ~link: (onclick = None) ?in_search book];
+      [td [Formatters_new.Book.name_row ~link: (onclick = None) ?in_search book];
       td [txt @@ Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) book.date];
       td (Formatters_new.Person.names ~links: (onclick = None) ~short: true book.authors);
       ] @

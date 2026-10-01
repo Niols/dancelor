@@ -26,25 +26,21 @@ let editor =
     () ^::
   nil
 
-let assemble (name, (scddb_id, ())) =
-  (* FIXME: This is obviously very wrong as it erases the _tunes_are_public information. *)
-  Model.Person.make ~name ~scddb_id ~composed_tunes_are_public: false ~published_tunes_are_public: false ()
+let assemble (name, (scddb_id, ())) : Person_form.t =
+  {name; scddb_id}
+
+let disassemble ({name; scddb_id}: Person_form.t) =
+  lwt (name, (scddb_id, ()))
 
 let submit mode person =
   let%lwt id =
     match mode with
-    | Editor.Edit prev_person -> Api.call_exn (Person Update) (Entry.id prev_person) person;%lwt lwt (Entry.id prev_person)
-    | _ ->
-      Api.call_exn (Person Create) person
+    | Editor.Edit {With_id.id; _} -> Api.call_exn (Person Update) id person;%lwt lwt id
+    | _ -> Api.call_exn (Person Create) person
   in
-  Option.get <$> Model.Person.get id
+  lwt {With_id.id; form = person}
 
-let unsubmit = lwt % Entry.value
-
-let disassemble person =
-  let name = Model.Person.name person in
-  let scddb_id = Model.Person.scddb_id person in
-  lwt (name, (scddb_id, ()))
+let unsubmit = lwt % With_id.form
 
 let create mode =
   (* FIXME: if [mode] is an edition, then we should assert_can_update_public *)
@@ -58,17 +54,18 @@ let create mode =
     ~submit
     ~unsubmit
     ~disassemble
-    ~check_product: Model.Person.equal
-    ~format: (Formatters.Person.name' ~link: true)
-    ~href: (Endpoints.Page.href_person % Entry.id)
+    ~check_product: Person_form.equal
+    ~format: (Formatters_new.Person.name ~link: true % With_id.map Person_form.to_name)
+    ~href: (Endpoints.Page.href_person % With_id.id)
 
+(* FIXME: Remove once dance and source editors don't rely on it anymore *)
 let to_name (person : Model.Person.entry) : Person_name.t = {
   Person_name.id = Entry.id person;
   name = NEString.to_string @@ Model.Person.name' person;
 }
 
 let create_row (mode : (Person_row.t, 'a) Editor.mode) =
-  let%lwt (mode : (Model.Person.entry, 'a) Editor.mode) =
+  let%lwt (mode : ((Person_id.t, Person_form.t) With_id.t, 'a) Editor.mode) =
     match mode with
     | Create state -> lwt @@ Editor.Create state
     | Create_with_local_storage -> lwt Editor.Create_with_local_storage
@@ -76,18 +73,11 @@ let create_row (mode : (Person_row.t, 'a) Editor.mode) =
       lwt @@
         Editor.Quick_create (
           init,
-          (fun result ->
-            let result = {
-              Person_row.id = Entry.id result;
-              name = NEString.to_string @@ Model.Person.name' result;
-            }
-            in
-            callback result
-          )
+          (callback % With_id.map Person_form.to_row)
         )
-    | Edit result ->
-      let%lwt result = Option.get <$> Model.Person.get (Person_row.id result) in
-      lwt @@ Editor.Edit result
+    | Edit {Person_row.id; _} ->
+      let%lwt form = Api.call_exn (Person Get_form) id in
+      lwt @@ Editor.Edit {With_id.id; form}
     | Quick_edit state -> lwt @@ Editor.Quick_edit state
   in
   create mode
@@ -96,5 +86,5 @@ let add () =
   create Create_with_local_storage
 
 let edit id =
-  let%lwt person = Option.get <$> Model.Person.get id in
-  create (Edit person)
+  let%lwt form = Api.call_exn (Person Get_form) id in
+  create @@ Edit {With_id.id; form}
