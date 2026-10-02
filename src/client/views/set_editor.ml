@@ -1,5 +1,6 @@
 open Nes
 open Dancelor_common
+module Model = Model_builder.Core
 open Model_new
 open Components
 open Html
@@ -41,7 +42,7 @@ let editor =
           Selector.prepare
             ~make_descr: (lwt % Person_row.name)
             ~make_result: (Any_result_new.make_person_result ?in_search: None)
-            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~label: "Conceptor"
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
@@ -117,27 +118,6 @@ let submit mode set =
 
 let unsubmit = lwt % With_id.form
 
-let entry_permission_new entry =
-  let access = Entry.access entry in
-  let entry_is_public = Entry.Access.Private.is_public access in
-  let%lwt actor_role, actor_is_omniscient_administrator =
-    match%lwt Environment.actor with
-    | None -> lwt (None, false)
-    | Some actor ->
-      lwt (
-        (
-          if List.exists (Entry.Id.equal' (Entry.id actor)) (Entry.Access.Private.owners access) then
-            Some (Owner : Permission_new.actor_role)
-          else if List.exists (Entry.Id.equal' (Entry.id actor)) (Entry.Access.Private.viewers access) then
-            Some (Viewer : Permission_new.actor_role)
-          else
-            None
-        ),
-        Model.User.is_omniscient_administrator' actor
-      )
-  in
-  lwt @@ Permission_new.make ~entry_is_public ~actor_role ~actor_is_omniscient_administrator
-
 let create mode =
   (* FIXME: if [mode] is an edition, then we should [assert_can_update_public] *)
   (* FIXME: reintroduce the [?pre_body] explaining why the actor is allowed to
@@ -168,28 +148,6 @@ let create mode =
 (*     | Omniscient_administrator -> [div ~a: [a_class ["mb-4"]] [Alert.make ~level: Warning [txt "You are editing this set as an omniscient administrator."]]] *)
 (*   in *)
 (*   make_editor ~pre_body () *)
-
-let version_to_name (version : Model.Version.entry) : Version_name.t Lwt.t =
-  let%lwt tune = Model.Version.tune' version in
-  lwt {
-    Version_name.id = Entry.id version;
-    name = NEString.to_string @@ NEList.hd @@ Model.Tune.names' tune;
-  }
-
-let to_row (set : Model.Set.entry) : Set_row.t Lwt.t =
-  let%lwt conceptors = Lwt_list.map_s (Option.get <%> Model.Person.get) @@ Model.Set.conceptors' set in
-  let conceptors = List.map Person_editor.to_name conceptors in
-  let%lwt tunes = Lwt_list.map_s (Option.get <%> Model.Version.get % fst) @@ Model.Set.contents' set in
-  let%lwt tunes = Lwt_list.map_s version_to_name tunes in
-  let%lwt permission = entry_permission_new set in
-  lwt {
-    Set_row.id = Entry.id set;
-    name = NEString.to_string @@ Model.Set.name' set;
-    kind = Model.Set.kind' set;
-    conceptors;
-    tunes;
-    permission;
-  }
 
 let create_row (mode : (Set_row.t, 'a) Editor.mode) =
   let%lwt (mode : ((Set_id.t, Set_form.t) With_id.t, 'a) Editor.mode) =

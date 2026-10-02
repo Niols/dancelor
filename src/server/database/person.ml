@@ -21,10 +21,6 @@ let get_form id : Person_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
   Person_sql.Single.get_form db ~id (person_sql_to_form ~k: Fun.id)
 
-let get_row_for_user (id : User_id.t) : Person_row.t option Lwt.t =
-  Connection.with_ @@ fun db ->
-  Person_sql.Single.get_row_for_user db ~id (person_sql_to_row ~k: Fun.id)
-
 let search query : (Person_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = ()} = query in
   Connection.with_ @@ fun db ->

@@ -1,4 +1,6 @@
 open Nes
+open Dancelor_common
+open Model_builder.Core
 open Components
 open Html
 
@@ -6,17 +8,17 @@ let editor =
   let open Bundle in
   group
     ~wrap: (fun (display_name, (display_composer, (structure, (first_bar, (transposition, ()))))) ->
-      Model.Version_parameters.make ?display_name ?display_composer ?structure ?first_bar ?transposition ()
+      Version_parameters.make ?display_name ?display_composer ?structure ?first_bar ?transposition ()
     )
     ~unwrap: (fun params ->
-      let display_name = Model.Version_parameters.display_name params in
-      let display_composer = Model.Version_parameters.display_composer params in
-      let structure = Model.Version_parameters.structure params in
-      let first_bar = Model.Version_parameters.first_bar params in
-      let transposition = Model.Version_parameters.transposition params in
+      let display_name = Version_parameters.display_name params in
+      let display_composer = Version_parameters.display_composer params in
+      let structure = Version_parameters.structure params in
+      let first_bar = Version_parameters.first_bar params in
+      let transposition = Version_parameters.transposition params in
         (display_name, (display_composer, (structure, (first_bar, (transposition, ())))))
     )
-    ~check: Model.Version_parameters.equal
+    ~check: Version_parameters.equal
     (
       Input.prepare_option
         ~type_: Text
@@ -36,8 +38,8 @@ let editor =
         ~type_: Text
         ~label: "Structure"
         ~placeholder: "eg. AABB or ABABB"
-        ~serialise: Model.Version_parameters.maybe_structure_to_string
-        ~validate: (S.const % Option.to_result ~none: "not a valid structure" % Model.Version_parameters.maybe_structure_of_string)
+        ~serialise: Version_parameters.maybe_structure_to_string
+        ~validate: (S.const % Option.to_result ~none: "not a valid structure" % Version_parameters.maybe_structure_of_string)
         () ^::
       Input.prepare_option
         ~type_: Text
@@ -64,4 +66,4 @@ let e =
     ~href: (fun _ -> assert false)
     editor
 
-let empty_value () = Editor.result_to_state e Model.Version_parameters.none
+let empty_value () = Editor.result_to_state e Version_parameters.none

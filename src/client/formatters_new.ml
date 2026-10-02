@@ -140,6 +140,9 @@ module Tune = struct
 end
 
 module Version = struct
+  let id id =
+    span [a ~a: [a_href @@ Endpoints.Page.href_version id] [txt @@ Entry.Id.to_string id]]
+
   let name ?(link = true) ?in_search ?in_set (version : Version_name.t) =
     if link then
       a
@@ -198,27 +201,27 @@ module Version = struct
         ]
 
   let parameters params =
-    let params = Option.value params ~default: Model.Version_parameters.none in
+    let params = Option.value params ~default: Model_builder.Core.Version_parameters.none in
     let display_name_block =
-      match Model.Version_parameters.display_name params with
+      match Model_builder.Core.Version_parameters.display_name params with
       | None -> []
       | Some display_name -> [txtf " [as “%s”]" @@ NEString.to_string display_name]
     in
     let structure_block =
-      match Model.Version_parameters.structure params with
+      match Model_builder.Core.Version_parameters.structure params with
       | None | Some Force_no_structure -> []
-      | Some Structure structure -> [txtf " [play %s]" @@ NEString.to_string @@ Model.Version.Structure.to_string structure]
+      | Some Structure structure -> [txtf " [play %s]" @@ NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure]
     in
     let transposition_block =
-      match Model.Version_parameters.transposition params with
+      match Model_builder.Core.Version_parameters.transposition params with
       | None -> []
       | Some transposition -> [txtf " [%+d m2]" @@ Transposition.to_semitones transposition]
     in
     display_name_block @ structure_block @ transposition_block
 
   let display_composer params =
-    let params = Option.value params ~default: Model.Version_parameters.none in
-    match Model.Version_parameters.display_composer params with
+    let params = Option.value params ~default: Model_builder.Core.Version_parameters.none in
+    match Model_builder.Core.Version_parameters.display_composer params with
     | None -> []
     | Some display_composer -> [txtf " [as “%s”]" @@ NEString.to_string display_composer]
 

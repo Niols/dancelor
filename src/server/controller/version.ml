@@ -17,12 +17,10 @@ end)
 
 (* Legacy *)
 
-let get env id =
+let get _env id =
   match%lwt Database.Version.get id with
   | None -> Permission.reject_can_get ()
-  | Some version ->
-    Permission.assert_can_get_public env version;%lwt
-    lwt version
+  | Some version -> lwt version
 
 (** Additionnally to the low-level permission system, version content is
     protected by copyright, so we check whether the composer or the publisher of
@@ -68,10 +66,7 @@ let with_copyright_check env version f =
     lwt (Endpoints.Version.Granted {payload; reason})
 
 let can_get_and_copyright_ok env version =
-  Lwt.l2
-    (&&)
-    (Permission.can_get_public env version)
-    (((<>) Endpoints.Version.Protected) <$> with_copyright_check env version (const lwt_unit))
+  ((<>) Endpoints.Version.Protected) <$> with_copyright_check env version (const lwt_unit)
 
 let get_view_for_tune env id =
   let all = Database.Version.get_all_for_tune id in
@@ -131,12 +126,12 @@ let build_snippets env id version_params _rendering_params =
 
 let build_snippets' env version version_params _rendering_params =
   Log.debug (fun m -> m "build_snippets'");
-  Permission.assert_can_create_public env;%lwt
+  Shared.assert_can_create () env @@ fun _actor ->
   register_snippets_job ~version_params version
 
 let build_snippets'_new env version version_params _rendering_params =
   Log.debug (fun m -> m "build_snippets'_new");
-  Permission.assert_can_create_public env;%lwt
+  Shared.assert_can_create () env @@ fun _actor ->
   register_snippets_job_new ~version_params version
 
 (* Dispatch *)

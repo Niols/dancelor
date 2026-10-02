@@ -15,12 +15,10 @@ end)
 
 (* Legacy *)
 
-let get env id =
+let get _env id =
   match%lwt Database.Tune.get id with
   | None -> Permission.reject_can_get ()
-  | Some tune ->
-    Permission.assert_can_get_public env tune;%lwt
-    lwt tune
+  | Some tune -> lwt tune
 
 (* Dispatch *)
 

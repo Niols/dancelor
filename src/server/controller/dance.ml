@@ -15,17 +15,14 @@ end)
 
 (* Legacy *)
 
-let get env id =
+let get _env id =
   match%lwt Database.Dance.get id with
   | None -> Permission.reject_can_get ()
-  | Some dance ->
-    Permission.assert_can_get_public env dance;%lwt
-    lwt dance
+  | Some dance -> lwt dance
 
 let tunes env id =
   let%lwt _ = get env id in
   let%lwt tunes = Database.Tune.get_rows_for_dance id in
-  let%lwt tunes = Lwt_list.filter_s (Permission.can_get_public_new env) tunes in
   lwt tunes
 
 (* Dispatch *)

@@ -15,15 +15,6 @@ include Shared.Make_public(struct
   let get_view id = (fun f -> f id) <$> get_row_for [id]
 end)
 
-(* Legacy *)
-
-let get env id =
-  match%lwt Database.User.get id with
-  | None -> Permission.reject_can_get ()
-  | Some user ->
-    Permission.assert_can_get_public env user;%lwt
-    lwt user
-
 let status env =
   lwt @@
     match Environment.actor env with
@@ -35,6 +26,13 @@ let status_new env =
   | None -> lwt_none
   | Some actor_id -> some <$> get_row env actor_id
 
+(* Legacy *)
+
+let get _env id =
+  match%lwt Database.User.get id with
+  | None -> Permission.reject_can_get ()
+  | Some user -> lwt user
+
 let sign_in env username password remember_me =
   Log.info (fun m -> m "Attempt to sign in with username `%s`." (Username.to_string username));
   match Environment.actor env with
@@ -43,11 +41,11 @@ let sign_in env username password remember_me =
     lwt_none
   | Anonymous ->
     (* FIXME: should be included in [get_password_from_username] except we return a user  *)
-    match%lwt Database.User.get_from_username username with
+    match%lwt Database.User.get_actor_from_username username with
     | None ->
       Log.info (fun m -> m "Rejecting because of wrong username.");
       lwt_none
-    | Some user ->
+    | Some actor ->
       match%lwt Database.User.get_password_from_username username with
       | None ->
         Log.info (fun m -> m "Rejecting because user has no password.");
@@ -57,9 +55,9 @@ let sign_in env username password remember_me =
         Log.info (fun m -> m "Rejecting because passwords do not match.");
         lwt_none
       | Some _ ->
-        Environment.sign_in env user ~remember_me;%lwt
+        Environment.sign_in env actor ~remember_me;%lwt
         Log.info (fun m -> m "Accepted sign in for %a." Environment.pp env);
-        lwt_some user
+        lwt_some actor
 
 let sign_out env =
   match Environment.actor env with
@@ -87,28 +85,28 @@ let create env user =
 let prepare_reset_password env username =
   Permission.assert_can_administrate env @@ fun _admin ->
   Log.info (fun m -> m "Preparing password reset for user `%s`." (Username.to_string username));
-  match%lwt Database.User.get_from_username username with
+  match%lwt Database.User.get_actor_from_username username with
   | None ->
     Log.info (fun m -> m "Rejecting because username not found.");
     Madge_server.shortcut_bad_request "User not found."
-  | Some user ->
+  | Some actor ->
     let token = Model.User.Password_reset_token_clear.make () in
     (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
        is only available on the server side (NesHashedSecretUnix), not in common code. *)
     let hashed_token = Database.User.Password_reset_token_hashed.inject @@ HashedSecret.make ~clear: (Model.User.Password_reset_token_clear.project token) in
     let max_date = Datetime.make_in_the_future (float_of_int @@ 3 * 24 * 3600) in
-    Database.User.set_password_reset_token (Entry.id user) hashed_token max_date;%lwt
+    Database.User.set_password_reset_token actor.id hashed_token max_date;%lwt
     Log.info (fun m -> m "Password reset token generated for user `%s`." (Username.to_string username));
     lwt token
 
 let reset_password username token password =
   Log.info (fun m -> m "Attempt to reset password for user `%s`." (Username.to_string username));
   (* FIXME: should be included in [get_password_reset_token_from_username] except we return a user  *)
-  match%lwt Database.User.get_from_username username with
+  match%lwt Database.User.get_actor_from_username username with
   | None ->
     Log.info (fun m -> m "Rejecting because of wrong username.");
     Madge_server.shortcut_forbidden_no_leak ()
-  | Some user ->
+  | Some actor ->
     match%lwt Database.User.get_password_reset_token_from_username username with
     | None ->
       Log.info (fun m -> m "Rejecting because of lack of token.");
@@ -131,12 +129,12 @@ let reset_password username token password =
           (* NOTE: We should use Password_hashed.make here, but HashedSecret.make
              is only available on the server side (NesHashedSecretUnix), not in common code. *)
           let password = Database.User.Password_hashed.inject @@ HashedSecret.make ~clear: (Model.User.Password_clear.project password) in
-          Database.User.set_password (Entry.id user) password
+          Database.User.set_password actor.id password
         )
 
 let set_omniscience env value =
-  Permission.assert_can_administrate env @@ fun user ->
-  Database.User.set_omniscience (Entry.id user) value
+  Permission.assert_can_administrate env @@ fun actor ->
+  Database.User.set_omniscience actor.id value
 
 (* Dispatch *)
 
@@ -145,7 +143,6 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.User.t -> a 
   | Get -> get env
   | Get_row -> get_row env
   | Status -> status env
-  | Status_new -> status_new env
   | Sign_in -> sign_in env
   | Sign_out -> sign_out env
   | Create -> create env

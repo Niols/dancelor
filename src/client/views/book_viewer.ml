@@ -76,13 +76,13 @@ let table_contents ~this_id content =
                   dance
               | Book_view.Dance (dance, Dance_versions versions_and_params) ->
                 Any_result_new.make_dance_plus_versions_result
-                  ~prefix: [td [txt "Dance"; Any_result.details [txt (if List.is_singleton versions_and_params then "+Tune" else "+Tunes")]]]
+                  ~prefix: [td [txt "Dance"; Any_result_new.block_details [txt (if List.is_singleton versions_and_params then "+Tune" else "+Tunes")]]]
                   ~suffix
                   dance
                   versions_and_params
               | Book_view.Dance (dance, Dance_set (set, params)) ->
                 Any_result_new.make_dance_plus_set_result
-                  ~prefix: [td [txt "Dance"; Any_result.details [txt "+Set"]]]
+                  ~prefix: [td [txt "Dance"; Any_result_new.block_details [txt "+Set"]]]
                   ~suffix
                   dance
                   set

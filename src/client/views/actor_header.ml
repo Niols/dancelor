@@ -32,14 +32,14 @@ let open_sign_in_dialog () =
       ~label: "Password"
       ~placeholder: "1234567"
       ~oninput: (fun _ -> set_status_signal Dont_know)
-      ~serialise: Model.User.Password_clear.project
+      ~serialise: Model_builder.Core.User.Password_clear.project
       ~validate: (fun password ->
         S.bind status_signal @@ fun status ->
         S.const @@
           match password, status with
           | "", _ -> Error "The password cannot be empty."
           | _, Invalid -> Error "Invalid username or password."
-          | _, Dont_know -> Ok (Model.User.Password_clear.inject password)
+          | _, Dont_know -> Ok (Model_builder.Core.User.Password_clear.inject password)
       )
       ""
   in
@@ -147,7 +147,7 @@ let header_item =
       | Some actor ->
         [
           Button.make
-            ~label: (Username.to_string @@ Model.User.username' actor)
+            ~label: (Username.to_string actor.username)
             ~icon: (Model User)
             ~classes: ["text-white"; "dropdown-toggle"]
             ~more_a: [a_user_data "bs-toggle" "dropdown"; a_aria "expanded" ["false"]]
@@ -158,7 +158,7 @@ let header_item =
               List.flatten
                 [
                   (
-                    if Model.User.is_administrator' actor then
+                    if actor.role = Administrator then
                       [
                         li [
                           Button.make_a
@@ -177,7 +177,7 @@ let header_item =
                             ()
                         ];
                         li [
-                          if Model.User.is_omniscient_administrator' actor then
+                          if actor.role = Administrator && actor.omniscience then
                             Button.make
                               ~label: "Disable omniscience"
                               ~icon: (Access Omniscient_administrator)

@@ -1,6 +1,6 @@
 open Nes
 open Dancelor_common
-open Model
+module Model = Model_builder.Core
 open Model_new
 open Search_new
 open Html
@@ -121,7 +121,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       version
       ~none: lwt_nil
       ~some: (fun version ->
-        match%lwt Permission.can_update_public_new version with
+        match%lwt Main_page.can_update_public version with
         | None -> lwt_nil
         | Some _ ->
           lwt [
@@ -135,7 +135,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       )
   );
   (
-    match%lwt Permission.can_update_public_new tune with
+    match%lwt Main_page.can_update_public tune with
     | None -> lwt_nil
     | Some _ ->
       lwt [
@@ -152,7 +152,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       version
       ~none: lwt_nil
       ~some: (fun version ->
-        match%lwt Permission.can_delete_public_new version with
+        match%lwt Main_page.can_delete_public version with
         | None -> lwt_nil
         | Some _ ->
           lwt [
@@ -165,7 +165,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       )
   );
   (
-    match%lwt Permission.can_delete_public_new tune with
+    match%lwt Main_page.can_delete_public tune with
     | None -> lwt_nil
     | Some _ ->
       lwt [
@@ -181,7 +181,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       version
       ~none: lwt_nil
       ~some: (fun version ->
-        match%lwt Permission.can_administrate () with
+        match%lwt Main_page.can_admin () with
         | false -> lwt_nil
         | true ->
           let other_versions = List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Entry.Id.equal' v.id version.Version_view.id) tune.versions in
@@ -230,7 +230,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
             txtf
               " in %s, shown here as %s"
               (Music.Key.to_pretty_string version.key)
-              (NEString.to_string @@ Version.Structure.to_string default_structure);
+              (NEString.to_string @@ Model.Version.Structure.to_string default_structure);
           ]
       );
       div ~a: [a_class ["col-auto"; "text-end"]] (

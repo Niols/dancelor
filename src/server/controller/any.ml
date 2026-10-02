@@ -9,8 +9,15 @@ let get env id =
   | Some any ->
     Model.Any.to_entry'
       any
-      ~on_public: (Permission.assert_can_get_public env)
-      ~on_private: (Permission.assert_can_get_private env);%lwt
+      ~on_public: (fun _entry -> lwt_unit)
+      ~on_private: (fun entry ->
+        Database.with_ @@ fun db ->
+        (* hackish solution to check whether we have access to that particular private entry *)
+        let actor_id = Environment.actor_id env in
+        match%lwt Database.Entry.get_permission db ~actor_id (Entry.id entry) with
+        | None -> Permission.reject_can_get ()
+        | Some _ -> lwt_unit
+      );%lwt
     lwt any
 
 let get_rows env ids =

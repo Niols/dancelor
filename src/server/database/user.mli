@@ -21,7 +21,14 @@ type entry = t Entry.public
 (** {2 Queries} *)
 
 val get_row_for : User_id.t list -> (User_id.t -> User_row.t option) Lwt.t
+val get_actor : User_id.t -> Actor.t option Lwt.t
 val search : User_query.t -> (User_row.t * float) list Lwt.t
+
+(** {2 From username} *)
+
+val get_actor_from_username : Username.t -> Actor.t option Lwt.t
+val get_password_from_username : Username.t -> Password_hashed.t option Lwt.t
+val get_password_reset_token_from_username : Username.t -> (Password_reset_token_hashed.t * Datetime.t) option Lwt.t
 
 (** {2 FIXME: Clean up the following} *)
 
@@ -29,12 +36,6 @@ val get : User_id.t -> entry option Lwt.t
 
 (* FIXME: we should really rather provide a fold function, or directly an Lwt_stream or something *)
 val get_all : unit -> entry list Lwt.t
-
-val get_from_username : Username.t -> entry option Lwt.t
-
-val get_password_from_username : Username.t -> Password_hashed.t option Lwt.t
-
-val get_password_reset_token_from_username : Username.t -> (Password_reset_token_hashed.t * Datetime.t) option Lwt.t
 
 val create :
   username: Username.t ->

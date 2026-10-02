@@ -1,5 +1,6 @@
 open Nes
 open Dancelor_common
+module Model = Dancelor_common.Model_builder.Core
 open Model_new
 open Html
 open Utils
@@ -17,7 +18,7 @@ let actions (dance : Dance_view.t) = [
     Endpoints.Book.Add_dance_to_contents
     (Dance_view.to_name dance);
   (
-    match%lwt Permission.can_update_public_new dance with
+    match%lwt Main_page.can_update_public () with
     | None -> lwt_nil
     | Some _ ->
       lwt [
@@ -30,7 +31,7 @@ let actions (dance : Dance_view.t) = [
       ]
   );
   (
-    match%lwt Permission.can_delete_public_new dance with
+    match%lwt Main_page.can_delete_public () with
     | None -> lwt_nil
     | Some _ ->
       lwt [

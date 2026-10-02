@@ -13,20 +13,11 @@ include Shared.Make_public_full(struct
   include Database.Person
 end)
 
-let for_user env id =
-  match%lwt Database.Person.get_row_for_user id with
-  | None -> lwt_none
-  | Some person ->
-    Permission.assert_can_get_public_new env person;%lwt
-    lwt_some person
-
 (* Legacy *)
-let get env id =
+let get _env id =
   match%lwt Database.Person.get id with
   | None -> Permission.reject_can_get ()
-  | Some person ->
-    Permission.assert_can_get_public env person;%lwt
-    lwt person
+  | Some person -> lwt person
 
 (* Dispatch *)
 
@@ -37,7 +28,6 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Person.t -> 
   | Get_view -> get_view env
   | Get_form -> get_form env
   | Search -> search env
-  | For_user -> for_user env
   | Create -> create env
   | Update -> update env
   | Delete -> delete env

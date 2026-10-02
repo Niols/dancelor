@@ -126,6 +126,28 @@ SELECT *
 FROM "users"
 WHERE "id" IN @ids;
 
+-- @actors | include: reuse
+SELECT
+    "user"."id",
+    "username",
+    "github_handle",
+    "role",
+    "omniscience",
+    "person_id",
+    "person"."name" AS "person_name"
+FROM "user"
+LEFT JOIN "person" ON "user"."person_id" = "person"."id";
+
+-- @get_actor
+WITH "actors" AS &actors
+SELECT * FROM "actors"
+WHERE "id" = @id;
+
+-- @get_actor_from_username
+WITH "actors" AS &actors
+SELECT * FROM "actors"
+WHERE "username" = @username;
+
 -- @search
 WITH "user_rows" AS &get_user_rows
 SELECT

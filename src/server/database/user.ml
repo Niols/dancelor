@@ -23,6 +23,30 @@ let search query : (User_row.t * float) list Lwt.t =
     ~terms
     (fun ~score -> user_sql_to_row ~k: (Pair.snoc score))
 
+let get_actor_gen f =
+  Connection.with_ @@ fun db ->
+  match%lwt f db with
+  | None -> lwt_none
+  | Some (id, username, github_handle, role, omniscience, person_id, person_name) ->
+    lwt_some {
+      Actor.id;
+      username = Username.of_string_exn username;
+      github_handle;
+      role = Sql_types.role_to_common role;
+      omniscience;
+      person =
+      match person_id, person_name with
+      | None, None -> None
+      | Some id, Some name -> Some {Person_row.id; name};
+      | _ -> assert false
+    }
+
+let get_actor id =
+  get_actor_gen (fun db -> User_sql.get_actor db ~id)
+
+let get_actor_from_username username =
+  get_actor_gen (fun db -> User_sql.get_actor_from_username db ~username: (Username.to_string username))
+
 (* Legacy *)
 
 type t = Entry.User.t
@@ -62,11 +86,6 @@ let row_to_user
 let get id : entry option Lwt.t =
   Connection.with_ @@ fun db ->
   User_sql.Single.get db ~id (row_to_user ~id)
-
-let get_from_username username =
-  let username = Username.to_string username in
-  Connection.with_ @@ fun db ->
-  User_sql.Single.get_from_username db ~username (row_to_user ~username)
 
 let get_all () : entry list Lwt.t =
   Connection.with_ @@ fun db ->

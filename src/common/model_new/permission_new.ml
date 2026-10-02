@@ -1,11 +1,11 @@
+type role =
+  Normal_user | Maintainer | Administrator
+[@@deriving eq, yojson]
+
 type actor_role =
   | Owner
   | Viewer
 [@@deriving eq, yojson]
-
-let actor_role_of_poly = function
-  | `Owner -> Owner
-  | `Viewer -> Viewer
 
 type t = {
   entry_is_public: bool;
@@ -13,15 +13,6 @@ type t = {
   actor_is_omniscient_administrator: bool;
 }
 [@@deriving eq, yojson]
-
-let make ~entry_is_public ~actor_role ~actor_is_omniscient_administrator =
-  {entry_is_public; actor_role; actor_is_omniscient_administrator}
-
-let make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator =
-  make
-    ~entry_is_public
-    ~actor_role: (Option.map actor_role_of_poly actor_role)
-    ~actor_is_omniscient_administrator
 
 type view_reason =
   | Public
@@ -38,6 +29,7 @@ let view_reason {entry_is_public; actor_role; actor_is_omniscient_administrator}
   | _, _, true -> Omniscient_administrator
   | _ -> failwith "Permission.view_reason"
 
+(* FIXME: if the entry is public, then maintainers also should be able to edit/delete! *)
 type edit_reason =
   | Owner
   | Omniscient_administrator
@@ -49,16 +41,10 @@ let edit_reason {actor_role; actor_is_omniscient_administrator; _} =
   | _, true -> Some Omniscient_administrator
   | _ -> None
 
-type delete_reason =
-  | Owner
-  | Omniscient_administrator
+type delete_reason = edit_reason
 [@@deriving show]
 
-let delete_reason {actor_role; actor_is_omniscient_administrator; _} =
-  match actor_role, actor_is_omniscient_administrator with
-  | Some Owner, _ -> Some Owner
-  | _, true -> Some Omniscient_administrator
-  | _ -> None
+let delete_reason = edit_reason
 
 type share_reason =
   | Owner

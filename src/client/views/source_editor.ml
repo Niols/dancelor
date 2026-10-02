@@ -1,5 +1,6 @@
 open Nes
 open Dancelor_common
+module Model = Model_builder.Core
 open Model_new
 open Components
 open Html
@@ -40,7 +41,7 @@ let editor =
             ~unserialise: (Api.call_or_option @@ Person Get_row)
             ~make_descr: (lwt % Person_row.name)
             ~make_result: (Any_result_new.make_person_result ?in_search: None)
-            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
             ()

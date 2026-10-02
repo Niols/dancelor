@@ -1,5 +1,6 @@
 open Nes
 open Dancelor_common
+module Model = Model_builder.Core
 open Model_new
 open Components
 open Html
@@ -261,7 +262,7 @@ let editor =
           Selector.prepare
             ~make_descr: (lwt % Person_row.name)
             ~make_result: (Any_result_new.make_person_result ?in_search: None)
-            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~label: "Arranger"
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
@@ -388,25 +389,6 @@ let create_gen mode =
 
 (* Needs to be exposed for other editors. *)
 let create mode = create_gen (`With_mode mode)
-
-let to_row (version : Model.Version.entry) : Version_row.t Lwt.t =
-  let content_to_content = function
-    | Model.Version.Content.No_content -> Version_row.No_content
-    | Destructured _ -> Destructured
-    | Monolithic {bars; structure; _} -> Monolithic {bars; structure}
-  in
-  let%lwt tune = Tune_editor.to_row =<< Model.Version.tune' version in
-  let%lwt sources = Lwt_list.map_s (Option.get <%> Model.Source.get % Model.Version.source_source) @@ Model.Version.sources' version in
-  let sources = List.map Source_editor.to_short_name sources in
-  let%lwt arrangers = Lwt_list.map_s (Person_editor.to_name % Option.get <%> Model.Person.get) (Model.Version.arrangers' version) in
-  lwt {
-    Version_row.id = Entry.id version;
-    tune;
-    sources;
-    disambiguation = Option.map NEString.to_string @@ Model.Version.disambiguation' version;
-    arrangers;
-    content = content_to_content @@ Model.Version.content' version;
-  }
 
 let create_row (mode : (Version_row.t, 'a) Editor.mode) =
   let%lwt (mode : ((Version_id.t, Version_form.t) With_id.t, 'a) Editor.mode) =

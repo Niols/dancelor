@@ -109,6 +109,9 @@ module Version_form = struct
   }
   [@@deriving eq, yojson]
 
+  let source_to_name {source = {id; name; _}; _} : Source_name.t =
+    {id; name}
+
   let source_to_short_name {source = {id; name; _}; _} : Source_short_name.t = {
     id;
     short_name = name; (* FIXME: that's bad *)

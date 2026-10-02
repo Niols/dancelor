@@ -1,4 +1,5 @@
 open Nes
+module Model = Dancelor_common.Model_builder.Core
 open Components
 open Js_of_ocaml
 open Utils

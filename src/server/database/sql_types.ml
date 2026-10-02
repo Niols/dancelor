@@ -83,12 +83,24 @@ let two_chords_of_common : Model_builder.Core.Dance.two_chords -> two_chords = f
   | One_chord -> `One_chord
   | Two_chords -> `Two_chords
 
-type role = [`Owner | `Viewer]
+type role = [`Normal_user | `Maintainer | `Administrator]
 
-let role_to_common : role -> Permission_new.actor_role = function
+let role_to_common : role -> Permission_new.role = function
+  | `Normal_user -> Normal_user
+  | `Maintainer -> Maintainer
+  | `Administrator -> Administrator
+
+let role_of_common : Permission_new.role -> role = function
+  | Normal_user -> `Normal_user
+  | Maintainer -> `Maintainer
+  | Administrator -> `Administrator
+
+type actor_role = [`Owner | `Viewer]
+
+let actor_role_to_common : actor_role -> Permission_new.actor_role = function
   | `Owner -> Owner
   | `Viewer -> Viewer
 
-let role_of_common : Permission_new.actor_role -> role = function
+let actor_role_of_common : Permission_new.actor_role -> actor_role = function
   | Owner -> `Owner
   | Viewer -> `Viewer

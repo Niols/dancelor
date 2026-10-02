@@ -14,15 +14,12 @@ include Shared.Make_public_full(struct
 end)
 
 (* Legacy *)
-let get env id =
+let get _env id =
   match%lwt Database.Source.get id with
   | None -> Permission.reject_can_get ()
-  | Some source ->
-    Permission.assert_can_get_public env source;%lwt
-    lwt source
+  | Some source -> lwt source
 
-let get_cover env id =
-  Permission.assert_can_get_public env =<< get env id;%lwt
+let get_cover _env id =
   Database.Source.with_cover id @@ fun fname ->
   let fname = Option.value fname ~default: (Filename.concat (Config.get ()).share "no-cover.webp") in
   Madge_server.respond_file ~fname

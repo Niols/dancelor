@@ -171,7 +171,7 @@ module Make_private_full (Db : Db_private_full) = struct
   let create env form =
     Database.with_ @@ fun db ->
     assert_can_create db env @@ fun actor ->
-    Db.create db ~owner_id: (Entry.id actor) form
+    Db.create db ~owner_id: actor.id form
 
   let update env id form =
     Database.with_ @@ fun db ->

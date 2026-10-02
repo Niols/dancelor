@@ -1,5 +1,6 @@
 open Nes
 open Dancelor_common
+module Model = Model_builder.Core
 open Model_new
 open Components
 open Html
@@ -46,7 +47,7 @@ let editor =
               Selector.prepare
                 ~make_descr: (lwt % Person_row.name)
                 ~make_result: (Any_result_new.make_person_result ?in_search: None)
-                ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+                ~results_when_no_search: (Option.to_list <$> Environment.person)
                 ~label: "Composer"
                 ~model_name: "person"
                 ~create_dialog_content: Person_editor.create_row
@@ -141,16 +142,6 @@ let create mode =
     ~href: (Endpoints.Page.href_tune % With_id.id)
     ~submit
     ~unsubmit
-
-let to_row tune =
-  let%lwt composers = Lwt_list.map_s (Option.get <%> Model.Person.get % Model.Tune.composer_composer) @@ Model.Tune.composers' tune in
-  let composers = List.map Person_editor.to_name composers in
-  lwt {
-    Tune_row.id = Entry.id tune;
-    name = NEString.to_string @@ NEList.hd @@ Model.Tune.names' tune;
-    kind = Model.Tune.kind' tune;
-    composers;
-  }
 
 let create_row (mode : (Tune_row.t, 'a) Editor.mode) =
   let%lwt (mode : ((Tune_id.t, Tune_form.t) With_id.t, 'a) Editor.mode) =

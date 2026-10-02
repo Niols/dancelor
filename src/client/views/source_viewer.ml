@@ -17,7 +17,7 @@ let view in_search id =
     ~share: (Sharing_dialog.copy_link_button @@ Source id)
     ~actions: [
       (
-        match%lwt Permission.can_update_public_new source with
+        match%lwt Main_page.can_update_public () with
         | None -> lwt_nil
         | Some _ ->
           lwt [
@@ -30,7 +30,7 @@ let view in_search id =
           ]
       );
       (
-        match%lwt Permission.can_delete_public_new source with
+        match%lwt Main_page.can_delete_public () with
         | None -> lwt_nil
         | Some _ ->
           lwt [

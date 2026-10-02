@@ -177,7 +177,8 @@ let get env id =
   match%lwt Database.Book.get id with
   | None -> Permission.reject_can_get ()
   | Some book ->
-    Permission.assert_can_get_private env book;%lwt
+    (* rely on [get_row] to guarantee that we do have access to this *)
+    let%lwt (_ : Book_row.t) = get_row env id in
     lwt book
 
 let build_pdf env id book_params rendering_params =

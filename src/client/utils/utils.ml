@@ -4,7 +4,6 @@ open Model_new
 open Search_new
 open Js_of_ocaml
 
-module Any_result = Any_result
 module Any_result_new = Any_result_new
 module Icon = Icon
 module Alert = Alert
@@ -70,23 +69,3 @@ let href_any_for_sharing_new any =
   let current = Uri.of_string (Js.to_string Dom_html.window##.location##.href) in
   let path = Endpoints.Page.(href Any) @@ Any_id.to_entry_id any in
   Uri.to_string @@ Uri.with_query (Uri.with_path current (Uri.path path)) []
-
-let old_any_to_any_id : Model.Any.t -> Any_id.t = function
-  | Person p -> Person (Entry.id p)
-  | Dance d -> Dance (Entry.id d)
-  | Source s -> Source (Entry.id s)
-  | Book b -> Book (Entry.id b)
-  | Set s -> Set (Entry.id s)
-  | Tune t -> Tune (Entry.id t)
-  | Version v -> Version (Entry.id v)
-  | User _ -> assert false
-
-let any_id_to_old_any : Any_id.t -> Model.Any.t Lwt.t = function
-  | Person id -> (fun p -> Model.Any.Person (Option.get p)) <$> Model.Person.get id
-  | Dance id -> (fun d -> Model.Any.Dance (Option.get d)) <$> Model.Dance.get id
-  | Source id -> (fun s -> Model.Any.Source (Option.get s)) <$> Model.Source.get id
-  | Book id -> (fun b -> Model.Any.Book (Option.get b)) <$> Model.Book.get id
-  | Set id -> (fun s -> Model.Any.Set (Option.get s)) <$> Model.Set.get id
-  | Tune id -> (fun t -> Model.Any.Tune (Option.get t)) <$> Model.Tune.get id
-  | Version id -> (fun v -> Model.Any.Version (Option.get v)) <$> Model.Version.get id
-  | User id -> (fun u -> Model.Any.User (Option.get u)) <$> Model.User.get id

@@ -192,7 +192,7 @@ let format_version_kind_and_structure (version : Version_row.t) =
     txtf
       "%s (%s)"
       (Kind.Version.to_string (bars, version.tune.kind))
-      (NEString.to_string @@ Model.Version.Structure.to_string structure)
+      (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure)
 
 let make_version_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (version : Version_row.t) =
   row

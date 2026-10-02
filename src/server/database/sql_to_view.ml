@@ -167,7 +167,11 @@ let set_sql_to_view
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
     order = Model_builder.Core.Set_order.of_string order;
     remark;
-    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
+    permission = {
+      entry_is_public;
+      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
+      actor_is_omniscient_administrator;
+    };
   }
 
 let book_sql_to_view
@@ -195,5 +199,9 @@ let book_sql_to_view
     sources;
     scddb_id = Option.map Int64.to_int scddb_id;
     warnings = [];
-    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
+    permission = {
+      entry_is_public;
+      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
+      actor_is_omniscient_administrator;
+    };
   }

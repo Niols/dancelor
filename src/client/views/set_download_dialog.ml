@@ -3,7 +3,7 @@ open Dancelor_common
 open Model_new
 open Html
 open Utils
-open Model
+open Model_builder.Core
 
 (* REVIEW: This is close to `Version_download_dialog.t`; there is room for
    factorisation here. *)
