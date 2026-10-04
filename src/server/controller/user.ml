@@ -38,11 +38,6 @@ let status env =
     | Anonymous -> None
     | Signed_in actor -> Some actor
 
-let status_new env =
-  match Environment.actor_id env with
-  | None -> lwt_none
-  | Some actor_id -> some <$> get_row env actor_id
-
 (* Legacy *)
 
 let sign_in env username password remember_me =

@@ -170,7 +170,7 @@ let href_set ?in_search set = href (Set View) in_search set
 let href_tune ?in_search tune = href (Tune View) in_search tune
 let href_version ?in_search ?in_set version = href (Version View) in_search in_set version
 
-let href_any_full_new ?in_search (any : Any_id.t) =
+let href_any_full ?in_search (any : Any_id.t) =
   match any with
   | Version version -> href_version ?in_search version
   | Set set -> href_set ?in_search set

@@ -9,7 +9,7 @@ let copy_link_button ?(object_is_public = false) (id : Any_id.t) =
     ~icon: (Action Share)
     ~classes: ["btn-primary"]
     ~onclick: (fun _ ->
-      write_to_clipboard @@ href_any_for_sharing_new id;
+      write_to_clipboard @@ href_any_for_sharing id;
       Toast.open_ ~title: "Copied to clipboard" [
         txt "The link to this page was copied to your clipboard.";
         txt (
@@ -145,7 +145,7 @@ let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
           ~disabled
           ~onclick: (fun _ ->
             update ();%lwt
-            write_to_clipboard @@ href_any_for_sharing_new id;
+            write_to_clipboard @@ href_any_for_sharing id;
             Toast.open_ ~title: "Permissions updated" [txt "The permissions have been updated, and a link to this page was copied to your clipboard."];
             return (some ());
             lwt_unit

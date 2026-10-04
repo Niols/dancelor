@@ -134,7 +134,7 @@ let create mode =
 (*   (\* FIXME: I guess we should be able to check permissions like for Edit. *\) *)
 (*   Main_page.assert_can_create_private make_editor *)
 (* | Edit set -> *)
-(*   let%lwt permission = entry_permission_new set in *)
+(*   let%lwt permission = entry_permission set in *)
 (*   Main_page.assert_can_update permission @@ fun edit_reason -> *)
 (*   let pre_body = *)
 (*     match edit_reason with *)

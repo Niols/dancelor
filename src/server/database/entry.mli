@@ -22,7 +22,7 @@ type visibility_or_public = [visibility | `Public]
 val make_public : Connection.t -> type_ -> 'tag Id.t Lwt.t
 (** Make a public entry and return the new id. *)
 
-val make_private_new : Connection.t -> type_ -> User_id.t -> 'tag Id.t Lwt.t
+val make_private : Connection.t -> type_ -> User_id.t -> 'tag Id.t Lwt.t
 (** Make a private entry, handling its access, and return the new id. *)
 
 val touch : Connection.t -> 'tag Id.t -> unit Lwt.t

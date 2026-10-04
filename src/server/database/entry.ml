@@ -75,7 +75,7 @@ let make_public db type_ =
      no visibility field. *)
   insert_to_entry_table db type_ ~is_public: true
 
-let make_private_new db type_ owner =
+let make_private db type_ owner =
   assert (classify_type type_ = `Private);
   insert_or_update_private db ~viewers: [] ~owners: [owner] @@ fun () ->
   insert_to_entry_table db type_ ~is_public: false

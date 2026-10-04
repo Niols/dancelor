@@ -196,7 +196,7 @@ let for_search query (any_id : Any_id.t) =
         (* NOTE: sync with search.ml *)
         S.const @@ href Explore query (Option.value page ~default: 1)
       in
-      let this_page = Some (Endpoints.Page.href_any_full_new any_id) in
+      let this_page = Some (Endpoints.Page.href_any_full any_id) in
       let index_total_category_name_lwt =
         let%lwt (index, total) =
           Lwt.map
@@ -212,7 +212,7 @@ let for_search query (any_id : Any_id.t) =
         in
         lwt (index, total, category, name)
       in
-      let page_href any = lwt @@ Endpoints.Page.href_any_full_new ~in_search: (Endpoints.Page.In_search.inject query) any in
+      let page_href any = lwt @@ Endpoints.Page.href_any_full ~in_search: (Endpoints.Page.In_search.inject query) any in
       let page_descr _any = "FIXME" in
       let versions_in_page : Any_id.t -> (Version_id.t * Version_parameters.t) list Lwt.t = function
         (** NOTE: This is about the versions that are **visible** in the any.
