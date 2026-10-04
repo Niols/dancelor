@@ -1,7 +1,7 @@
 (** {1 Client Router} *)
 
 open Nes
-open Model_new
+open Model
 
 module In_search = struct
   include Fresh.Make(String)

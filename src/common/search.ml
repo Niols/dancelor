@@ -1,5 +1,5 @@
 open Nes
-open Model_new
+open Model
 
 (** {2 Results} *)
 

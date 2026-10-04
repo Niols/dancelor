@@ -7,5 +7,5 @@ module Music = Music
 module Rendering_parameters = Rendering_parameters
 module SCDDB = SCDDB
 
-include Model_new
+include Model
 include Search

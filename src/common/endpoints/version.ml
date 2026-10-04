@@ -1,6 +1,6 @@
 open Nes
 open Madge
-open Model_new
+open Model
 open Search
 
 type copyright_response_reason =
