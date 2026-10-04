@@ -1,10 +1,8 @@
 open NesUnix
 open Dancelor_common
-open Model_new
-open Search_new
 
-include Shared.Make_private_full(struct
-  type entry = Model_builder.Core.Book.t
+include Shared.Make_private(struct
+  type tag = Book_tag.t
   type id = Book_id.t
   type row = Book_row.t
   type view = Book_view.t
@@ -21,7 +19,7 @@ let add_version_to_contents env id version_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt version_row = Version.get_row env version_id in
-  update env id {form with contents = form.contents @ [Versions (NEList.singleton (version_row, Model_builder.Core.Version_parameters.none))]}
+  update env id {form with contents = form.contents @ [Versions (NEList.singleton (version_row, Version_parameters.none))]}
 
 let add_set_to_contents env id set_id =
   (* FIXME: make all the database endpoints take the database such that
@@ -31,7 +29,7 @@ let add_set_to_contents env id set_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt set_row = Set.get_row env set_id in
-  update env id {form with contents = form.contents @ [Set (set_row, Model_builder.Core.Set_parameters.none)]}
+  update env id {form with contents = form.contents @ [Set (set_row, Set_parameters.none)]}
 
 let add_dance_to_contents env id dance_id =
   (* FIXME: make all the database endpoints take the database such that
@@ -77,14 +75,14 @@ module Warnings = struct
 
   let duplicate_set ~actor_id book =
     let%lwt sets = sets_from_content ~actor_id book in
-    match List.sort (fun s1 s2 -> Entry.Id.compare' s1.Set_view.id s2.id) sets with
+    match List.sort (fun s1 s2 -> Id.compare' s1.Set_view.id s2.id) sets with
     | [] -> lwt_nil
     | first_set :: other_sets ->
       let (_, warnings) =
         List.fold_left
           (fun (previous_set, warnings) current_set ->
             let warnings =
-              if Entry.Id.equal' current_set.Set_view.id previous_set.Set_view.id then
+              if Id.equal' current_set.Set_view.id previous_set.Set_view.id then
                   (Book_view.Duplicate_set (Set_view.to_name current_set) :: warnings)
               else
                 warnings
@@ -98,7 +96,7 @@ module Warnings = struct
 
   let unique_sets_from_content ~actor_id book =
     let%lwt sets = sets_from_content ~actor_id book in
-    lwt @@ List.sort_uniq (fun s1 s2 -> Entry.Id.compare' s1.Set_view.id s2.Set_view.id) sets
+    lwt @@ List.sort_uniq (fun s1 s2 -> Id.compare' s1.Set_view.id s2.Set_view.id) sets
 
   let duplicate_tune ~actor_id book =
     let%lwt sets = unique_sets_from_content ~actor_id book in
@@ -128,7 +126,7 @@ module Warnings = struct
     |> List.of_seq
     |> List.fold_left
         (fun warnings tune ->
-          let set_opts = List.sort_count (Option.compare (fun s1 s2 -> Entry.Id.compare' s1.Set_view.id s2.id)) (Hashtbl.find_all tunes_to_sets tune) in
+          let set_opts = List.sort_count (Option.compare (fun s1 s2 -> Id.compare' s1.Set_view.id s2.id)) (Hashtbl.find_all tunes_to_sets tune) in
           let set_opts = List.map (Pair.map_fst (Option.map Set_view.to_name)) set_opts in
           if List.length set_opts > 1 then
             Book_view.Duplicate_tune (tune, set_opts) :: warnings
@@ -171,31 +169,24 @@ let get_view env book =
   let%lwt warnings = Warnings.all ~actor_id: (Environment.actor_id env) book in
   lwt {book with warnings}
 
-(* Legacy *)
-
-let get env id =
-  match%lwt Database.Book.get id with
-  | None -> Permission.reject_can_get ()
-  | Some book ->
-    Permission.assert_can_get_private env book;%lwt
-    lwt book
-
 let build_pdf env id book_params rendering_params =
-  get env id >>= fun book ->
-  let%lwt book = Model_to_renderer.book_to_renderer_book' book book_params in
+  get_form env id >>= fun book ->
+  let actor_id = Environment.actor_id env in
+  let%lwt book = Model_to_renderer.book_to_renderer_book ~actor_id book book_params in
   let book_pdf_arg = Model_to_renderer.renderer_book_to_renderer_book_pdf_arg book rendering_params in
   uncurry Job.register_job_and_file <$> Renderer.make_book_pdf book_pdf_arg
 
 let build_zip env id book_params rendering_params =
-  get env id >>= fun book ->
+  get_form env id >>= fun book ->
+  let actor_id = Environment.actor_id env in
   let%lwt sets =
     Lwt_list.filter_map_s
       (fun page ->
-        match%lwt Model_to_renderer.page_to_renderer_page page book_params with
+        match%lwt Model_to_renderer.page_to_renderer_page ~actor_id page book_params with
         | (Part _, _) -> lwt_none
         | (Set set, pdf_metadata) -> lwt_some {Renderer.set; pdf_metadata}
       )
-      (Model.Book.contents' book)
+      book.contents
   in
   let sets = NEList.of_list_exn sets in
   let sets_zip_arg = Model_to_renderer.renderer_sets_to_renderer_sets_zip_arg sets rendering_params in
@@ -205,7 +196,6 @@ let build_zip env id book_params rendering_params =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Book.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env

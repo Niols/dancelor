@@ -1,7 +1,7 @@
 CREATE TYPE "type" AS ENUM ('Person', 'User', 'Dance', 'Source', 'Tune', 'Version', 'Set', 'Book');
 
 CREATE TABLE "entry" (
-    -- [sqlgg] module=Sql_types.Entry_id_conv
+    -- [sqlgg] module=Sql_types.Untagged_id_conv
     "id" VARCHAR(14) NOT NULL,
     "type" "type" NOT NULL,
     "created_at" TIMESTAMP NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE "user" (
 CREATE TYPE "actor_role" AS ENUM ('Owner', 'Viewer');
 
 CREATE TABLE "entry_actors" (
-    -- [sqlgg] module=Sql_types.Entry_id_conv
+    -- [sqlgg] module=Sql_types.Untagged_id_conv
     "entry_id" VARCHAR(14) NOT NULL,
     -- [sqlgg] module=Sql_types.User_id_conv
     "user_id" VARCHAR(14) NOT NULL,

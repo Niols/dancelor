@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Html
 open Utils
 
@@ -68,9 +67,9 @@ let dialog_to_book ~source_type ~source_id ~source_format endpoint source =
     ~source_format
     ~target_type: "book"
     ~target_icon: Icon.(Model Book)
-    ~target_format: (Formatters_new.Book.name % Book_row.to_name)
+    ~target_format: (Formatters.Book.name % Book_row.to_name)
     ~target_href: (Endpoints.Page.href_book % Book_row.id)
-    ~target_result: (Any_result_new.make_book_result ?classes: None ?prefix: None ?suffix: None)
+    ~target_result: (Any_result.make_book_result ?classes: None ?prefix: None ?suffix: None)
     ~target_search: (fun slice query -> Api.book_search slice query)
     ~target_history: History.get_books
     ~target_add_source_to_content: (fun (book : Book_row.t) source ->

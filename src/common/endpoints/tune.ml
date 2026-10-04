@@ -1,11 +1,9 @@
 open Nes
 open Madge
-open Model_new
-open Search_new
-open Model_builder.Core
+open Model
+open Search
 
 type (_, _, _) t =
-  | Get : (Tune_id.t -> 'w, 'w, Tune.entry) t
   | Get_row : (Tune_id.t -> 'w, 'w, Tune_row.t) t
   | Get_view : (Tune_id.t -> 'w, 'w, Tune_view.t) t
   | Get_form : (Tune_id.t -> 'w, 'w, Tune_form.t) t
@@ -18,7 +16,6 @@ type (_, _, _) t =
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in
   function
-    | Get -> variable (module Tune_id) @@ get (module Entry.JPublic(Tune))
     | Get_row -> variable (module Tune_id) @@ literal "row" @@ get (module Tune_row)
     | Get_view -> variable (module Tune_id) @@ literal "view" @@ get (module Tune_view)
     | Get_form -> variable (module Tune_id) @@ literal "form" @@ get (module Tune_form)

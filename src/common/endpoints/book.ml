@@ -1,11 +1,9 @@
 open Nes
 open Madge
-open Model_new
-open Search_new
-open Model_builder.Core
+open Model
+open Search
 
 type (_, _, _) t =
-  | Get : (Book_id.t -> 'w, 'w, Book.entry) t
   | Get_row : (Book_id.t -> 'w, 'w, Book_row.t) t
   | Get_view : (Book_id.t -> 'w, 'w, Book_view.t) t
   | Get_form : (Book_id.t -> 'w, 'w, Book_form.t) t
@@ -24,7 +22,6 @@ type (_, _, _) t =
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in
   function
-    | Get -> variable (module Book_id) @@ get (module Entry.JPrivate(Book))
     | Get_row -> variable (module Book_id) @@ literal "row" @@ get (module Book_row)
     | Get_view -> variable (module Book_id) @@ literal "view" @@ get (module Book_view)
     | Get_form -> variable (module Book_id) @@ literal "form" @@ get (module Book_form)

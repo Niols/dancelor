@@ -39,7 +39,7 @@ let open_quick_search () =
         ~onclick: (fun () -> quick_search_to_explorer (S.value @@ Components.Search.Quick.text quick_search))
         ();
     ]
-    ~make_result: (fun ?in_search result -> Any_result_new.make_result ?in_search result)
+    ~make_result: (fun ?in_search result -> Any_result.make_result ?in_search result)
     quick_search
 
 let nav_item_explore =
@@ -280,21 +280,42 @@ let madge_call_or_404 endpoint arg f =
     | Madge_client.(Error (Http {status; _})) -> Oooops_viewer.create status
 
 let assert_can_create_public f =
-  match%lwt Permission.can_create_public () with
+  match%lwt Environment.actor with
   | Some _ -> f ()
   | None -> Oooops_viewer.create `Forbidden
 
 let assert_can_create_private f =
-  match%lwt Permission.can_create_private () with
+  match%lwt Environment.actor with
   | Some _ -> f ()
   | None -> Oooops_viewer.create `Forbidden
 
 let assert_can_update permission f =
-  match Model_new.Permission_new.edit_reason permission with
+  match Permission.edit_reason permission with
   | Some edit_reason -> f edit_reason
   | None -> Oooops_viewer.create `Forbidden
 
+let can_update_public _ =
+  match%lwt Environment.actor with
+  | None -> lwt_none
+  | Some actor ->
+    (* FIXME: This is such a hack! [Permission_new] and [edit_reason] should be
+       aware of maintainers and non-omniscient administrator. *)
+    lwt @@
+      Permission.edit_reason {
+        actor_role = None;
+        actor_is_omniscient_administrator = (actor.role = Maintainer || actor.role = Administrator);
+        entry_is_public = true;
+      }
+
+let can_delete_public = can_update_public
+
+let can_admin () =
+  match%lwt Environment.actor with
+  | Some actor when actor.role = Administrator -> lwt_true
+  | _ -> lwt_false
+
 let assert_can_admin f =
-  match%lwt Permission.can_administrate () with
-  | true -> f ()
-  | false -> Oooops_viewer.create `Forbidden
+  if%lwt can_admin () then
+    f ()
+  else
+    Oooops_viewer.create `Forbidden

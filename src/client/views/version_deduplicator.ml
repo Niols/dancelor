@@ -1,8 +1,5 @@
 open Nes
 open Dancelor_common
-open Model
-open Model_new
-open Search_new
 open Html
 open Utils
 
@@ -18,43 +15,10 @@ let make_change_trackers () =
     )
   )
 
-let version_model_to_version_row : Model.Version.entry -> Version_row.t Lwt.t = fun version ->
-  let {Model_builder.Core.Version.tune; sources; arrangers; disambiguation; content; _} = Entry.value version in
-  let%lwt tune = Api.call_exn (Tune Get_row) tune in
-  let%lwt sources =
-    Lwt_list.map_p
-      (fun {Model_builder.Core.Version.source; _} ->
-        Source_view.to_short_name <$> Api.call_exn (Source Get_view) source
-      )
-      sources
-  in
-  let%lwt arrangers =
-    Lwt_list.map_p
-      (fun arranger ->
-        Person_row.to_name <$> Api.call_exn (Person Get_row) arranger
-      )
-      arrangers
-  in
-  let content : Version_row.content =
-    match content with
-    | No_content -> No_content
-    | Destructured _ -> Destructured
-    | Monolithic {bars; structure; _} -> Monolithic {bars; structure}
-  in
-  lwt {
-    Version_row.id =
-    Entry.id version;
-    tune;
-    sources;
-    disambiguation = Option.map NEString.to_string disambiguation;
-    arrangers;
-    content;
-  }
-
 (* /!\ deduplicate this version INTO the other version *)
-let confirmation_dialog ~this_version ~other_version =
-  let%lwt this_version_row : Version_row.t = version_model_to_version_row this_version in
-  let%lwt other_version_row : Version_row.t = version_model_to_version_row other_version in
+let confirmation_dialog ~this_version_id ~other_version_id =
+  let%lwt this_version = Api.call_exn (Version Get_form) this_version_id in
+  let%lwt other_version = Api.call_exn (Version Get_form) other_version_id in
   let (get_changes_actions, get_changes_html, add_changes) = make_change_trackers () in
 
   (* changes to other version *)
@@ -63,76 +27,61 @@ let confirmation_dialog ~this_version ~other_version =
       make_change_trackers ()
     in
     (* tune *)
-    let%lwt this_tune = Model.Version.tune' this_version in
-    let%lwt other_tune = Model.Version.tune' other_version in
-    if not (Entry.equal' this_tune other_tune) then
+    if not (Id.equal' this_version.tune.id other_version.tune.id) then
       failwith "Version de-duplicator: these two versions do not share the same tune.";
+    let the_tune = other_version.tune in
     (* key *)
-    let this_key = Model.Version.key' this_version in
-    let other_key = Model.Version.key' other_version in
-    if this_key <> other_key then
+    if this_version.key <> other_version.key then
       failwith "Version de-duplicator: these two versions do not share the same key.";
+    let the_key = other_version.key in
     (* FIXME: can do better? *)
     (* sources *)
-    let this_sources = Model.Version.sources' this_version in
-    let other_sources = Model.Version.sources' other_version in
-    let other_sources = other_sources @ this_sources in
-    (* FIXME: de-duplicate and detect the changes? *)
     (
-      match this_sources with
+      match this_version.sources with
       | [] -> ()
       | _ ->
         add_other_version_changes [
           txt "add the following sources:";
-          R.ul (
-            S.from_lwt [] @@
-              Lwt_list.map_p
-                (fun Model.Version.{source; structure; _} ->
-                  let%lwt source = Option.get <$> Model.Source.get source in
-                  lwt @@
-                    li [
-                      Formatters.Source.name' source;
-                      txtf " (%s)" (NEString.to_string @@ Version.Structure.to_string structure);
-                    ]
-                )
-                this_sources
+          ul (
+            List.map
+              (fun source ->
+                li [
+                  Formatters.Source.name (Version_form.source_to_name source);
+                  txtf " (%s)" (NEString.to_string @@ Version_content.Structure.to_string source.structure);
+                ]
+              )
+              this_version.sources
           );
         ]
     );
+    let the_sources = other_version.sources @ this_version.sources in
     (* arrangers *)
-    let%lwt this_arrangers = Lwt_list.map_p (Option.get <%> Model.Person.get) (Model.Version.arrangers' this_version) in
-    let%lwt other_arrangers = Lwt_list.map_p (Option.get <%> Model.Person.get) (Model.Version.arrangers' other_version) in
-    if this_arrangers <> other_arrangers then
+    if this_version.arrangers <> other_version.arrangers then
       failwith "Version de-duplicator: these two versions do not share the same arrangers.";
+    let the_arrangers = other_version.arrangers in
     (* FIXME: can do better? *)
     (* remark *)
-    let this_remark = Model.Version.remark' this_version in
-    let other_remark = Model.Version.remark' other_version in
-    if this_remark <> other_remark then
+    if this_version.remark <> other_version.remark then
       failwith "Version de-duplicator: these two versions do not share the same remark.";
+    let the_remark = other_version.remark in
     (* FIXME: can do better? *)
     (* disambiguation *)
-    let this_disambiguation = Model.Version.disambiguation' this_version in
-    let other_disambiguation = Model.Version.disambiguation' other_version in
-    if this_disambiguation <> other_disambiguation then
+    if this_version.disambiguation <> other_version.disambiguation then
       failwith "Version de-duplicator: these two versions do not share the same disambiguation.";
+    let the_disambiguation = other_version.disambiguation in
     (* FIXME: can do better? *)
     (* content *)
-    let%lwt other_content = Api.call_exn (Version Content) (Entry.id other_version) in
-    let other_content =
-      match other_content with
-      | Endpoints.Version.Protected -> assert false
-      | Endpoints.Version.Granted {payload; _} -> payload
-    in
     add_other_version_changes [txt "use its content; the content of the current version will be lost entirely."];
+    let the_content = other_version.content in
     (* that's it for changes to the other version; bundle them together as a change *)
     let other_version_formatted =
-      span [
-        Formatters.Version.name_disambiguation_and_sources' other_version;
-        txt " [";
-        Formatters.Version.id' other_version;
-        txt "]"
-      ]
+      span (
+        Formatters.Version.name_disambiguation_and_sources (Version_form.to_row other_version_id other_version) @ [
+          txt " [";
+          Formatters.Version.id other_version_id;
+          txt "]"
+        ]
+      )
     in
     (
       match get_other_version_changes () with
@@ -141,50 +90,19 @@ let confirmation_dialog ~this_version ~other_version =
       | changes ->
         add_changes
           ~action: (fun () ->
-            (* FIXME: we should clearly not be reconstructing anything here but
-               have the right data right away *)
-            let%lwt other_composers =
-              Lwt_list.map_p
-                (fun {Tune.composer; _} ->
-                  Api.call_exn (Person Get_row) composer
-                )
-                (Model.Tune.composers' other_tune)
-            in
-            let%lwt other_sources =
-              Lwt_list.map_p
-                (fun {Version.source; structure; details} ->
-                  let%lwt source = Api.call_exn (Source Get_row) source in
-                  lwt {Version_form.source; structure; details}
-                )
-                other_sources
-            in
-            let other_arrangers =
-              List.map
-                (fun arranger ->
-                  {
-                    Person_row.id = Entry.id arranger;
-                    name = NEString.to_string @@ Model.Person.name' arranger;
-                  }
-                )
-                other_arrangers
-            in
             ignore
             <$> Api.call_exn
                 (Version Update)
-                (Entry.id other_version)
+                other_version_id
                 {
-                  Version_form.tune = {
-                    Tune_row.id = Entry.id other_tune;
-                    name = NEString.to_string @@ NEList.hd @@ Model.Tune.names' other_tune;
-                    kind = Model.Tune.kind' other_tune;
-                    composers = other_composers;
-                  };
-                  key = other_key;
-                  sources = other_sources;
-                  arrangers = other_arrangers;
-                  remark = other_remark;
-                  disambiguation = other_disambiguation;
-                  content = other_content;
+                  Version_form.tune =
+                  the_tune;
+                  key = the_key;
+                  sources = the_sources;
+                  arrangers = the_arrangers;
+                  remark = the_remark;
+                  disambiguation = the_disambiguation;
+                  content = the_content;
                 }
           (* FIXME: we should report nicely if things fail *)
           )
@@ -200,8 +118,8 @@ let confirmation_dialog ~this_version ~other_version =
 
   (* how to update a version from a set or a book *)
   let replace_version (a_version : Version_row.t) =
-    if Entry.Id.equal' a_version.id this_version_row.id then
-      other_version_row
+    if Id.equal' a_version.id this_version_id then
+        (Version_form.to_row other_version_id other_version)
     else
       a_version
   in
@@ -210,7 +128,7 @@ let confirmation_dialog ~this_version ~other_version =
   let%lwt sets =
     Search_result.items
     <$> Api.call_exn (Set Search) Slice.everything @@
-        Query.make ~specific: (Set_query.make_specific ~contains_version: (Some [Entry.id this_version]) ()) ()
+        Query.make ~specific: (Set_query.make_specific ~contains_version: (Some [this_version_id]) ()) ()
   in
   let%lwt sets =
     Lwt_list.map_p
@@ -226,7 +144,7 @@ let confirmation_dialog ~this_version ~other_version =
           let contents = List.map (Pair.map_fst replace_version) set.Set_form.contents in
           ignore <$> Api.call_exn (Set Update) id {set with contents}
         )
-        [txt "replace the version in set "; Formatters_new.Set.name (Set_form.to_name id set); txt "."]
+        [txt "replace the version in set "; Formatters.Set.name (Set_form.to_name id set); txt "."]
     )
     sets;
 
@@ -234,7 +152,7 @@ let confirmation_dialog ~this_version ~other_version =
   let%lwt books =
     Search_result.items
     <$> Api.call_exn (Book Search) Slice.everything @@
-        Query.make ~specific: (Book_query.make_specific ~contains_version: (Some [Entry.id this_version]) ()) ()
+        Query.make ~specific: (Book_query.make_specific ~contains_version: (Some [this_version_id]) ()) ()
   in
   let%lwt books =
     Lwt_list.map_p
@@ -260,7 +178,7 @@ let confirmation_dialog ~this_version ~other_version =
         )
         [
           txt "replace the version in book ";
-          Formatters_new.Book.name (Book_form.to_name id book);
+          Formatters.Book.name (Book_form.to_name id book);
           txt "."
         ]
     )
@@ -268,14 +186,15 @@ let confirmation_dialog ~this_version ~other_version =
 
   (* removal of the current version *)
   add_changes
-    ~action: (fun () -> ignore <$> Api.call_exn (Version Delete) (Entry.id this_version))
-    [
-      txt "delete the current version, ";
-      Formatters.Version.name_disambiguation_and_sources' this_version;
-      txt " [";
-      Formatters.Version.id' this_version;
-      txt "].";
-    ];
+    ~action: (fun () -> ignore <$> Api.call_exn (Version Delete) this_version_id)
+    (
+      [txt "delete the current version, "] @
+      Formatters.Version.name_disambiguation_and_sources (Version_form.to_row this_version_id this_version) @ [
+        txt " [";
+        Formatters.Version.id this_version_id;
+        txt "].";
+      ]
+    );
 
   (* report *)
   let%lwt user_input =
@@ -320,7 +239,7 @@ let confirmation_dialog ~this_version ~other_version =
           ~label: "Go to other version"
           ~icon: (Model Version)
           ~classes: ["btn-primary"]
-          ~href: (S.const @@ Endpoints.Page.href_version (Entry.id other_version))
+          ~href: (S.const @@ Endpoints.Page.href_version other_version_id)
           ();
       ];
     lwt_unit
@@ -336,9 +255,9 @@ let dialog (version : Version_view.t) (other_versions : Version_row.t list) =
       Tables.versions
         other_versions
         ~onclick: (fun other_version ->
-          let%lwt version = Option.get <$> Model.Version.get version.id in
-          let%lwt other_version = Option.get <$> Model.Version.get other_version.id in
-          confirmation_dialog ~this_version: version ~other_version;%lwt
+          confirmation_dialog
+            ~this_version_id: version.id
+            ~other_version_id: other_version.id;%lwt
           return (some ());
           lwt_unit
         );

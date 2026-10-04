@@ -1,8 +1,7 @@
 (** {1 Client Router} *)
 
 open Nes
-open Model_builder
-open Model_new
+open Model
 
 module In_search = struct
   include Fresh.Make(String)
@@ -63,13 +62,13 @@ type (_, _, _) book =
 type (_, _, _) user =
   | Create : ('w, 'w, Void.t) user
   | Prepare_reset_password : ('w, 'w, Void.t) user
-  | Password_reset : (Username.t -> Core.User.Password_reset_token_clear.t -> 'w, 'w, Void.t) user
+  | Password_reset : (Username.t -> Password_reset_token_clear.t -> 'w, 'w, Void.t) user
 [@@deriving madge_wrapped_endpoints]
 
 type (_, _, _) t =
   | Index : ('w, 'w, Void.t) t
   | Explore : (string -> int -> 'w, 'w, Void.t) t
-  | Any : (unit Entry.Id.t -> 'w, 'w, Void.t) t
+  | Any : (Untagged.t Id.t -> 'w, 'w, Void.t) t
   (* lifted endpoints *)
   | Person : ('a, 'w, 'r) person -> ('a, 'w, 'r) t
   | Dance : ('a, 'w, 'r) dance -> ('a, 'w, 'r) t
@@ -117,7 +116,7 @@ let route_version : type a w r. (a, w, r) version -> (a, w, r) route =
   let open Route in
   function
     | View -> literal "view" @@ query_str_opt "in-search" (module In_search) @@ query_json_opt "in-set" (module In_set) @@ variable (module Version_id) @@ void ()
-    | Add -> literal "add" @@ query_json_opt "tune" (module Entry.Id.J(Core.Tune)) @@ void ()
+    | Add -> literal "add" @@ query_json_opt "tune" (module Id.J(Tune_tag)) @@ void ()
     | Edit -> literal "edit" @@ variable (module Version_id) @@ void ()
 
 let route_set : type a w r. (a, w, r) set -> (a, w, r) route =
@@ -140,7 +139,7 @@ let route_user : type a w r. (a, w, r) user -> (a, w, r) route =
   function
     | Create -> literal "create" @@ void ()
     | Prepare_reset_password -> literal "prepare-reset-password" @@ void ()
-    | Password_reset -> literal "reset-password" @@ query_json "username" (module Username) @@ query_json "token" (module Core.User.Password_reset_token_clear) @@ void ()
+    | Password_reset -> literal "reset-password" @@ query_json "username" (module Username) @@ query_json "token" (module Password_reset_token_clear) @@ void ()
 
 (* FIXME: Factorise adding the model prefixes. *)
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
@@ -148,7 +147,7 @@ let route : type a w r. (a, w, r) t -> (a, w, r) route =
   function
     | Index -> void ()
     | Explore -> literal "explore" @@ query_str_def "q" (module SString) ~def: "" @@ query_json_def "page" (module JInt) ~def: 1 @@ void ()
-    | Any -> variable (module Entry.Id.S(SUnit)) @@ void ()
+    | Any -> variable (module Id.S(Untagged)) @@ void ()
     | Person page -> literal "person" @@ route_person page
     | Dance page -> literal "dance" @@ route_dance page
     | Source page -> literal "source" @@ route_source page
@@ -171,19 +170,7 @@ let href_set ?in_search set = href (Set View) in_search set
 let href_tune ?in_search tune = href (Tune View) in_search tune
 let href_version ?in_search ?in_set version = href (Version View) in_search in_set version
 
-let href_any_full ?in_search any =
-  let open Core.Any in
-  match any with
-  | Version version -> href_version ?in_search (Entry.id version)
-  | Set set -> href_set ?in_search (Entry.id set)
-  | Person person -> href_person ?in_search (Entry.id person)
-  | Source source -> href_source ?in_search (Entry.id source)
-  | Dance dance -> href_dance ?in_search (Entry.id dance)
-  | Book book -> href_book ?in_search (Entry.id book)
-  | Tune tune -> href_tune ?in_search (Entry.id tune)
-  | User _ -> Uri.of_string "/" (* FIXME: user visualisation page *)
-
-let href_any_full_new ?in_search (any : Any_id.t) =
+let href_any_full ?in_search (any : Any_id.t) =
   match any with
   | Version version -> href_version ?in_search version
   | Set set -> href_set ?in_search set
@@ -227,45 +214,28 @@ let consume : type a w r. return: w -> (a, w, r) t -> a = fun ~return: value end
   | User Prepare_reset_password -> value
   | User Password_reset -> const2 value
 
-module Make_describe (Model : Model_builder.S) = struct
-  let describe = fun uri ->
+module type Any_id_to_name = sig
+  type env
+  val get_person_name : env -> Person_id.t -> string Lwt.t
+  val get_dance_name : env -> Dance_id.t -> string Lwt.t
+  val get_source_name : env -> Source_id.t -> string Lwt.t
+  val get_tune_name : env -> Tune_id.t -> string Lwt.t
+  val get_version_name : env -> Version_id.t -> string Lwt.t
+  val get_set_name : env -> Set_id.t -> string Lwt.t
+  val get_book_name : env -> Book_id.t -> string Lwt.t
+end
+
+module Make_describe (Any_id_to_name : Any_id_to_name) = struct
+  let describe env = fun uri ->
     let describe : type a r. (a, (string * string) option Lwt.t, r) t -> a = function
-      | Any -> (fun id -> lwt_some ("any", Entry.Id.to_string id))
-      | Version View ->
-        (fun _ _ id ->
-          let%lwt name = NEString.to_string <$> (Model.Version.one_name' % Option.get =<< Model.Version.get id) in
-          lwt_some ("version", name)
-        )
-      | Tune View ->
-        (fun _ id ->
-          let%lwt name = NEString.to_string % Model.Tune.one_name' % Option.get <$> Model.Tune.get id in
-          lwt_some ("tune", name)
-        )
-      | Set View ->
-        (fun _ id ->
-          let%lwt name = NEString.to_string % Model.Set.name' % Option.get <$> Model.Set.get id in
-          lwt_some ("set", name)
-        )
-      | Book View ->
-        (fun _ id ->
-          let%lwt name = NEString.to_string % Model.Book.name' % Option.get <$> Model.Book.get id in
-          lwt_some ("book", name)
-        )
-      | Dance View ->
-        (fun _ id ->
-          let%lwt name = NEString.to_string % Model.Dance.one_name' % Option.get <$> Model.Dance.get id in
-          lwt_some ("dance", name)
-        )
-      | Person View ->
-        (fun _ id ->
-          let%lwt name = NEString.to_string % Model.Person.name' % Option.get <$> Model.Person.get id in
-          lwt_some ("person", name)
-        )
-      | Source View ->
-        (fun _ id ->
-          let%lwt name = NEString.to_string % Model.Source.name' % Option.get <$> Model.Source.get id in
-          lwt_some ("source", name)
-        )
+      | Any -> (fun id -> lwt_some ("any", Id.to_string id))
+      | Person View -> (fun _ id -> some % Pair.cons "person" <$> Any_id_to_name.get_person_name env id)
+      | Dance View -> (fun _ id -> some % Pair.cons "dance" <$> Any_id_to_name.get_dance_name env id)
+      | Source View -> (fun _ id -> some % Pair.cons "source" <$> Any_id_to_name.get_source_name env id)
+      | Tune View -> (fun _ id -> some % Pair.cons "tune" <$> Any_id_to_name.get_tune_name env id)
+      | Version View -> (fun _ _ id -> some % Pair.cons "version" <$> Any_id_to_name.get_version_name env id)
+      | Set View -> (fun _ id -> some % Pair.cons "set" <$> Any_id_to_name.get_set_name env id)
+      | Book View -> (fun _ id -> some % Pair.cons "book" <$> Any_id_to_name.get_book_name env id)
       | endpoint -> consume endpoint ~return: lwt_none
     in
     let madge_match_apply_all : (string * string) option Lwt.t wrapped' list -> (unit -> (string * string) option Lwt.t) option =

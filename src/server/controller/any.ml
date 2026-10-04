@@ -1,17 +1,11 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 
-let get env id =
-  match%lwt Database.Any.get id with
-  | None -> Permission.reject_can_get ()
-  | Some any ->
-    Model.Any.to_entry'
-      any
-      ~on_public: (Permission.assert_can_get_public env)
-      ~on_private: (Permission.assert_can_get_private env);%lwt
-    lwt any
+let get_type env id =
+  let actor_id = Environment.actor_id env in
+  match%lwt Database.Any.get_type ~actor_id id with
+  | None -> Shared.reject_can_get ()
+  | Some type_ -> lwt type_
 
 let get_rows env ids =
   let (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids) =
@@ -208,9 +202,9 @@ let assert_can_edit_permissions env db id f =
   match%lwt Database.Entry.get_permission db ~actor_id id with
   | None ->
     (* not even read permissions on the item *)
-    Permission.reject_can_get ()
+    Shared.reject_can_get ()
   | Some permission ->
-    match Permission_new.share_reason permission with
+    match Permission.share_reason permission with
     | None ->
       (* no permission to share *)
       Madge_server.shortcut_forbidden "You cannot edit permissions for this object"
@@ -236,7 +230,7 @@ let set_permissions env id {Permissions_form.entry_is_public; actor_roles} =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Any.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
+  | Get_type -> get_type env
   | Get_rows -> get_rows env
   | Newest -> newest env
   | Search -> search env

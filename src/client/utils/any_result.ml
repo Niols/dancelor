@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model
 open Html
 
 let row ?(classes = []) ?onclick cells =
@@ -15,131 +14,194 @@ let row ?(classes = []) ?onclick cells =
     )
     (cells)
 
-let details content = p ~a: [a_class ["mb-0"; "opacity-50"; "lh-sm"]] [small content]
+let inline_details = Formatters.details
+let block_details content = p ~a: [a_class ["mb-0"; "opacity-50"; "lh-sm"]] [small content]
+
+(* FIXME: add a tooltip explaining what a forbidden value is *)
+let format_forbidden f = function
+  | Allowed set -> f set
+  | Forbidden -> span ~a: [a_class ["badge"; "text-bg-secondary"; "pe-none"]] [Icon.html (Other Forbidden); txt " Private"]
 
 let make_part_result ?classes ?onclick ?(prefix = []) ?(suffix = []) title =
-  row ?classes ?onclick (prefix @ [td ~a: [a_colspan 3] [txt @@ NEString.to_string title]] @ suffix)
+  row ?classes ?onclick (prefix @ [td ~a: [a_colspan 3] [txt title]] @ suffix)
 
-let make_source_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) source =
+let make_source_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (source : Source_row.t) =
   row
     ?classes
     ?onclick
     (
       prefix @
-      [L.td (Lwt.pause ();%lwt lwt [Formatters.Source.name' ~link: (onclick = None) ?in_search source]);
-      L.td (Lwt.pause ();%lwt lwt [txt (Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) (Source.date' source))]);
-      L.td (Lwt.pause ();%lwt List.singleton <$> (Formatters.Person.names' ~links: (onclick = None) ~short: true <$> Lwt_list.map_p (Option.get <%> Person.get) (Source.editors' source)));
+      [td [Formatters.Source.name_row ~link: (onclick = None) ?in_search source];
+      td [txt @@ Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) source.date];
+      td (Formatters.Person.names ~links: (onclick = None) ~short: true source.editors);
       ] @
       suffix
     )
 
-let make_person_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) person =
+let make_person_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (person : Person_row.t) =
   row
     ?classes
     ?onclick
     (
       prefix @
-      [L.td ~a: [a_colspan 3] (Lwt.pause ();%lwt lwt [Formatters.Person.name' ~link: (onclick = None) ?in_search person]);
+      [td ~a: [a_colspan 3] [Formatters.Person.name ~link: (onclick = None) ?in_search person];
       ] @
       suffix
     )
 
-let make_dance_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) dance =
+let make_user_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (user : User_row.t) =
+  ignore in_search;
+  (* FIXME *)
   row
     ?classes
     ?onclick
     (
       prefix @
-      [L.td (Lwt.pause ();%lwt lwt [Formatters.Dance.name_and_disambiguation' ~name_link: (onclick = None) ?in_search dance]);
-      L.td (Lwt.pause ();%lwt lwt [txt (Kind.Dance.to_string @@ Dance.kind' dance)]);
-      L.td (Lwt.pause ();%lwt List.singleton <$> (Formatters.Person.names' ~links: (onclick = None) ~short: true <$> Lwt_list.map_p (Option.get <%> Person.get) (Dance.devisers' dance)));
+      [td ~a: [a_colspan 3] [txt @@ Username.to_string user.username];
       ] @
       suffix
     )
 
-let make_dance_plus_set_result ?classes ?onclick ?in_search ?set_params ?(prefix = []) ?(suffix = []) dance set =
+let make_dance_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (dance : Dance_row.t) =
+  row
+    ?classes
+    ?onclick
+    (
+      prefix @
+      [td (Formatters.Dance.name_and_disambiguation ~link: (onclick = None) ?in_search dance);
+      td [txt @@ Kind.Dance.to_string dance.kind];
+      td (Formatters.Person.names ~links: (onclick = None) ~short: true dance.devisers);
+      ] @
+      suffix
+    )
+
+let make_dance_plus_set_result ?classes ?onclick ?in_search ?set_params ?(prefix = []) ?(suffix = []) (dance : Dance_row.t) (set : Set_row.t or_forbidden) =
   row ?classes ?onclick (
     prefix @
-    [td [
-      Formatters.Dance.name' ?in_search dance;
-      details [txt "Set: "; Formatters.Set.name' ~link: (onclick = None) ?params: set_params set];
-      details [Formatters.Set.tunes' ~link: (onclick = None) set];
-    ];
-    td [txt @@ Kind.Dance.to_string @@ Dance.kind' dance];
-    td [Formatters.Set.conceptors' ~short: true ?params: set_params set];
-    ] @
+    [td (
+      [Formatters.Dance.name_row ?in_search dance] @
+      [block_details [txt "Set: "; format_forbidden (Formatters.Set.name_row ~link: (onclick = None)) set]] @
+      Option.fold
+        (Option.bind set_params Set_parameters.display_name)
+        ~none: []
+        ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]]) @ (
+        match set with
+        | Forbidden -> []
+        | Allowed set -> [block_details (Formatters.Set.tunes ~links: (onclick = None) set)]
+      )
+    );
+    td [txt @@ Kind.Dance.to_string dance.kind];
+    td (
+      (
+        match set with
+        | Forbidden -> []
+        | Allowed set -> Formatters.Person.names ~links: (onclick = None) ~short: true set.conceptors
+      ) @
+        Option.fold
+          (Option.bind set_params Set_parameters.display_conceptor)
+          ~none: []
+          ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]])
+    )] @
     suffix
   )
 
-let make_dance_plus_versions_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) dance versions_and_params =
+let make_dance_plus_versions_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (dance : Dance_row.t) versions_and_params =
   row ?classes ?onclick (
     prefix @
     [td [
-      Formatters.Dance.name' ?in_search dance;
-      details [
-        txt (if NEList.is_singleton versions_and_params then "Tune: " else "Tunes: ");
-        Formatters.Version.names_disambiguations_and_sources' versions_and_params
+      Formatters.Dance.name_row ?in_search dance;
+      block_details [
+        txt (if List.is_singleton versions_and_params then "Tune: " else "Tunes: ");
+        Formatters.Version.names_disambiguations_sources_and_params versions_and_params
       ];
     ];
-    td [txt @@ Kind.Dance.to_string @@ Dance.kind' dance];
-    td [Formatters.Version.composers_and_arrangers' ~short: true versions_and_params]] @
+    td [txt @@ Kind.Dance.to_string dance.kind];
+    td [Formatters.Version.composers_arrangers_and_params ~short: true versions_and_params]] @
     suffix
   )
 
-let make_book_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) book =
+let make_book_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (book : Book_row.t) =
   row
     ?classes
     ?onclick
     (
       prefix @
-      [L.td (Lwt.pause ();%lwt lwt [Formatters.Book.name' ~link: (onclick = None) ?in_search book]);
-      L.td (Lwt.pause ();%lwt lwt [txt (Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) (Book.date' book))]);
-      L.td (Lwt.pause ();%lwt lwt [Formatters.Book.editors' book]);
+      [td [Formatters.Book.name_row ~link: (onclick = None) ?in_search book];
+      td [txt @@ Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) book.date];
+      td (Formatters.Person.names ~links: (onclick = None) ~short: true book.authors);
       ] @
       suffix
     )
 
-let make_set_result ?classes ?onclick ?in_search ?params ?(prefix = []) ?(suffix = []) set =
+let make_set_or_forbidden_result ?classes ?onclick ?in_search ?params ?(prefix = []) ?(suffix = []) (set : Set_row.t or_forbidden) =
   row
     ?classes
     ?onclick
     (
       prefix @
-      [L.td (
-        Lwt.pause ();%lwt
-        lwt [
-          Formatters.Set.name' ~link: (onclick = None) ?in_search ?params set;
-          details [Formatters.Set.tunes' ~link: (onclick = None) set];
-        ]
+      [td (
+        [format_forbidden (Formatters.Set.name_row ~link: (onclick = None) ?in_search) set] @
+        Option.fold
+          (Option.bind params Set_parameters.display_name)
+          ~none: []
+          ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]]) @ (
+          match set with
+          | Forbidden -> []
+          | Allowed set -> [block_details (Formatters.Set.tunes ~links: (onclick = None) set)]
+        )
       );
-      L.td (Lwt.pause ();%lwt lwt [txt @@ Kind.Dance.to_string @@ Set.kind' set]);
-      L.td (Lwt.pause ();%lwt lwt [Formatters.Set.conceptors' ~link: (onclick = None) ~short: true ?params set]);
-      ] @
+      td [txt (match set with Forbidden -> "" | Allowed set -> Kind.Dance.to_string set.kind)];
+      td (
+        (
+          match set with
+          | Forbidden -> []
+          | Allowed set -> Formatters.Person.names ~links: (onclick = None) ~short: true set.conceptors
+        ) @
+          Option.fold
+            (Option.bind params Set_parameters.display_conceptor)
+            ~none: []
+            ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]])
+      )] @
       suffix
     )
 
-let make_tune_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) tune =
+let make_set_result ?classes ?onclick ?in_search ?params ?prefix ?suffix (set : Set_row.t) =
+  make_set_or_forbidden_result ?classes ?onclick ?in_search ?params ?prefix ?suffix (Allowed set)
+
+let make_tune_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (tune : Tune_row.t) =
   row
     ?classes
     ?onclick
     (
       prefix @
-      [L.td (Lwt.pause ();%lwt lwt [Formatters.Tune.name' ~link: (onclick = None) ?in_search tune]);
-      L.td (Lwt.pause ();%lwt lwt [txt @@ Kind.Base.to_long_string ~capitalised: true @@ Tune.kind' tune]);
-      L.td (Lwt.pause ();%lwt lwt [Formatters.Tune.composers' ~links: (onclick = None) tune]);
+      [td [Formatters.Tune.name_row ~link: (onclick = None) ?in_search tune];
+      td [txt @@ Kind.Base.to_long_string ~capitalised: true tune.kind];
+      td (Formatters.Person.names ~links: (onclick = None) ~short: true tune.composers);
       ] @
       suffix
     )
 
-let make_version_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) version =
+let format_version_kind_and_structure (version : Version_row.t) =
+  match version.content with
+  | No_content ->
+    txt "(no cont.)"
+  | Destructured ->
+    txt @@ "∗ " ^ Kind.Base.to_short_string version.tune.kind ^ " (destr.)"
+  | Monolithic {bars; structure} ->
+    txtf
+      "%s (%s)"
+      (Kind.Version.to_string (bars, version.tune.kind))
+      (NEString.to_string @@ Version_content.Structure.to_string structure)
+
+let make_version_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (version : Version_row.t) =
   row
     ?classes
     ?onclick
     (
       prefix @
-      [L.td (Lwt.pause ();%lwt lwt [Formatters.Version.name_disambiguation_and_sources' ~link: (onclick = None) ?in_search version]);
-      L.td (Lwt.pause ();%lwt lwt [Formatters.Version.kind_and_structure' version]);
-      L.td (Lwt.pause ();%lwt lwt [Formatters.Version.composer_and_arranger' ~link: (onclick = None) ~short: true version]);
+      [td (Formatters.Version.name_disambiguation_and_sources ~links: (onclick = None) ?in_search version);
+      td [format_version_kind_and_structure version];
+      td (Formatters.Version.composer_and_arranger ~links: (onclick = None) ~short: true version);
       ] @
       suffix
     )
@@ -147,86 +209,70 @@ let make_version_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = [
 let make_versions_result ?classes ?onclick ?(prefix = []) ?(suffix = []) versions_and_params =
   row ?classes ?onclick (
     prefix @
-    [td [Formatters.Version.names_disambiguations_and_sources' versions_and_params];
-    (
-      L.td (
-        let%lwt all_kinds =
-          List.sort_uniq Kind.Base.compare %
-            NEList.to_list
-          <$> NEList.map_lwt_p (Version.kind' % fst) versions_and_params
-        in
-        lwt [
-          txt @@
-            match all_kinds with
-            | [kind] -> Kind.Base.to_short_string kind ^ (if NEList.is_singleton versions_and_params then "" else "s")
-            | _ -> "Medley"
-        ]
-      )
+    [td [Formatters.Version.names_disambiguations_sources_and_params versions_and_params];
+    td (
+      let all_kinds = List.sort_uniq Kind.Base.compare (List.map (fun (version, _) -> version.Version_row.tune.kind) versions_and_params) in
+      [
+        txt @@
+          match all_kinds with
+          | [kind] -> Kind.Base.to_long_string ~capitalised: true kind ^ (if List.is_singleton versions_and_params then "" else "s")
+          | _ -> "Medley"
+      ]
     );
-    td [Formatters.Version.composers_and_arrangers' ~short: true versions_and_params]] @
+    td [Formatters.Version.composers_arrangers_and_params ~short: true versions_and_params]] @
     suffix
   )
 
-let make_user_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) user =
-  ignore in_search;
-  row
-    ?classes
-    ?onclick
-    (
-      prefix @
-      [L.td ~a: [a_colspan 3] (Lwt.pause ();%lwt lwt [txt @@ Username.to_string @@ User.username' user]);
-      ] @
-      suffix
-    )
+let any_to_icon_and_string any =
+  match (any : Any_row.t) with
+  | Source _ -> (Icon.Source, "Source")
+  | Person _ -> (Icon.Person, "Person")
+  | Dance _ -> (Icon.Dance, "Dance")
+  | Tune _ -> (Icon.Tune, "Tune")
+  | Version _ -> (Icon.Version, "Version")
+  | Set _ -> (Icon.Set, "Set")
+  | Book _ -> (Icon.Book, "Book")
+  | User _ -> (Icon.User, "User")
 
-let any_type_to_icon any =
-  Icon.Model (
-    match (any : Any.Type.t) with
-    | Source -> Source
-    | Person -> Person
-    | Dance -> Dance
-    | Tune -> Tune
-    | Version -> Version
-    | Set -> Set
-    | Book -> Book
-    | User -> User
-  )
-
-let make_result ?classes ?in_search any =
-  let prefix = [
-    L.td
-      ~a: [a_class ["text-nowrap"; "pe-none"]]
-      (
-        Lwt.pause ();%lwt
-        let type_ = Any.type_of any in
-        lwt [
-          Icon.html (any_type_to_icon type_);
-          span ~a: [a_class ["d-none"; "d-sm-inline"]] [txt " "; txt (Any.Type.to_string type_)];
+let make_result ?classes ?in_search (any : Any_row.t) =
+  let prefix =
+    let (icon, type_) = any_to_icon_and_string any in
+    [
+      td
+        ~a: [a_class ["text-nowrap"; "pe-none"]]
+        [
+          Icon.(html (Model icon));
+          span ~a: [a_class ["d-none"; "d-sm-inline"]] [txt " "; txt type_];
         ]
-      );
-  ]
+    ]
   in
   let suffix = [
-    L.td (
-      Lwt.pause ();%lwt
-      List.singleton
-      <$> Model.Any.to_entry'
-          any
-          ~on_public: (fun _entry ->
-            lwt (Icon.html Icon.(Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"])
-          )
-          ~on_private: (fun entry ->
-            let%lwt reason = Option.get <$> Permission.can_get_private entry in
-            let (icon, tooltip, classes) =
-              match reason with
-              | Everyone -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
-              | Viewer -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
-              | Owner -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
-              | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])
-            in
-            lwt (Icon.html icon ~tooltip ~classes)
-          )
-    )
+    td
+      ~a: [a_class ["text-end"]]
+      [
+        let permission =
+          match any with
+          | Source _ -> None
+          | Person _ -> None
+          | Dance _ -> None
+          | Tune _ -> None
+          | Version _ -> None
+          | Set set -> Some set.permission
+          | Book book -> Some book.permission
+          | User _ -> None
+        in
+        match permission with
+        | None -> Icon.html Icon.(Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"]
+        | Some permission ->
+          let (icon, tooltip, classes) =
+            match Permission.view_reason permission with
+            | Public -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
+            | Viewer -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
+            | Owner -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
+            | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])
+          in
+          Icon.html icon ~tooltip ~classes
+      ]
   ]
   in
   match any with

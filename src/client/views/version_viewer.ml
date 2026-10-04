@@ -1,20 +1,14 @@
 open Nes
 open Dancelor_common
-open Model
-open Model_new
-open Search_new
 open Html
 open Utils
 
 let show_lilypond_dialog (version : Version_view.t) =
   let content_promise =
     let%lwt content = Api.call_exn (Version Content) version.id in
-    let content =
-      match content with
-      | Endpoints.Version.Protected -> assert false
-      | Endpoints.Version.Granted {payload; _} -> payload
-    in
-    lwt @@ Model.Version.Content.lilypond ~kind: version.tune.kind ~key: version.key content
+    match content with
+    | Endpoints.Version.Protected -> assert false
+    | Endpoints.Version.Granted {payload; _} -> lwt payload
   in
   ignore
   <$> Page.open_dialog @@ fun return ->
@@ -22,7 +16,7 @@ let show_lilypond_dialog (version : Version_view.t) =
       ~title: (lwt "LilyPond")
       [with_div_placeholder (
         let%lwt content = content_promise in
-        lwt [pre [txt (Option.get content)]]
+        lwt [pre [txt content]]
       )]
       ~buttons: [
         Button.close' ~return ();
@@ -32,7 +26,7 @@ let show_lilypond_dialog (version : Version_view.t) =
           ~classes: ["btn-primary"]
           ~onclick: (fun _ ->
             let%lwt content = content_promise in
-            write_to_clipboard (Option.get content);
+            write_to_clipboard content;
             Toast.open_ ~title: "Copied to clipboard" [txt "The LilyPond content was copied to your clipboard."];
             return (some ());
             lwt_unit
@@ -46,9 +40,9 @@ let add_to_set_dialog =
     ~source_format: (txt % Version_name.name)
     ~target_type: "set"
     ~target_icon: Icon.(Model Set)
-    ~target_format: (Formatters_new.Set.name % Set_row.to_name)
+    ~target_format: (Formatters.Set.name % Set_row.to_name)
     ~target_href: (Endpoints.Page.href_set % Set_row.id)
-    ~target_result: (Any_result_new.make_set_result ?classes: None ?params: None ?prefix: None ?suffix: None)
+    ~target_result: (Any_result.make_set_result ?classes: None ?params: None ?prefix: None ?suffix: None)
     ~target_search: (fun slice query -> Api.set_search slice query)
     ~target_history: History.get_sets
     ~target_add_source_to_content: (fun (set : Set_row.t) (version : Version_name.t) ->
@@ -66,7 +60,7 @@ let madge_call_tune_or_version tune_or_version_id f =
     Main_page.madge_call_or_404 (Version Get_view) id (fun version -> f version.tune (Some version))
 
 let subtitles (tune : Tune_view.t) =
-  [span (Formatters_new.Tune.description tune)]
+  [span (Formatters.Tune.description tune)]
 
 let actions (tune : Tune_view.t) (version : Version_view.t option) = [
   (
@@ -121,7 +115,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       version
       ~none: lwt_nil
       ~some: (fun version ->
-        match%lwt Permission.can_update_public_new version with
+        match%lwt Main_page.can_update_public version with
         | None -> lwt_nil
         | Some _ ->
           lwt [
@@ -135,7 +129,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       )
   );
   (
-    match%lwt Permission.can_update_public_new tune with
+    match%lwt Main_page.can_update_public tune with
     | None -> lwt_nil
     | Some _ ->
       lwt [
@@ -152,7 +146,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       version
       ~none: lwt_nil
       ~some: (fun version ->
-        match%lwt Permission.can_delete_public_new version with
+        match%lwt Main_page.can_delete_public version with
         | None -> lwt_nil
         | Some _ ->
           lwt [
@@ -165,7 +159,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       )
   );
   (
-    match%lwt Permission.can_delete_public_new tune with
+    match%lwt Main_page.can_delete_public tune with
     | None -> lwt_nil
     | Some _ ->
       lwt [
@@ -181,10 +175,10 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
       version
       ~none: lwt_nil
       ~some: (fun version ->
-        match%lwt Permission.can_administrate () with
+        match%lwt Main_page.can_admin () with
         | false -> lwt_nil
         | true ->
-          let other_versions = List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Entry.Id.equal' v.id version.Version_view.id) tune.versions in
+          let other_versions = List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Id.equal' v.id version.Version_view.id) tune.versions in
           let other_versions = List.map (Tune_view.version_row_without_tune_to_version_row tune) other_versions in
           lwt [
             Button.make
@@ -220,7 +214,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
             txtf
               "Monolithic %d-bar %s version in %s"
               bars
-              (NEString.to_string @@ Model.Version.Structure.to_string structure)
+              (NEString.to_string @@ Version_content.Structure.to_string structure)
               (Music.Key.to_pretty_string version.key);
           ]
         | Destructured {default_structure} ->
@@ -230,14 +224,14 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
             txtf
               " in %s, shown here as %s"
               (Music.Key.to_pretty_string version.key)
-              (NEString.to_string @@ Version.Structure.to_string default_structure);
+              (NEString.to_string @@ Version_content.Structure.to_string default_structure);
           ]
       );
       div ~a: [a_class ["col-auto"; "text-end"]] (
         Option.fold version.disambiguation ~none: [] ~some: (List.singleton % txtf " %s") @
           match version.arrangers with
           | [] -> []
-          | arrangers -> txt " arranged by " :: Formatters_new.Person.names ~links: true arrangers
+          | arrangers -> txt " arranged by " :: Formatters.Person.names ~links: true arrangers
       );
     ];
     (
@@ -271,7 +265,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
         let show_source_group (source_group : Version_view.source list) =
           span @@
             let source = List.hd source_group in
-            [Formatters_new.Source.name @@ Version_view.source_to_name source] @
+            [Formatters.Source.name @@ Version_view.source_to_name source] @
             (
               List.concat @@
               List.interspersei
@@ -281,14 +275,14 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
                 (fun ({details; structure; _}: Version_view.source) ->
                   [
                     Option.fold details ~none: (txt "") ~some: (txtf " %s");
-                    txtf " as %s" (NEString.to_string (Model.Version.Structure.to_string structure));
+                    txtf " as %s" (NEString.to_string (Version_content.Structure.to_string structure));
                   ]
                 )
                 source_group
             ) @
               [txt "."]
         in
-        match List.group ~by: (fun (s1 : Version_view.source) (s2 : Version_view.source) -> Entry.Id.equal' s1.id s2.id) version.Version_view.sources with
+        match List.group ~by: (fun (s1 : Version_view.source) (s2 : Version_view.source) -> Id.equal' s1.id s2.id) version.Version_view.sources with
         | [] -> []
         | source_groups ->
           [
@@ -314,7 +308,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
     let (title, versions) =
       match version with
       | None -> ("Versions", tune.versions)
-      | Some version -> ("Other versions", List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Entry.Id.equal' v.id version.Version_view.id) tune.versions)
+      | Some version -> ("Other versions", List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Id.equal' v.id version.Version_view.id) tune.versions)
     in
     let versions = List.map (Tune_view.version_row_without_tune_to_version_row tune) versions in
     [

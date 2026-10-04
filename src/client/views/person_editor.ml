@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Components
 open Html
 
@@ -52,14 +51,8 @@ let create mode =
     ~mode
     ~submit
     ~unsubmit
-    ~format: (Formatters_new.Person.name ~link: true % With_id.map Person_form.to_name)
+    ~format: (Formatters.Person.name ~link: true % With_id.map Person_form.to_name)
     ~href: (Endpoints.Page.href_person % With_id.id)
-
-(* FIXME: Remove once dance and source editors don't rely on it anymore *)
-let to_name (person : Model.Person.entry) : Person_name.t = {
-  Person_name.id = Entry.id person;
-  name = NEString.to_string @@ Model.Person.name' person;
-}
 
 let create_row (mode : (Person_row.t, 'a) Editor.mode) =
   let%lwt (mode : ((Person_id.t, Person_form.t) With_id.t, 'a) Editor.mode) =

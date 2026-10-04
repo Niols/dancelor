@@ -1,5 +1,4 @@
 open Dancelor_common
-open Model_new
 
 val for_search : Endpoints.Page.In_search.t option -> Any_id.t -> [> Html_types.div] Html.elt
 

@@ -1,4 +1,5 @@
 open Nes
+open Dancelor_common
 open Components
 open Js_of_ocaml
 open Utils
@@ -12,8 +13,8 @@ let create username token =
       ~type_: Password
       ~label: "Password"
       ~placeholder: "1234567"
-      ~serialise: Model.User.Password_clear.project
-      ~validate: (S.const % fun password1 -> Result.bind (Password.check password1) @@ fun () -> Ok (Model.User.Password_clear.inject password1))
+      ~serialise: Password_clear.project
+      ~validate: (S.const % fun password1 -> Result.bind (Password.check password1) @@ fun () -> Ok (Password_clear.inject password1))
       ""
   in
   let%lwt password2_input =
@@ -21,10 +22,10 @@ let create username token =
       ~type_: Password
       ~label: "Password, again"
       ~placeholder: "1234678"
-      ~serialise: Model.User.Password_clear.project
+      ~serialise: Password_clear.project
       ~validate: (fun password2 ->
         S.flip_map (Component.state password1_input) @@ fun password1 ->
-        if password1 = password2 then Ok (Model.User.Password_clear.inject password2) else Error "The passwords do not match."
+        if password1 = password2 then Ok (Password_clear.inject password2) else Error "The passwords do not match."
       )
       ""
   in

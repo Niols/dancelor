@@ -1,7 +1,5 @@
 open NesUnix
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_row
 
 module User_sql = User_sql.Sqlgg(Sqlgg_postgresql)
@@ -15,6 +13,9 @@ let get_row_for ids : (User_id.t -> User_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
   Utils.fold_to_get_single (User_sql.Fold.get_rows db ~ids) (fun k ~id -> user_sql_to_row ~id ~k: (k id))
 
+let get_row id =
+  (fun f -> f id) <$> get_row_for [id]
+
 let search query : (User_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = ()} = query in
   Connection.with_ @@ fun db ->
@@ -23,54 +24,31 @@ let search query : (User_row.t * float) list Lwt.t =
     ~terms
     (fun ~score -> user_sql_to_row ~k: (Pair.snoc score))
 
+let get_actor_gen f =
+  Connection.with_ @@ fun db ->
+  match%lwt f db with
+  | None -> lwt_none
+  | Some (id, username, github_handle, role, omniscience, person_id, person_name) ->
+    lwt_some {
+      Actor.id;
+      username = Username.of_string_exn username;
+      github_handle;
+      role = Sql_types.role_to_common role;
+      omniscience;
+      person =
+      match person_id, person_name with
+      | None, None -> None
+      | Some id, Some name -> Some {Person_row.id; name};
+      | _ -> assert false
+    }
+
+let get_actor id =
+  get_actor_gen (fun db -> User_sql.get_actor db ~id)
+
+let get_actor_from_username username =
+  get_actor_gen (fun db -> User_sql.get_actor_from_username db ~username: (Username.to_string username))
+
 (* Legacy *)
-
-type t = Entry.User.t
-type entry = t Entry.public
-
-let role_to_common omniscience = function
-  | `Normal_user -> Entry.User.Normal_user
-  | `Maintainer -> Maintainer
-  | `Administrator -> Administrator {omniscience}
-
-let role_of_common = function
-  | Entry.User.Normal_user -> (`Normal_user, false)
-  | Maintainer -> (`Maintainer, false)
-  | Administrator {omniscience} -> (`Administrator, omniscience)
-
-let row_to_user
-    ~id
-    ~username
-    ~role
-    ~omniscience
-    ~github_handle
-    ~created_at
-    ~modified_at
-  =
-  Entry.make
-    ~id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: Entry.Access.Public
-    (
-      Entry.User.make
-        ~username: (Username.of_string_exn username)
-        ~role: (role_to_common omniscience role)
-        ~github_handle
-        ()
-    )
-
-let get id : entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  User_sql.Single.get db ~id (row_to_user ~id)
-
-let get_from_username username =
-  let username = Username.to_string username in
-  Connection.with_ @@ fun db ->
-  User_sql.Single.get_from_username db ~username (row_to_user ~username)
-
-let get_all () : entry list Lwt.t =
-  Connection.with_ @@ fun db ->
-  User_sql.List.get_all db row_to_user
 
 let get_password_from_username username =
   let username = Username.to_string username in
@@ -93,18 +71,17 @@ let get_password_reset_token_from_username username =
       )
     )
 
-let create ~username ~role ~github_handle ~password_reset_token_hash ~password_reset_token_max_date =
-  let (role, omniscience) = role_of_common role in
+let create ~username ~password_reset_token_hash ~password_reset_token_max_date =
   Connection.with_ @@ fun db ->
-  let%lwt id = Entry_new.make_public db `User in
+  let%lwt id = Entry.make_public db `User in
   let%lwt _ =
     User_sql.create
       db
       ~id
       ~username: (Username.to_string username)
-      ~role
-      ~omniscience
-      ~github_handle
+      ~role: `Normal_user
+      ~omniscience: false
+      ~github_handle: None
       ~password_reset_token_hash: (some @@ HashedSecret.unsafe_to_string @@ Password_reset_token_hashed.project password_reset_token_hash)
       ~password_reset_token_max_date: (Some password_reset_token_max_date)
   in

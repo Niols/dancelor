@@ -4,13 +4,23 @@ open Html
 open Utils
 open Components
 
-include Endpoints.Page.Make_describe(Model)
+include Endpoints.Page.Make_describe(struct
+  type env = unit
+  let get_person_name () = Person_row.name <%> Api.call_exn (Person Get_row)
+  let get_dance_name () = Dance_row.name <%> Api.call_exn (Dance Get_row)
+  let get_source_name () = Source_row.name <%> Api.call_exn (Source Get_row)
+  let get_tune_name () = Tune_row.name <%> Api.call_exn (Tune Get_row)
+  let get_version_name () = Tune_row.name % Version_row.tune <%> Api.call_exn (Version Get_row)
+  let get_set_name () = Set_row.name <%> Api.call_exn (Set Get_row)
+  let get_book_name () = Book_row.name <%> Api.call_exn (Book Get_row)
+end)
+let describe page = describe () page
 
 let open_dialog page =
   let%lwt maybe_reporter_input =
     match Environment.actor_now () with
     | Some actor ->
-      lwt_left (`Connected, Input.inactive ~label: "Reporter" (Username.to_string @@ Model.User.username' actor))
+      lwt_left (`Connected, Input.inactive ~label: "Reporter" (Username.to_string actor.username))
     | None ->
       right
       <$> Input.make

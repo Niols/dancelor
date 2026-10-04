@@ -1,8 +1,5 @@
 open Nes
 open Dancelor_common
-open Model
-open Model_new
-open Search_new
 open Html
 open Utils
 
@@ -24,7 +21,7 @@ let subtitles_gen kind order conceptors = [
     match conceptors with
     | [] -> []
     | conceptors ->
-      txt "Set by " :: Formatters_new.Person.names ~links: true conceptors
+      txt "Set by " :: Formatters.Person.names ~links: true conceptors
   );
 ]
 
@@ -43,12 +40,12 @@ let actions (set : Set_view.t) = [
   Add_to.button_to_book
     ~source_type: "set"
     ~source_id: Set_name.id
-    ~source_format: Formatters_new.Set.name
+    ~source_format: Formatters.Set.name
     Endpoints.Book.Add_set_to_contents
     (Set_view.to_name set);
   (
     lwt @@
-      match Permission_new.edit_reason set.permission with
+      match Permission.edit_reason set.permission with
       | None -> []
       | Some _ ->
         [
@@ -77,14 +74,14 @@ let body_gen (content : (Version_row.t * Version_parameters.t) list) (id : Set_i
             [
               div ~a: [a_class ["row"; "justify-content-between"; "mb-2"]] [
                 div ~a: [a_class ["col"; "text-start"]] (
-                  Formatters_new.Version.name_disambiguation_and_sources ?in_set version @
-                    Formatters_new.Version.parameters (Some params)
+                  Formatters.Version.name_disambiguation_and_sources ?in_set version @
+                    Formatters.Version.parameters (Some params)
                 );
                 div ~a: [a_class ["col"; "text-end"]] (
-                  Formatters_new.Version.composer_and_arranger
+                  Formatters.Version.composer_and_arranger
                     ~short: true
                     version @
-                    Formatters_new.Version.display_composer (Some params)
+                    Formatters.Version.display_composer (Some params)
                 );
               ];
               Components.Version_snippets.make ~show_audio: false ~params (Version_row.to_name version);
@@ -115,7 +112,7 @@ let view in_search id =
     ~title: (lwt set.name)
     ~subtitles: (subtitles set)
     ~share: (
-      match Permission_new.share_reason set.permission with
+      match Permission.share_reason set.permission with
       | Some _ -> Sharing_dialog.open_dialog_button @@ Set id
       | None -> Sharing_dialog.copy_link_button @@ Set id
     )

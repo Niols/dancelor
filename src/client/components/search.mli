@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Search_new
 open Html
 
 val entries_per_page : int

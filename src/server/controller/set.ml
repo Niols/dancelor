@@ -1,10 +1,8 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 
-include Shared.Make_private_full(struct
-  type entry = Model_builder.Core.Set.t
+include Shared.Make_private(struct
+  type tag = Set_tag.t
   type id = Set_id.t
   type row = Set_row.t
   type view = Set_view.t
@@ -21,20 +19,11 @@ let add_version_to_contents env id version_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt version_row = Version.get_row env version_id in
-  update env id {form with contents = form.contents @ [(version_row, Model_builder.Core.Version_parameters.none)]}
-
-(* Legacy *)
-
-let get env id =
-  match%lwt Database.Set.get id with
-  | None -> Permission.reject_can_get ()
-  | Some set ->
-    Permission.assert_can_get_private env set;%lwt
-    lwt set
+  update env id {form with contents = form.contents @ [(version_row, Version_parameters.none)]}
 
 let build_pdf env id set_params rendering_params =
-  get env id >>= fun set ->
-  let%lwt set = Model_to_renderer.set_to_renderer_set' (Entry.id set) set_params in
+  get_form env id >>= fun set ->
+  let%lwt set = Model_to_renderer.set_to_renderer_set set set_params in
   let set_pdf_arg = Model_to_renderer.renderer_set_to_renderer_set_pdf_arg set rendering_params in
   uncurry Job.register_job_and_file <$> Renderer.make_set_pdf set_pdf_arg
 
@@ -42,7 +31,6 @@ let build_pdf env id set_params rendering_params =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Set.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env

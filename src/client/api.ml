@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Search_new
 
 let call endpoint = Madge_client.call (Endpoints.Api.route endpoint)
 let call_exn endpoint = Madge_client.call_exn (Endpoints.Api.route endpoint)

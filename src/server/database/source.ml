@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view
@@ -47,20 +45,20 @@ let update_other_tables db ~source_id ~editors =
     editors
 
 let create db source =
-  let%lwt id = Entry_new.make_public db `Source in
+  let%lwt id = Entry.make_public db `Source in
   ignore <$> source_form_to_sql (Source_sql.create db) id source;%lwt
   update_other_tables db ~source_id: id ~editors: source.editors;%lwt
   lwt id
 
 let update db id source =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> source_form_to_sql (fun ~id -> Source_sql.update db ~id) id source;%lwt
   update_other_tables db ~source_id: id ~editors: source.editors
 
 let delete db id =
   ignore <$> Source_sql.delete_all_editors ~source_id: id db;%lwt
   ignore <$> Source_sql.delete db ~id;%lwt
-  Entry_new.delete db id
+  Entry.delete db id
 
 let with_cover id f =
   let%lwt cover =
@@ -75,36 +73,3 @@ let with_cover id f =
       Lwt_io.write ochan cover;%lwt
       f (Some fname)
     )
-
-(* Legacy *)
-
-let sql_to_source
-    ~id
-    ~name
-    ~short_name
-    ~scddb_id
-    ~description
-    ~date
-    ~editors
-    ~created_at
-    ~modified_at
-  =
-  Entry.make
-    ~id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: Entry.Access.Public
-    (
-      Model_builder.Core.Source.make
-        ~name: (NEString.of_string_exn name)
-        ~short_name: (Option.map NEString.of_string_exn short_name)
-        ~scddb_id: (Option.map Int64.to_int scddb_id)
-        ~description
-        ~date: (Option.map (Option.get % PartialDate.from_string) date)
-        ~editors
-        ()
-    )
-
-let get id : Model_builder.Core.Source.entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  let%lwt editors = Source_sql.List.get_editors db ~source_id: id (fun ~person_id -> person_id) in
-  Source_sql.Single.get db ~id (sql_to_source ~id ~editors)

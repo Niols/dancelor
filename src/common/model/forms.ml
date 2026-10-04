@@ -1,0 +1,212 @@
+open Nes
+open Names
+open Rows
+open Views
+
+module With_id = struct
+  type ('id, 'form) t = {
+    id: 'id;
+    form: 'form;
+  }
+  [@@deriving fields, yojson]
+
+  let map f {id; form} = f id form
+end
+
+module Person_form = struct
+  type t = {
+    name: NEString.t;
+    scddb_id: int option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {name; _} : Person_name.t =
+    {id; name = NEString.to_string name}
+
+  let to_row id {name; _} : Person_row.t =
+    {id; name = NEString.to_string name}
+end
+
+module Source_form = struct
+  type t = {
+    name: NEString.t;
+    short_name: NEString.t option;
+    editors: Person_row.t list;
+    scddb_id: int option;
+    description: string option;
+    date: PartialDate.t option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {name; _} : Source_name.t =
+    {id; name = NEString.to_string name}
+
+  let to_row id {name; date; editors; _} : Source_row.t = {
+    id;
+    name = NEString.to_string name;
+    date;
+    editors;
+  }
+end
+
+module Dance_form = struct
+  type t = {
+    names: NEString.t NEList.t;
+    kind: Kind.Dance.t;
+    devisers: Person_row.t list;
+    two_chords: Dance_view.two_chords;
+    scddb_id: int option;
+    disambiguation: NEString.t option;
+    date: PartialDate.t option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {names; _} : Dance_name.t =
+    {id; name = NEString.to_string (NEList.hd names)}
+
+  let to_row id {names; kind; devisers; disambiguation; _} : Dance_row.t = {
+    id;
+    name = NEString.to_string (NEList.hd names);
+    kind;
+    devisers;
+    disambiguation = Option.map NEString.to_string disambiguation;
+  }
+end
+
+module Tune_form = struct
+  type composer = {
+    composer: Person_row.t;
+    details: NEString.t option;
+  }
+  [@@deriving eq, yojson]
+
+  type t = {
+    names: NEString.t NEList.t;
+    kind: Kind.Base.t;
+    composers: composer list;
+    dances: Dance_row.t list;
+    remark: NEString.t option;
+    scddb_id: int option;
+    date: PartialDate.t option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {names; _} : Tune_name.t =
+    {id; name = NEString.to_string (NEList.hd names)}
+
+  let to_row id {names; kind; composers; _} : Tune_row.t = {
+    id;
+    name = NEString.to_string (NEList.hd names);
+    kind;
+    composers = List.map (fun {composer; _} -> composer) composers;
+  }
+end
+
+module Version_form = struct
+  type source = {
+    source: Source_row.t;
+    structure: Version_content.Structure.t;
+    details: NEString.t option;
+  }
+  [@@deriving eq, yojson]
+
+  let source_to_name {source = {id; name; _}; _} : Source_name.t =
+    {id; name}
+
+  let source_to_short_name {source = {id; name; _}; _} : Source_short_name.t = {
+    id;
+    short_name = name; (* FIXME: that's bad *)
+  }
+
+  type t = {
+    tune: Tune_row.t;
+    key: Music.Key.t;
+    sources: source list;
+    arrangers: Person_row.t list;
+    remark: NEString.t option;
+    disambiguation: NEString.t option;
+    content: Version_content.t;
+  }
+  [@@deriving eq, fields, yojson]
+
+  let to_name id {tune; _} : Version_name.t =
+    {id; name = tune.name}
+
+  let content_to_row_content : Version_content.t -> Version_row.content = function
+    | No_content -> No_content
+    | Destructured _ -> Destructured
+    | Monolithic {lilypond = _; bars; structure} -> Monolithic {bars; structure}
+
+  let to_row id {tune; sources; disambiguation; arrangers; content; _} : Version_row.t = {
+    id;
+    tune;
+    sources = List.map source_to_short_name sources;
+    disambiguation = Option.map NEString.to_string disambiguation;
+    arrangers;
+    content = content_to_row_content content;
+  }
+end
+
+module Set_form = struct
+  type t = {
+    name: NEString.t;
+    kind: Kind.Dance.t;
+    conceptors: Person_row.t list;
+    contents: (Version_row.t * Version_parameters.t) list;
+    order: Set_order.t;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {name; _} : Set_name.t =
+    {id; name = NEString.to_string name}
+
+  let to_row id {name; kind; conceptors; contents; _} : Set_row.t =
+    let tunes = List.map (Version_row.to_name % fst) contents in
+    (* FIXME: grab proper permissions from somewhere, maybe pass to [to_row] *)
+    let permission = {Permission.entry_is_public = false; actor_role = None; actor_is_omniscient_administrator = false} in
+      {id; name = NEString.to_string name; kind; conceptors; tunes; permission}
+end
+
+module Book_form = struct
+  type dance_page =
+    | Dance_only
+    | Dance_versions of (Version_row.t * Version_parameters.t) NEList.t
+    | Dance_set of Set_row.t * Set_parameters.t
+  [@@deriving eq, yojson]
+
+  type page =
+    | Part of NEString.t
+    | Dance of Dance_row.t * dance_page
+    | Versions of (Version_row.t * Version_parameters.t) NEList.t
+    | Set of Set_row.t * Set_parameters.t
+  [@@deriving eq, yojson]
+
+  type t = {
+    name: NEString.t;
+    authors: Person_row.t list;
+    date: PartialDate.t option;
+    contents: page list;
+    remark: NEString.t option;
+    sources: Source_row.t list;
+    scddb_id: int option;
+  }
+  [@@deriving eq, yojson]
+
+  let to_name id {name; _} : Book_name.t =
+    {id; name = NEString.to_string name}
+end
+
+module Permissions_form = struct
+  type t = {
+    entry_is_public: bool;
+    actor_roles: (User_row.t * Permission.actor_role) list;
+  }
+  [@@deriving eq, yojson]
+end
+
+module User_create_form = struct
+  type t = {
+    username: Username.t;
+  }
+  [@@deriving eq, yojson]
+end

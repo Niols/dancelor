@@ -1,23 +1,22 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Html
 open Utils
 
 let subtitles dance = [
-  span (Formatters_new.Dance.aka dance);
-  span (Formatters_new.Dance.description dance);
+  span (Formatters.Dance.aka dance);
+  span (Formatters.Dance.description dance);
 ]
 
 let actions (dance : Dance_view.t) = [
   Add_to.button_to_book
     ~source_type: "dance"
     ~source_id: Dance_name.id
-    ~source_format: Formatters_new.Dance.name
+    ~source_format: Formatters.Dance.name
     Endpoints.Book.Add_dance_to_contents
     (Dance_view.to_name dance);
   (
-    match%lwt Permission.can_update_public_new dance with
+    match%lwt Main_page.can_update_public () with
     | None -> lwt_nil
     | Some _ ->
       lwt [
@@ -30,7 +29,7 @@ let actions (dance : Dance_view.t) = [
       ]
   );
   (
-    match%lwt Permission.can_delete_public_new dance with
+    match%lwt Main_page.can_delete_public () with
     | None -> lwt_nil
     | Some _ ->
       lwt [

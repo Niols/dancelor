@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Components
 open Html
 open Utils
@@ -45,14 +44,14 @@ let editor =
             (
               Selector.prepare
                 ~make_descr: (lwt % Person_row.name)
-                ~make_result: (Any_result_new.make_person_result ?in_search: None)
-                ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+                ~make_result: (Any_result.make_person_result ?in_search: None)
+                ~results_when_no_search: (Option.to_list <$> Environment.person)
                 ~label: "Composer"
                 ~model_name: "person"
                 ~create_dialog_content: Person_editor.create_row
                 ~search: Api.person_search
-                ~id_to_yojson: Entry.Id.to_yojson'
-                ~id_of_yojson: Entry.Id.of_yojson'
+                ~id_to_yojson: Id.to_yojson'
+                ~id_of_yojson: Id.of_yojson'
                 ~serialise: Person_row.id
                 ~unserialise: (Api.call_or_option @@ Person Get_row)
                 ()
@@ -85,12 +84,12 @@ let editor =
         (
           Selector.prepare
             ~search: Api.dance_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Dance_row.id
             ~unserialise: (Api.call_or_option @@ Dance Get_row)
             ~make_descr: (lwt % Dance_row.name)
-            ~make_result: (Any_result_new.make_dance_result ?in_search: None)
+            ~make_result: (Any_result.make_dance_result ?in_search: None)
             ~label: "Dance"
             ~model_name: "dance"
             ~create_dialog_content: Dance_editor.create_row
@@ -137,20 +136,10 @@ let create mode =
     ~icon: (Model Tune)
     editor
     ~mode
-    ~format: (Formatters_new.Tune.name ~link: true % With_id.map Tune_form.to_name)
+    ~format: (Formatters.Tune.name ~link: true % With_id.map Tune_form.to_name)
     ~href: (Endpoints.Page.href_tune % With_id.id)
     ~submit
     ~unsubmit
-
-let to_row tune =
-  let%lwt composers = Lwt_list.map_s (Option.get <%> Model.Person.get % Model.Tune.composer_composer) @@ Model.Tune.composers' tune in
-  let composers = List.map Person_editor.to_name composers in
-  lwt {
-    Tune_row.id = Entry.id tune;
-    name = NEString.to_string @@ NEList.hd @@ Model.Tune.names' tune;
-    kind = Model.Tune.kind' tune;
-    composers;
-  }
 
 let create_row (mode : (Tune_row.t, 'a) Editor.mode) =
   let%lwt (mode : ((Tune_id.t, Tune_form.t) With_id.t, 'a) Editor.mode) =

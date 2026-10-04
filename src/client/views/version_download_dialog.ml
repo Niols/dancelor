@@ -1,8 +1,6 @@
 open Js_of_ocaml
 open Nes
 open Dancelor_common
-open Model
-open Model_new
 open Html
 open Utils
 open Components
@@ -24,13 +22,13 @@ let create () =
           choice'
             [txt "B♭"]
             ~value: (
-              Version_parameters.make ~transposition: (Transposition.from_semitones 2) (),
+              Version_parameters.make ~transposition: (Music.Transposition.from_semitones 2) (),
               Rendering_parameters.make ~instruments: "Bb instruments" ()
             );
           choice'
             [txt "E♭"]
             ~value: (
-              Version_parameters.make ~transposition: (Transposition.from_semitones (-3)) (),
+              Version_parameters.make ~transposition: (Music.Transposition.from_semitones (-3)) (),
               Rendering_parameters.make ~instruments: "Eb instruments" ()
             );
         ]
@@ -59,10 +57,10 @@ let create () =
       make_radios
         ~label: "Octaviation"
         [
-          choice' [txt "+1"] ~value: (Version_parameters.make ~transposition: (Transposition.from_octaves 1) ());
+          choice' [txt "+1"] ~value: (Version_parameters.make ~transposition: (Music.Transposition.from_octaves 1) ());
           choice' [txt "0"] ~checked: true;
-          choice' [txt "-1"] ~value: (Version_parameters.make ~transposition: (Transposition.from_octaves (-1)) ());
-          choice' [txt "-2"] ~value: (Version_parameters.make ~transposition: (Transposition.from_octaves (-2)) ());
+          choice' [txt "-1"] ~value: (Version_parameters.make ~transposition: (Music.Transposition.from_octaves (-1)) ());
+          choice' [txt "-2"] ~value: (Version_parameters.make ~transposition: (Music.Transposition.from_octaves (-2)) ());
         ]
     )
   in

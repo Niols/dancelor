@@ -2,7 +2,6 @@
 
 open Nes
 open Dancelor_common
-open Search_new
 open Html
 
 val make :

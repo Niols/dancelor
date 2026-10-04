@@ -1,7 +1,6 @@
+open Js_of_ocaml
 open Nes
 open Dancelor_common
-open Search_new
-open Js_of_ocaml
 open Components
 open Html
 open Utils
@@ -37,7 +36,7 @@ let view query page =
     [
       Search.render
         search
-        ~make_result: (fun ?in_search result -> Any_result_new.make_result ?in_search result)
+        ~make_result: (fun ?in_search result -> Any_result.make_result ?in_search result)
         ~attached_buttons: [
           Button.make
             ~label: "Filter"

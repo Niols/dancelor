@@ -3,6 +3,8 @@
     Persistent information on the user of Dancelor. This typically comprises
     sessions and “remember me” manipulations. *)
 
+open Dancelor_common
+
 (** The abstract type of an environment. *)
 type t
 
@@ -36,24 +38,24 @@ val with_' :
 
 type actor =
   | Anonymous
-  | Signed_in of Database.User.entry
+  | Signed_in of Actor.t
 
 (** Returns the actor that is signed-in in the current session. *)
 val actor : t -> actor
 
 (** Same as {!actor} for use in the database directly. *)
-val actor_id : t -> Dancelor_common.Model_new.User_id.t option
+val actor_id : t -> User_id.t option
 
 (** Set the user as signed in for the current session. Subsequent calls to
     {!user} (across requests) will return that user. If the [~remember_me] flag
     is set, then also set up the user to be remembered in the future, modifying
     the database and registering the appropriate response cookie. *)
-val sign_in : t -> Database.User.entry -> remember_me: bool -> unit Lwt.t
+val sign_in : t -> Actor.t -> remember_me: bool -> unit Lwt.t
 
 (** Set the user as signed out for the current session. Subsequent calls to
     {!user} (across requests) will return [None]. Any “remember me” token will
     be erased from the database and the client's cookies. *)
-val sign_out : t -> Database.User.entry -> unit Lwt.t
+val sign_out : t -> Actor.t -> unit Lwt.t
 
 (** {2 Other} *)
 

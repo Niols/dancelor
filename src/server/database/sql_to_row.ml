@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 
 let person_sql_to_row ~id ~name ~(k : Person_row.t -> 'w) : 'w =
   k {id; name}
@@ -18,7 +17,7 @@ let dance_sql_to_row ~id ~name ~kind ~devisers ~disambiguation ~(k : Dance_row.t
   k {
     id;
     name;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     devisers;
     disambiguation;
   }
@@ -52,7 +51,7 @@ let version_sql_to_row
     | (Some bars, Some structure) ->
       Monolithic {
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | _ -> assert false
   in
@@ -80,10 +79,14 @@ let set_sql_to_row
   k {
     id;
     name;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     conceptors;
     tunes;
-    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
+    permission = {
+      entry_is_public;
+      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
+      actor_is_omniscient_administrator;
+    };
   }
 
 let book_sql_to_row
@@ -102,7 +105,11 @@ let book_sql_to_row
     name;
     date = Option.map (Option.get % PartialDate.from_string) date;
     authors;
-    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
+    permission = {
+      entry_is_public;
+      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
+      actor_is_omniscient_administrator;
+    };
   }
 
 let user_sql_to_row

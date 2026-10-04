@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Html
 open Utils
 
@@ -14,7 +12,7 @@ let view in_search id =
     ~share: (Sharing_dialog.copy_link_button @@ Person id)
     ~actions: [
       (
-        match%lwt Permission.can_update_public_new person with
+        match%lwt Main_page.can_update_public () with
         | None -> lwt_nil
         | Some _ ->
           lwt [
@@ -27,7 +25,7 @@ let view in_search id =
           ]
       );
       (
-        match%lwt Permission.can_delete_public_new person with
+        match%lwt Main_page.can_delete_public () with
         | None -> lwt_nil
         | Some _ ->
           lwt [

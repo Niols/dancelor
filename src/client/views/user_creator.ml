@@ -6,18 +6,18 @@ open Utils
 
 type status = Match | Dont_match
 
-let open_token_result_dialog user token =
+let open_token_result_dialog (user : User_row.t) token =
   ignore
   <$> Page.open_dialog @@ fun return ->
     Page.make'
       ~title: (lwt "Created user")
       [p [
         txt "User ";
-        txt (Entry.id_as_string user);
+        txt (Id.to_string user.id);
         txt " was created successfully. Pass them the following link: ";
       ];
       p [
-        let href = Endpoints.Page.(href @@ User Password_reset) (Model.User.username' user) token in
+        let href = Endpoints.Page.(href @@ User Password_reset) user.username token in
         a ~a: [a_href href] [txt @@ Uri.to_string href]
       ];
       p [
@@ -39,7 +39,7 @@ let create () =
   in
   let signal =
     RS.bind (Component.signal username_input) @@ fun username ->
-    S.const @@ Ok (Model.User.make ~username ())
+    S.const @@ Ok {User_create_form.username}
   in
   Page.make'
     ~title: (lwt "Create user")

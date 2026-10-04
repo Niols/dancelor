@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view
@@ -63,13 +61,13 @@ let update_other_tables db ~dance_id ~extra_names ~devisers =
     devisers
 
 let create db dance =
-  let%lwt id = Entry_new.make_public db `Dance in
+  let%lwt id = Entry.make_public db `Dance in
   ignore <$> dance_form_to_sql (Dance_sql.create db) id dance;%lwt
   update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers;%lwt
   lwt id
 
 let update db id dance =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> dance_form_to_sql (fun ~id -> Dance_sql.update db ~id) id dance;%lwt
   update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers
 
@@ -77,41 +75,4 @@ let delete db id =
   ignore <$> Dance_sql.delete_all_extra_names db ~dance_id: id;%lwt
   ignore <$> Dance_sql.delete_all_devisers db ~dance_id: id;%lwt
   ignore <$> Dance_sql.delete db ~id;%lwt
-  Entry_new.delete db id
-
-(* Legacy *)
-
-let sql_to_dance
-    ~id
-    ~name
-    ~extra_names
-    ~kind
-    ~two_chords
-    ~scddb_id
-    ~disambiguation
-    ~date
-    ~created_at
-    ~modified_at
-    ~devisers
-  =
-  Entry.make
-    ~id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: Entry.Access.Public
-    (
-      Model_builder.Core.Dance.make
-        ~names: (NEList.cons (NEString.of_string_exn name) extra_names)
-        ~kind: (Kind_dance.of_string kind)
-        ~two_chords: (Sql_types.two_chords_to_common two_chords)
-        ~scddb_id: (Option.map Int64.to_int scddb_id)
-        ~disambiguation: (Option.map NEString.of_string_exn disambiguation)
-        ~date: (Option.map (Option.get % PartialDate.from_string) date)
-        ~devisers
-        ()
-    )
-
-let get id : Model_builder.Core.Dance.entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  let%lwt extra_names = Dance_sql.List.get_extra_names db ~dance_id: id (fun ~extra_name -> NEString.of_string_exn extra_name) in
-  let%lwt devisers = Dance_sql.List.get_devisers db ~dance_id: id (fun ~deviser_id -> deviser_id) in
-  Dance_sql.Single.get db ~id (sql_to_dance ~id ~extra_names ~devisers)
+  Entry.delete db id

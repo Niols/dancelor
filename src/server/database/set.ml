@@ -1,14 +1,11 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view
 open Sql_to_form
 open Form_to_sql
 
-module Entry_sql = Entry_sql.Sqlgg(Sqlgg_postgresql)
 module Set_sql = Set_sql.Sqlgg(Sqlgg_postgresql)
 
 let get_tune_composers_for db set_ids =
@@ -65,11 +62,11 @@ let get_content_for db set_ids =
           ~k: Fun.id
       in
       let params =
-        Model_builder.Core.Version_parameters.make
-          ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
+        Version_parameters.make
+          ?transposition: (Option.map (Music.Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
           ?first_bar: (Option.map Int64.to_int version_parameter_first_bar)
           ?clef: (Option.map Music.Clef.of_string version_parameter_clef)
-          ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
+          ?structure: (Option.map (Option.get % Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
           ?trivia: version_parameter_trivia
           ?display_name: (Option.map NEString.of_string_exn version_parameter_display_name)
           ?display_composer: (Option.map NEString.of_string_exn version_parameter_display_composer)
@@ -83,8 +80,9 @@ let get_row_for ~actor_id ids : (Set_id.t -> Set_row.t option) Lwt.t =
   let%lwt tunes_for = get_tunes_for db (`One_of ids) in
   let%lwt conceptors_for = get_conceptors_for db (`One_of ids) in
   Utils.fold_to_get_single
-    (Set_sql.Fold.get_rows db ~ids ~actor_id)
+    (Set_sql.Fold.get_rows db ~ids: (List.map Id.unsafe_coerce ids) ~actor_id)
     (fun k ~id ->
+      let id = Id.unsafe_coerce id in
       set_sql_to_row
         ~id
         ~tunes: (tunes_for id)
@@ -99,8 +97,14 @@ let get_view ~actor_id id : Set_view.t option Lwt.t =
   Set_sql.Single.get_view
     db
     ~actor_id
-    ~id
-    (set_sql_to_view ~conceptors ~content ~k: Fun.id)
+    ~id: (Id.unsafe_coerce id)
+    (fun ~id ->
+      set_sql_to_view
+        ~id: (Id.unsafe_coerce id)
+        ~conceptors
+        ~content
+        ~k: Fun.id
+    )
 
 let get_form ~actor_id id : Set_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
@@ -125,6 +129,7 @@ let search ~actor_id query : (Set_row.t * float) list Lwt.t =
     ~contains_version: (Utils.option_to_sql contains_version)
     ~contains_tune: (Utils.option_to_sql contains_tune)
     (fun ~score ~id ->
+      let id = Id.unsafe_coerce id in
       set_sql_to_row
         ~id
         ~tunes: (tunes_for id)
@@ -152,24 +157,24 @@ let update_other_tables db ~set_id ~conceptors ~contents =
           ~set_id
           ~index: (Int64.of_int index)
           ~version_id: version.Version_row.id
-          ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition params)
-          ~version_parameter_first_bar: (Option.map Int64.of_int @@ Model_builder.Core.Version_parameters.first_bar params)
-          ~version_parameter_clef: (Option.map Music.Clef.to_string @@ Model_builder.Core.Version_parameters.clef params)
-          ~version_parameter_structure: (Option.map (NEString.to_string % Model_builder.Core.Version_parameters.maybe_structure_to_string) @@ Model_builder.Core.Version_parameters.structure params)
-          ~version_parameter_trivia: (Model_builder.Core.Version_parameters.trivia params)
-          ~version_parameter_display_name: (Option.map NEString.to_string @@ Model_builder.Core.Version_parameters.display_name params)
-          ~version_parameter_display_composer: (Option.map NEString.to_string @@ Model_builder.Core.Version_parameters.display_composer params)
+          ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Music.Transposition.to_semitones) @@ Version_parameters.transposition params)
+          ~version_parameter_first_bar: (Option.map Int64.of_int @@ Version_parameters.first_bar params)
+          ~version_parameter_clef: (Option.map Music.Clef.to_string @@ Version_parameters.clef params)
+          ~version_parameter_structure: (Option.map (NEString.to_string % Version_parameters.maybe_structure_to_string) @@ Version_parameters.structure params)
+          ~version_parameter_trivia: (Version_parameters.trivia params)
+          ~version_parameter_display_name: (Option.map NEString.to_string @@ Version_parameters.display_name params)
+          ~version_parameter_display_composer: (Option.map NEString.to_string @@ Version_parameters.display_composer params)
     )
     contents
 
 let create db ~owner_id set =
-  let%lwt id = Entry_new.make_private_new db `Set owner_id in
+  let%lwt id = Entry.make_private db `Set owner_id in
   ignore <$> set_form_to_sql (Set_sql.create db) id set;%lwt
   update_other_tables db ~set_id: id ~conceptors: set.conceptors ~contents: set.contents;%lwt
   lwt id
 
 let update db id set =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> set_form_to_sql (fun ~id -> Set_sql.update db ~id) id set;%lwt
   update_other_tables db ~set_id: id ~conceptors: set.conceptors ~contents: set.contents
 
@@ -177,69 +182,4 @@ let delete db id =
   ignore <$> Set_sql.delete_all_conceptors db ~set_id: id;%lwt
   ignore <$> Set_sql.delete_all_content db ~set_id: id;%lwt
   ignore <$> Set_sql.delete db ~id;%lwt
-  Entry_new.delete db id
-
-(* Legacy *)
-
-let sql_to_set
-    ~id
-    ~name
-    ~kind
-    ~order
-    ~remark
-    ~created_at
-    ~modified_at
-    ~is_public
-    ~conceptors
-    ~content
-    ~owners
-    ~viewers
-  =
-  Entry.make
-    ~id: id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: (Entry.Access.Private.make ~owners ~viewers ~is_public ())
-    (
-      Model_builder.Core.Set.make
-        ~name: (NEString.of_string_exn name)
-        ~conceptors
-        ~kind: (Kind_dance.of_string kind)
-        ~contents: content
-        ~order: (Model_builder.Core.Set_order.of_string order)
-        ~remark: (Option.map NEString.of_string_exn remark)
-        ()
-    )
-
-let get id : Model_builder.Core.Set.entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  let%lwt conceptors = Set_sql.List.get_conceptors db ~set_id: id (fun ~conceptor_id -> conceptor_id) in
-  let%lwt (owners, viewers) =
-    List.partition_map (function (`Owner, user_id) -> Left user_id | (`Viewer, user_id) -> Right user_id)
-    <$> Entry_sql.List.get_actors db ~entry_id: id (fun ~user_id ~role -> (role, user_id))
-  in
-  let%lwt content =
-    Set_sql.List.get_content db ~set_id: id (fun
-        ~version_id
-        ~version_parameter_transposition_semitones
-        ~version_parameter_first_bar
-        ~version_parameter_clef
-        ~version_parameter_structure
-        ~version_parameter_trivia
-        ~version_parameter_display_name
-        ~version_parameter_display_composer
-      ->
-      (
-        version_id,
-        Model_builder.Core.Version_parameters.make
-          ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
-          ?first_bar: (Option.map Int64.to_int version_parameter_first_bar)
-          ?clef: (Option.map Music.Clef.of_string version_parameter_clef)
-          ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
-          ?trivia: version_parameter_trivia
-          ?display_name: (Option.map NEString.of_string_exn version_parameter_display_name)
-          ?display_composer: (Option.map NEString.of_string_exn version_parameter_display_composer)
-          ()
-      )
-    )
-  in
-  Set_sql.Single.get db ~id (sql_to_set ~id ~conceptors ~viewers ~owners ~content)
+  Entry.delete db id

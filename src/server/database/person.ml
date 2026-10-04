@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_row
 open Sql_to_view
 open Sql_to_form
@@ -21,10 +19,6 @@ let get_form id : Person_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
   Person_sql.Single.get_form db ~id (person_sql_to_form ~k: Fun.id)
 
-let get_row_for_user (id : User_id.t) : Person_row.t option Lwt.t =
-  Connection.with_ @@ fun db ->
-  Person_sql.Single.get_row_for_user db ~id (person_sql_to_row ~k: Fun.id)
-
 let search query : (Person_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = ()} = query in
   Connection.with_ @@ fun db ->
@@ -34,42 +28,14 @@ let search query : (Person_row.t * float) list Lwt.t =
     (fun ~score -> person_sql_to_row ~k: (Pair.snoc score))
 
 let create db person =
-  let%lwt id = Entry_new.make_public db `Person in
+  let%lwt id = Entry.make_public db `Person in
   let%lwt _ = person_form_to_sql (Person_sql.create db) id person in
   lwt id
 
 let update db id person =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> person_form_to_sql (fun ~id -> Person_sql.update db ~id) id person
 
 let delete db id =
   ignore <$> Person_sql.delete db ~id;%lwt
-  Entry_new.delete db id
-
-(* Legacy *)
-
-let sql_to_person
-    ~id
-    ~name
-    ~scddb_id
-    ~composed_tunes_are_public
-    ~published_tunes_are_public
-    ~created_at
-    ~modified_at
-  =
-  Entry.make
-    ~id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: Entry.Access.Public
-    (
-      Model_builder.Core.Person.make
-        ~name: (NEString.of_string_exn name)
-        ~scddb_id: (Option.map Int64.to_int scddb_id)
-        ~composed_tunes_are_public
-        ~published_tunes_are_public
-        ()
-    )
-
-let get id : Model_builder.Core.Person.entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  Person_sql.Single.get db ~id (sql_to_person ~id)
+  Entry.delete db id

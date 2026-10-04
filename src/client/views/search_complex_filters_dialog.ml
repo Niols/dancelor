@@ -1,25 +1,23 @@
 open Nes
 open Dancelor_common
-open Search_new
-open Model
 open Html
 open Utils
 open Components
 
-let type_choices (type_ : Any.Type.t option) =
+let type_choices (type_ : Any_id.Type.t option) =
   Choices.(
     make_radios
       ~label: "Type"
       [
         choice' [txt "All"] ~checked: (Option.is_none type_);
-        choice' [txt "Person"] ~value: Any.Type.Person ~checked: (type_ = Some Any.Type.Person);
-        choice' [txt "Dance"] ~value: Any.Type.Dance ~checked: (type_ = Some Any.Type.Dance);
-        choice' [txt "Source"] ~value: Any.Type.Source ~checked: (type_ = Some Any.Type.Source);
-        choice' [txt "Tune"] ~value: Any.Type.Tune ~checked: (type_ = Some Any.Type.Tune);
-        choice' [txt "Version"] ~value: Any.Type.Version ~checked: (type_ = Some Any.Type.Version);
-        choice' [txt "Set"] ~value: Any.Type.Set ~checked: (type_ = Some Any.Type.Set);
-        choice' [txt "Book"] ~value: Any.Type.Book ~checked: (type_ = Some Any.Type.Book);
-        choice' [txt "User"] ~value: Any.Type.User ~checked: (type_ = Some Any.Type.User);
+        choice' [txt "Person"] ~value: Any_id.Type.Person ~checked: (type_ = Some Any_id.Type.Person);
+        choice' [txt "Dance"] ~value: Any_id.Type.Dance ~checked: (type_ = Some Any_id.Type.Dance);
+        choice' [txt "Source"] ~value: Any_id.Type.Source ~checked: (type_ = Some Any_id.Type.Source);
+        choice' [txt "Tune"] ~value: Any_id.Type.Tune ~checked: (type_ = Some Any_id.Type.Tune);
+        choice' [txt "Version"] ~value: Any_id.Type.Version ~checked: (type_ = Some Any_id.Type.Version);
+        choice' [txt "Set"] ~value: Any_id.Type.Set ~checked: (type_ = Some Any_id.Type.Set);
+        choice' [txt "Book"] ~value: Any_id.Type.Book ~checked: (type_ = Some Any_id.Type.Book);
+        choice' [txt "User"] ~value: Any_id.Type.User ~checked: (type_ = Some Any_id.Type.User);
       ]
   )
 
@@ -173,14 +171,14 @@ let open_ (query : Any_query.t) =
   let (type_, person_query, dance_query, source_query, tune_query, version_query, set_query, book_query, user_query) =
     match query.specific with
     | None -> (None, None, None, None, None, None, None, None, None)
-    | Some Person person_query -> (Some Any.Type.Person, Some person_query, None, None, None, None, None, None, None)
-    | Some Dance dance_query -> (Some Any.Type.Dance, None, Some dance_query, None, None, None, None, None, None)
-    | Some Source source_query -> (Some Any.Type.Source, None, None, Some source_query, None, None, None, None, None)
-    | Some Tune tune_query -> (Some Any.Type.Tune, None, None, None, Some tune_query, None, None, None, None)
-    | Some Version version_query -> (Some Any.Type.Version, None, None, None, Some version_query.tune, Some version_query, None, None, None)
-    | Some Set set_query -> (Some Any.Type.Set, None, None, None, None, None, Some set_query, None, None)
-    | Some Book book_query -> (Some Any.Type.Book, None, None, None, None, None, None, Some book_query, None)
-    | Some User user_query -> (Some Any.Type.User, None, None, None, None, None, None, None, Some user_query)
+    | Some Person person_query -> (Some Any_id.Type.Person, Some person_query, None, None, None, None, None, None, None)
+    | Some Dance dance_query -> (Some Any_id.Type.Dance, None, Some dance_query, None, None, None, None, None, None)
+    | Some Source source_query -> (Some Any_id.Type.Source, None, None, Some source_query, None, None, None, None, None)
+    | Some Tune tune_query -> (Some Any_id.Type.Tune, None, None, None, Some tune_query, None, None, None, None)
+    | Some Version version_query -> (Some Any_id.Type.Version, None, None, None, Some version_query.tune, Some version_query, None, None, None)
+    | Some Set set_query -> (Some Any_id.Type.Set, None, None, None, None, None, Some set_query, None, None)
+    | Some Book book_query -> (Some Any_id.Type.Book, None, None, None, None, None, None, Some book_query, None)
+    | Some User user_query -> (Some Any_id.Type.User, None, None, None, None, None, None, None, Some user_query)
   in
   let%lwt type_choices = type_choices type_ in
   let (person_query, person_html) = make_person_specific_choices person_query in

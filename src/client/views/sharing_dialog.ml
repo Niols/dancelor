@@ -2,8 +2,6 @@ open Nes
 open Utils
 open Html
 open Dancelor_common
-open Model_new
-open Search_new
 open Components
 
 let copy_link_button ?(object_is_public = false) (id : Any_id.t) =
@@ -11,7 +9,7 @@ let copy_link_button ?(object_is_public = false) (id : Any_id.t) =
     ~icon: (Action Share)
     ~classes: ["btn-primary"]
     ~onclick: (fun _ ->
-      write_to_clipboard @@ href_any_for_sharing_new id;
+      write_to_clipboard @@ href_any_for_sharing id;
       Toast.open_ ~title: "Copied to clipboard" [
         txt "The link to this page was copied to your clipboard.";
         txt (
@@ -50,16 +48,16 @@ let component =
               Selector.prepare
                 ~label: "Actor"
                 ~model_name: "user"
-                ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
-                ~make_result: (Any_result_new.make_user_result ?in_search: None)
-                ~results_when_no_search: (Option.to_list <$> Environment.actor_new)
+                ~make_descr: (fun user -> lwt @@ Username.to_string user.User_row.username)
+                ~make_result: (Any_result.make_user_result ?in_search: None)
+                ~results_when_no_search: (Option.to_list % Option.map Actor.to_user_row <$> Environment.actor)
                 ~search: (fun slice input ->
                   match User_query.parse input with
                   | Error msg -> lwt_error msg
                   | Ok query -> ok <$> Api.call_exn (User Search) slice query
                 )
-                ~id_to_yojson: Entry.Id.to_yojson'
-                ~id_of_yojson: Entry.Id.of_yojson'
+                ~id_to_yojson: Id.to_yojson'
+                ~id_of_yojson: Id.of_yojson'
                 ~serialise: User_row.id
                 ~unserialise: (Api.call_or_option @@ User Get_row)
                 ()
@@ -69,7 +67,7 @@ let component =
               Plus.prepare
                 ~label: "Role"
                 ~cast: (function
-                  | Zero() -> (Owner : Permission_new.actor_role)
+                  | Zero() -> (Owner : Permission.actor_role)
                   | Succ Zero() -> Viewer
                   | _ -> assert false (* types guarantee this is not reachable *)
                 )
@@ -103,7 +101,7 @@ let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
             Some user.User_row.id,
             (
               (
-                (match (role : Permission_new.actor_role) with Owner -> Some 0 | Viewer -> Some 1),
+                (match (role : Permission.actor_role) with Owner -> Some 0 | Viewer -> Some 1),
                 ((), ((), ()))
               ),
               ()
@@ -147,7 +145,7 @@ let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
           ~disabled
           ~onclick: (fun _ ->
             update ();%lwt
-            write_to_clipboard @@ href_any_for_sharing_new id;
+            write_to_clipboard @@ href_any_for_sharing id;
             Toast.open_ ~title: "Permissions updated" [txt "The permissions have been updated, and a link to this page was copied to your clipboard."];
             return (some ());
             lwt_unit
@@ -175,7 +173,7 @@ let open_dialog_button id =
             let other_actors =
               List.filter
                 (fun ({User_row.id = actor_id'; _}, _) ->
-                  not @@ Option.equal Entry.Id.equal' (Some actor_id') actor_id
+                  not @@ Option.equal Id.equal' (Some actor_id') actor_id
                 )
                 permissions.actor_roles
             in

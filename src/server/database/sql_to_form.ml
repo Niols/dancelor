@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Sql_to_row
 
 let person_sql_to_form ~id: _ ~name ~scddb_id ~(k : Person_form.t -> 'w) : 'w =
@@ -22,7 +21,7 @@ let source_sql_to_form ~id: _ ~name ~short_name ~editors ~scddb_id ~description 
 let dance_sql_to_form ~id: _ ~name ~extra_names ~kind ~devisers ~scddb_id ~disambiguation ~date ~two_chords ~(k : Dance_form.t -> 'w) : 'w =
   k {
     names = NEList.map NEString.of_string_exn (NEList.cons name extra_names);
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     devisers;
     scddb_id = Option.map Int64.to_int scddb_id;
     disambiguation = Option.map NEString.of_string_exn disambiguation;
@@ -53,7 +52,7 @@ let version_sql_to_form_source
   =
   k {
     source = source_sql_to_row ~id ~name ~date ~editors ~k: Fun.id;
-    structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+    structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
     details = Option.map NEString.of_string_exn details;
   }
 
@@ -77,13 +76,13 @@ let version_sql_to_form
     ~(k : Version_form.t -> 'w)
     : 'w
   =
-  let content : Model_builder.Core.Version.Content.t =
+  let content : Version_content.t =
     match (monolithic_bars, monolithic_or_default_structure, monolithic_lilypond) with
     | (None, None, None) -> No_content
     | (None, Some default_structure, None) ->
       Destructured {
         default_structure =
-        Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure));
+        Option.get (Version_content.Structure.of_string (NEString.of_string_exn default_structure));
         parts = NEList.of_list_exn destructured_parts;
         transitions = destructured_transitions;
         as_2_4 = destructured_as_2_4;
@@ -92,7 +91,7 @@ let version_sql_to_form
       Monolithic {
         lilypond = monolithic_lilypond;
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | _ -> assert false
   in
@@ -124,10 +123,10 @@ let set_sql_to_form
   =
   k {
     name = NEString.of_string_exn name;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     conceptors;
     contents;
-    order = Model_builder.Core.Set_order.of_string order;
+    order = Set_order.of_string order;
   }
 
 let book_sql_to_form

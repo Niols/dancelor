@@ -1,4 +1,4 @@
-module Entry = Entry_new
+module Entry = Entry
 module Any = Any
 module Book = Book
 module Dance = Dance

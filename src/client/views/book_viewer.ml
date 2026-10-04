@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Utils
 
 let display_warnings warnings =
@@ -14,7 +13,7 @@ let display_warnings warnings =
     | (None, n) :: tl ->
       ([txt "standalone"] @ display_times n) :: display_sets tl
     | (Some set, n) :: tl ->
-      ([txt "in “"; Formatters_new.Set.name set; txt "”"] @ display_times n) :: display_sets tl
+      ([txt "in “"; Formatters.Set.name set; txt "”"] @ display_times n) :: display_sets tl
   in
   let rec format_set_list = function
     (* If the warning Duplicate_tune has been logged, the list of sets,
@@ -30,15 +29,15 @@ let display_warnings warnings =
     | Book_view.Duplicate_set set ->
       R.li @@
       S.from_lwt [] @@
-      lwt [txt "Set “"; Formatters_new.Set.name set; txt "” appears several times in this book."]
+      lwt [txt "Set “"; Formatters.Set.name set; txt "” appears several times in this book."]
     | Book_view.Duplicate_tune (tune, sets_opt) ->
       R.li @@
       S.from_lwt [] @@
-      lwt (txt "Tune “" :: Formatters_new.Tune.name tune :: txt "” appears several times: " :: (display_sets sets_opt |> format_set_list))
+      lwt (txt "Tune “" :: Formatters.Tune.name tune :: txt "” appears several times: " :: (display_sets sets_opt |> format_set_list))
     | Book_view.Set_dance_kind_mismatch (set, dance) ->
       R.li @@
       S.from_lwt [] @@
-      lwt [txt "Set “"; Formatters_new.Set.name set; txt "” does not have the same kind as its associated dance “"; Formatters_new.Dance.name dance; txt "”."]
+      lwt [txt "Set “"; Formatters.Set.name set; txt "” does not have the same kind as its associated dance “"; Formatters.Dance.name dance; txt "”."]
   in
   List.map display_warning warnings
 
@@ -65,35 +64,35 @@ let table_contents ~this_id content =
               in
               match page with
               | Book_view.Part title ->
-                Any_result_new.make_part_result
+                Any_result.make_part_result
                   ~prefix: [td [txt "Part"]]
                   ~suffix
                   title
               | Book_view.Dance (dance, Dance_only) ->
-                Any_result_new.make_dance_result
+                Any_result.make_dance_result
                   ~prefix: [td [txt "Dance"]]
                   ~suffix
                   dance
               | Book_view.Dance (dance, Dance_versions versions_and_params) ->
-                Any_result_new.make_dance_plus_versions_result
-                  ~prefix: [td [txt "Dance"; Any_result.details [txt (if List.is_singleton versions_and_params then "+Tune" else "+Tunes")]]]
+                Any_result.make_dance_plus_versions_result
+                  ~prefix: [td [txt "Dance"; Any_result.block_details [txt (if List.is_singleton versions_and_params then "+Tune" else "+Tunes")]]]
                   ~suffix
                   dance
                   versions_and_params
               | Book_view.Dance (dance, Dance_set (set, params)) ->
-                Any_result_new.make_dance_plus_set_result
-                  ~prefix: [td [txt "Dance"; Any_result.details [txt "+Set"]]]
+                Any_result.make_dance_plus_set_result
+                  ~prefix: [td [txt "Dance"; Any_result.block_details [txt "+Set"]]]
                   ~suffix
                   dance
                   set
                   ~set_params: params
               | Book_view.Versions versions_and_params ->
-                Any_result_new.make_versions_result
+                Any_result.make_versions_result
                   ~prefix: [td [txt @@ if List.is_singleton versions_and_params then "Tune" else "Tunes"]]
                   ~suffix
                   versions_and_params
               | Book_view.Set (set, params) ->
-                Any_result_new.make_set_or_forbidden_result
+                Any_result.make_set_or_forbidden_result
                   ~prefix: [td [txt "Set"]]
                   ~suffix
                   ~params
@@ -111,9 +110,9 @@ let view in_search id =
     ~parent_title: "Book"
     ~before_title: [Components.Context_links.for_search in_search (Any_id.Book id)]
     ~title: (lwt book.name)
-    ~subtitles: [span (Formatters_new.Book.date_and_editors book)]
+    ~subtitles: [span (Formatters.Book.date_and_editors book)]
     ~share: (
-      match Permission_new.share_reason book.permission with
+      match Permission.share_reason book.permission with
       | Some _ -> Sharing_dialog.open_dialog_button @@ Book id
       | None -> Sharing_dialog.copy_link_button @@ Book id
     )
@@ -128,7 +127,7 @@ let view in_search id =
       ];
       (
         lwt @@
-          match Permission_new.edit_reason book.permission with
+          match Permission.edit_reason book.permission with
           | None -> []
           | Some _ ->
             [

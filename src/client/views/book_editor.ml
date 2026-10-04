@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Components
 open Html
 open Utils
@@ -16,7 +15,7 @@ let versions_and_parameters ?(label = "Versions") () =
         (
           Selector.prepare
             ~make_descr: (lwt % Tune_row.name % Version_row.tune)
-            ~make_result: (Any_result_new.make_version_result ?in_search: None)
+            ~make_result: (Any_result.make_version_result ?in_search: None)
             ~make_more_results: (fun version ->
               S.flip_map show_preview @@ function
                 | true -> [tr [td ~a: [a_colspan 9999] [Version_snippets.make ~show_audio: false (Version_row.to_name version)]]]
@@ -26,8 +25,8 @@ let versions_and_parameters ?(label = "Versions") () =
             ~model_name: "version"
             ~create_dialog_content: Version_editor.create_row
             ~search: Api.version_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Version_row.id
             ~unserialise: (Api.call_or_option @@ Version Get_row)
             ()
@@ -40,18 +39,18 @@ let set_and_parameters ?(label = "Set") () =
     (
       Selector.prepare
         ~make_descr: (lwt % Set_row.name)
-        ~make_result: (Any_result_new.make_set_result ?in_search: None ?params: None)
+        ~make_result: (Any_result.make_set_result ?in_search: None ?params: None)
         ~make_more_results: (fun set ->
           S.flip_map show_preview @@ function
-            | true -> [tr [td ~a: [a_colspan 9999] (Formatters_new.Set.tunes set)]]
+            | true -> [tr [td ~a: [a_colspan 9999] (Formatters.Set.tunes set)]]
             | false -> []
         )
         ~label
         ~model_name: "set"
         ~create_dialog_content: Set_editor.create_row
         ~search: Api.set_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
+        ~id_to_yojson: Id.to_yojson'
+        ~id_of_yojson: Id.of_yojson'
         ~serialise: Set_row.id
         ~unserialise: (Api.call_or_option @@ Set Get_row)
         ()
@@ -68,13 +67,13 @@ let dance_and_dance_page =
     (
       Selector.prepare
         ~make_descr: (lwt % Dance_row.name)
-        ~make_result: (Any_result_new.make_dance_result ?in_search: None)
+        ~make_result: (Any_result.make_dance_result ?in_search: None)
         ~label: "Dance"
         ~model_name: "dance"
         ~create_dialog_content: Dance_editor.create_row
         ~search: Api.dance_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
+        ~id_to_yojson: Id.to_yojson'
+        ~id_of_yojson: Id.of_yojson'
         ~serialise: Dance_row.id
         ~unserialise: (Api.call_or_option @@ Dance Get_row)
         ()
@@ -126,13 +125,13 @@ let editor =
           Selector.prepare
             ~label: "Editor"
             ~search: Api.person_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Person_row.id
             ~unserialise: (Api.call_or_option @@ Person Get_row)
             ~make_descr: (lwt % Person_row.name)
-            ~make_result: (Any_result_new.make_person_result ?in_search: None)
-            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~make_result: (Any_result.make_person_result ?in_search: None)
+            ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
             ()
@@ -208,13 +207,13 @@ let editor =
         (
           Selector.prepare
             ~make_descr: (lwt % Source_row.name)
-            ~make_result: (Any_result_new.make_source_result ?in_search: None)
+            ~make_result: (Any_result.make_source_result ?in_search: None)
             ~label: "Source"
             ~model_name: "source"
             ~create_dialog_content: Source_editor.create_row
             ~search: Api.source_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Source_row.id
             ~unserialise: (Api.call_or_option @@ Source Get_row)
             ()
@@ -255,7 +254,7 @@ let create mode =
     ~icon: (Model Book)
     editor
     ~mode
-    ~format: (Formatters_new.Book.name % With_id.map Book_form.to_name)
+    ~format: (Formatters.Book.name % With_id.map Book_form.to_name)
     ~href: (Endpoints.Page.href_book % With_id.id)
     ~submit
     ~unsubmit
@@ -267,7 +266,7 @@ let create mode =
 (*   (\* FIXME: I guess we should be able to check permissions like for Edit. *\) *)
 (*   Main_page.assert_can_create_private make_editor *)
 (* | Edit book -> *)
-(*   let%lwt permission = Set_editor.entry_permission_new book in *)
+(*   let%lwt permission = Set_editor.entry_permission book in *)
 (*   Main_page.assert_can_update permission @@ fun edit_reason -> *)
 (*   let pre_body = *)
 (*     match edit_reason with *)

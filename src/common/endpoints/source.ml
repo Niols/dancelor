@@ -1,11 +1,9 @@
 open Nes
 open Madge
-open Model_new
-open Search_new
-open Model_builder.Core
+open Model
+open Search
 
 type (_, _, _) t =
-  | Get : (Source_id.t -> 'w, 'w, Source.entry) t
   | Get_row : (Source_id.t -> 'w, 'w, Source_row.t) t
   | Get_view : (Source_id.t -> 'w, 'w, Source_view.t) t
   | Get_form : (Source_id.t -> 'w, 'w, Source_form.t) t
@@ -20,7 +18,6 @@ let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in
   function
     | Search -> literal "search" @@ query_json "slice" (module Slice) @@ query_json "query" (module Source_query) @@ get (module Make_search_result(Source_row))
-    | Get -> variable (module Source_id) @@ get (module Entry.JPublic(Source))
     | Get_row -> variable (module Source_id) @@ literal "row" @@ get (module Source_row)
     | Get_view -> variable (module Source_id) @@ literal "view" @@ get (module Source_view)
     | Get_form -> variable (module Source_id) @@ literal "form" @@ get (module Source_form)

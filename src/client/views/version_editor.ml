@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Components
 open Html
 open Utils
@@ -9,10 +8,10 @@ let structure =
   Input.prepare
     ~type_: Text
     ~placeholder: "eg. AABB or ABAB"
-    ~serialise: (NEString.to_string % Model.Version.Structure.to_string)
+    ~serialise: (NEString.to_string % Version_content.Structure.to_string)
     ~validate: (
       S.const % Option.to_result ~none: "not a valid structure" %
-        (fun s -> Option.bind (NEString.of_string s) Model.Version.Structure.of_string
+        (fun s -> Option.bind (NEString.of_string s) Version_content.Structure.of_string
         )
     )
 
@@ -21,9 +20,9 @@ let content_monolithic () =
   group
     ~label: "Monolithic"
     ~wrap: (fun (bars, (structure, (lilypond, ()))) ->
-      {Model_builder.Core.Version.Content.bars; structure; lilypond}
+      {Version_content.bars; structure; lilypond}
     )
-    ~unwrap: (fun {Model_builder.Core.Version.Content.bars; structure; lilypond} ->
+    ~unwrap: (fun {Version_content.bars; structure; lilypond} ->
       (bars, (structure, (lilypond, ())))
     )
     (
@@ -56,9 +55,9 @@ let content_destructured () =
   group
     ~label: "Destructured"
     ~wrap: (fun (default_structure, (as_2_4, (parts, (transitions, ())))) ->
-      {Model_builder.Core.Version.Content.default_structure; as_2_4; parts; transitions}
+      {Version_content.default_structure; as_2_4; parts; transitions}
     )
-    ~unwrap: (fun {Model_builder.Core.Version.Content.default_structure; as_2_4; parts; transitions} ->
+    ~unwrap: (fun {Version_content.default_structure; as_2_4; parts; transitions} ->
       (default_structure, (as_2_4, (parts, (transitions, ()))))
     )
     (
@@ -87,12 +86,12 @@ let content_destructured () =
       (
         Star.prepare_non_empty
           ~label: "Parts"
-          ~make_header: (fun n -> div [txtf "Part %c" @@ Model.Version.Part_name.(to_char % of_int) n])
+          ~make_header: (fun n -> div [txtf "Part %c" @@ Version_content.Part_name.(to_char % of_int) n])
           (
             group
               ~label: "Part"
-              ~wrap: (fun (melody, (chords, ())) -> {Model_builder.Core.Version.Voices.melody; chords})
-              ~unwrap: (fun {Model_builder.Core.Version.Voices.melody; chords} -> (melody, (chords, ())))
+              ~wrap: (fun (melody, (chords, ())) -> {Version_content.Voices.melody; chords})
+              ~unwrap: (fun {Version_content.Voices.melody; chords} -> (melody, (chords, ())))
               (
                 cons
                   ~stacking: No_label
@@ -146,8 +145,8 @@ let content_destructured () =
                   (
                     Input.prepare
                       ~type_: Text
-                      ~serialise: Model.Version.Part_name.opens_to_string
-                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Model.Version.Part_name.opens_of_string)
+                      ~serialise: Version_content.Part_name.opens_to_string
+                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Version_content.Part_name.opens_of_string)
                       ~label: "from"
                       ~placeholder: "eg. “A”, “B” or “start”"
                       ()
@@ -155,8 +154,8 @@ let content_destructured () =
                   (
                     Input.prepare
                       ~type_: Text
-                      ~serialise: Model.Version.Part_name.opens_to_string
-                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Model.Version.Part_name.opens_of_string)
+                      ~serialise: Version_content.Part_name.opens_to_string
+                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Version_content.Part_name.opens_of_string)
                       ~label: "to"
                       ~placeholder: "eg. “A”, “B” or “end”"
                       ()
@@ -166,9 +165,9 @@ let content_destructured () =
                 pair
                   ~stacking: No_label
                   ~wrap: (fun (melody, chords) ->
-                    {Model_builder.Core.Version.Voices.melody; chords}
+                    {Version_content.Voices.melody; chords}
                   )
-                  ~unwrap: (fun {Model_builder.Core.Version.Voices.melody; chords} ->
+                  ~unwrap: (fun {Version_content.Voices.melody; chords} ->
                     (melody, chords)
                   )
                   (
@@ -202,15 +201,15 @@ let content () =
   Plus.prepare
     ~label: "Content"
     ~cast: (function
-      | Zero() -> Model.Version.Content.No_content
-      | Succ Zero destructured -> Model.Version.Content.Destructured destructured
-      | Succ Succ Zero monolithic -> Model.Version.Content.Monolithic monolithic
+      | Zero() -> Version_content.No_content
+      | Succ Zero destructured -> Version_content.Destructured destructured
+      | Succ Succ Zero monolithic -> Version_content.Monolithic monolithic
       | _ -> assert false (* types guarantee this is not reachable *)
     )
     ~uncast: (function
-      | Model.Version.Content.No_content -> Zero ()
-      | Model.Version.Content.Destructured destructured -> one destructured
-      | Model.Version.Content.Monolithic monolithic -> two monolithic
+      | Version_content.No_content -> Zero ()
+      | Version_content.Destructured destructured -> one destructured
+      | Version_content.Monolithic monolithic -> two monolithic
     )
     ~selected_when_empty: 0
     (
@@ -234,13 +233,13 @@ let editor =
     (
       Selector.prepare
         ~make_descr: (lwt % Tune_row.name)
-        ~make_result: (Any_result_new.make_tune_result ?in_search: None)
+        ~make_result: (Any_result.make_tune_result ?in_search: None)
         ~label: "Tune"
         ~model_name: "tune"
         ~create_dialog_content: Tune_editor.create_row
         ~search: Api.tune_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
+        ~id_to_yojson: Id.to_yojson'
+        ~id_of_yojson: Id.of_yojson'
         ~serialise: Tune_row.id
         ~unserialise: (Api.call_or_option @@ Tune Get_row)
         () ^::
@@ -260,14 +259,14 @@ let editor =
         (
           Selector.prepare
             ~make_descr: (lwt % Person_row.name)
-            ~make_result: (Any_result_new.make_person_result ?in_search: None)
-            ~results_when_no_search: (Option.to_list <$> Environment.person_row)
+            ~make_result: (Any_result.make_person_result ?in_search: None)
+            ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~label: "Arranger"
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
             ~search: Api.person_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Person_row.id
             ~unserialise: (Api.call_or_option @@ Person Get_row)
             ()
@@ -292,13 +291,13 @@ let editor =
                 (
                   Selector.prepare
                     ~make_descr: (lwt % Source_row.name)
-                    ~make_result: (Any_result_new.make_source_result ?in_search: None)
+                    ~make_result: (Any_result.make_source_result ?in_search: None)
                     ~label: "Source"
                     ~model_name: "source"
                     ~create_dialog_content: Source_editor.create_row
                     ~search: Api.source_search
-                    ~id_to_yojson: Entry.Id.to_yojson'
-                    ~id_of_yojson: Entry.Id.of_yojson'
+                    ~id_to_yojson: Id.to_yojson'
+                    ~id_of_yojson: Id.of_yojson'
                     ~serialise: Source_row.id
                     ~unserialise: (Api.call_or_option @@ Source Get_row)
                     ()
@@ -345,7 +344,7 @@ let preview version =
     <$> Page.open_dialog @@ fun return ->
       Page.make'
         ~title: (lwt "Preview")
-        [Components.Version_snippets.make_preview_new ~show_logs: true slug version]
+        [Components.Version_snippets.make_preview ~show_logs: true slug version]
         ~buttons: [
           Button.cancel' ~return ();
           Button.save ~onclick: (fun () -> return (Some ()); lwt_unit) ();
@@ -367,7 +366,7 @@ let prepare () =
     ~icon: (Model Version)
     editor
     ~href: (Endpoints.Page.href_version % With_id.id)
-    ~format: (Formatters_new.Version.name ~link: true % With_id.map Version_form.to_name)
+    ~format: (Formatters.Version.name ~link: true % With_id.map Version_form.to_name)
     ~submit
     ~unsubmit
     ~preview
@@ -388,25 +387,6 @@ let create_gen mode =
 
 (* Needs to be exposed for other editors. *)
 let create mode = create_gen (`With_mode mode)
-
-let to_row (version : Model.Version.entry) : Version_row.t Lwt.t =
-  let content_to_content = function
-    | Model.Version.Content.No_content -> Version_row.No_content
-    | Destructured _ -> Destructured
-    | Monolithic {bars; structure; _} -> Monolithic {bars; structure}
-  in
-  let%lwt tune = Tune_editor.to_row =<< Model.Version.tune' version in
-  let%lwt sources = Lwt_list.map_s (Option.get <%> Model.Source.get % Model.Version.source_source) @@ Model.Version.sources' version in
-  let sources = List.map Source_editor.to_short_name sources in
-  let%lwt arrangers = Lwt_list.map_s (Person_editor.to_name % Option.get <%> Model.Person.get) (Model.Version.arrangers' version) in
-  lwt {
-    Version_row.id = Entry.id version;
-    tune;
-    sources;
-    disambiguation = Option.map NEString.to_string @@ Model.Version.disambiguation' version;
-    arrangers;
-    content = content_to_content @@ Model.Version.content' version;
-  }
 
 let create_row (mode : (Version_row.t, 'a) Editor.mode) =
   let%lwt (mode : ((Version_id.t, Version_form.t) With_id.t, 'a) Editor.mode) =

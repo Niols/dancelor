@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Html
 
 let make_svg_gen ?(show_logs = false) status_signal =
@@ -96,7 +95,7 @@ let make_gen ?show_logs ?show_audio ~slug copyright_response_promise =
     svg_status_signal
     ogg_status_signal
 
-let make ?show_logs ?show_audio ?(params = Model.Version_parameters.none) (version : Version_name.t) =
+let make ?show_logs ?show_audio ?(params = Version_parameters.none) (version : Version_name.t) =
   make_gen
     ?show_logs
     ?show_audio
@@ -109,7 +108,7 @@ let make ?show_logs ?show_audio ?(params = Model.Version_parameters.none) (versi
         Rendering_parameters.none
     )
 
-let make_preview ?show_logs ?show_audio ?(params = Model.Version_parameters.none) slug version =
+let make_preview ?show_logs ?show_audio ?(params = Version_parameters.none) slug version =
   make_gen
     ?show_logs
     ?show_audio
@@ -118,22 +117,6 @@ let make_preview ?show_logs ?show_audio ?(params = Model.Version_parameters.none
       let%lwt payload =
         Api.call_exn
           (Version Build_snippets')
-          version
-          params
-          Rendering_parameters.none
-      in
-      lwt @@ Endpoints.Version.Granted {payload; reason = Non_copyrighted}
-    )
-
-let make_preview_new ?show_logs ?show_audio ?(params = Model.Version_parameters.none) slug version =
-  make_gen
-    ?show_logs
-    ?show_audio
-    ~slug
-    (
-      let%lwt payload =
-        Api.call_exn
-          (Version Build_snippets'_new)
           version
           params
           Rendering_parameters.none

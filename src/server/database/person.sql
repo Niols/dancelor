@@ -31,14 +31,6 @@ SELECT "persons".*
 FROM "persons"
 WHERE "id" = @id;
 
--- @get_row_for_user
-WITH "persons" AS &get_person_rows
-SELECT "persons".*
-FROM "persons"
-JOIN "user" ON "persons"."id" = "user"."person_id"
-WHERE "user"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
 -- @search
 WITH "person_rows" AS &get_person_rows
 SELECT

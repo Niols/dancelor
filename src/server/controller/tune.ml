@@ -1,10 +1,8 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 
-include Shared.Make_public_full(struct
-  type entry = Model_builder.Core.Tune.t
+include Shared.Make_public(struct
+  type tag = Tune_tag.t
   type id = Tune_id.t
   type row = Tune_row.t
   type view = Tune_view.t
@@ -13,20 +11,10 @@ include Shared.Make_public_full(struct
   include Database.Tune
 end)
 
-(* Legacy *)
-
-let get env id =
-  match%lwt Database.Tune.get id with
-  | None -> Permission.reject_can_get ()
-  | Some tune ->
-    Permission.assert_can_get_public env tune;%lwt
-    lwt tune
-
 (* Dispatch *)
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Tune.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env

@@ -1,6 +1,6 @@
+open Js_of_ocaml
 open Nes
 open Dancelor_common
-open Js_of_ocaml
 open Html
 open Utils
 open Views
@@ -10,8 +10,8 @@ module Log = (val Logs.src_log @@ Logs.Src.create "client": Logs.LOG)
 let get_uri () = Uri.of_string (Js.to_string Dom_html.window##.location##.href)
 
 let redirect_any id =
-  Main_page.madge_call_or_404 (Any Get) id @@ fun any ->
-  Redirection_viewer.create (Endpoints.Page.href_any_full any)
+  Main_page.madge_call_or_404 (Any Get_type) id @@ fun type_ ->
+  Redirection_viewer.create @@ Endpoints.Page.href_any_full @@ Any_id.of_type id type_
 
 let () = Madge_client.initialise_batch_route Endpoints.Api.(route_full Batch)
 

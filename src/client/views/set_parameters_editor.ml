@@ -1,4 +1,5 @@
 open Nes
+open Dancelor_common
 open Components
 open Html
 
@@ -6,13 +7,13 @@ let editor =
   let open Bundle in
   group
     ~wrap: (fun (display_name, ()) ->
-      Model.Set_parameters.make ?display_name ()
+      Set_parameters.make ?display_name ()
     )
     ~unwrap: (fun params ->
-      let display_name = Model.Set_parameters.display_name params in
+      let display_name = Set_parameters.display_name params in
         (display_name, ())
     )
-    ~check: Model.Set_parameters.equal
+    ~check: Set_parameters.equal
     (
       Input.prepare_option
         ~type_: Text
@@ -32,4 +33,4 @@ let e =
     ~href: (fun _ -> assert false)
     editor
 
-let empty_value () = Editor.result_to_state e Model.Set_parameters.none
+let empty_value () = Editor.result_to_state e Set_parameters.none

@@ -1,10 +1,18 @@
 open Nes
 open Dancelor_common
-
 open Endpoints.Issue_report
 open Request
 
-include Endpoints.Page.Make_describe(Model)
+include Endpoints.Page.Make_describe(struct
+  type env = Environment.t
+  let get_person_name env id = Person_row.name <$> Person.get_row env id
+  let get_dance_name env id = Dance_row.name <$> Dance.get_row env id
+  let get_source_name env id = Source_row.name <$> Source.get_row env id
+  let get_tune_name env id = Tune_row.name <$> Tune.get_row env id
+  let get_version_name env id = Tune_row.name % Version_row.tune <$> Version.get_row env id
+  let get_set_name env id = Set_row.name <$> Set.get_row env id
+  let get_book_name env id = Book_row.name <$> Book.get_row env id
+end)
 
 (* used at the end of the {!report} function below *)
 let id_regexp = Str.regexp ".*/issues/\\(.*\\)"
@@ -14,7 +22,7 @@ let report env issue =
     if issue.source_is_dancelor then
       lwt ((Config.get ()).github_repository, issue.title)
     else
-      let%lwt (model, name) = Option.get <$> describe issue.page in
+      let%lwt (model, name) = Option.get <$> describe env issue.page in
       lwt ((Config.get ()).github_database_repository, Format.sprintf "%s “%s”: %s" model name issue.title)
   in
   assert (repo <> "");
@@ -29,8 +37,8 @@ let report env issue =
             match Environment.actor env with
             | Signed_in actor ->
               (* FIXME: when there is a profile page for users, link to it *)
-              (Username.to_string @@ Model.User.username' actor) ^
-                (match Model.User.github_handle' actor with None -> "" | Some handle -> spf " (@%s)" handle)
+              (Username.to_string actor.username) ^
+                (match actor.github_handle with None -> "" | Some handle -> spf " (@%s)" handle)
             | Anonymous -> "(claiming to be connected but is not)"
           )
         | Right string -> string ^ " (not connected)"

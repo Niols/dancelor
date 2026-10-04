@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 
 let person_sql_to_view ~id ~name ~scddb_id ~composed_tunes_are_public ~published_tunes_are_public ~(k : Person_view.t -> 'w) : 'w =
   k {
@@ -27,7 +26,7 @@ let dance_sql_to_view ~id ~name ~extra_names ~kind ~devisers ~scddb_id ~disambig
     id;
     name;
     extra_names;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     devisers;
     scddb_id = Option.map Int64.to_int scddb_id;
     disambiguation;
@@ -44,7 +43,7 @@ let tune_sql_to_version_row_without_tune ~id ~sources ~disambiguation ~arrangers
     | (Some bars, Some structure) ->
       Monolithic {
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | _ -> assert false
   in
@@ -81,7 +80,7 @@ let version_sql_to_source
   k {
     id;
     name;
-    structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+    structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
     details;
   }
 
@@ -113,12 +112,12 @@ let version_sql_to_view
     | (None, Some default_structure) ->
       Destructured {
         default_structure =
-        Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure));
+        Option.get (Version_content.Structure.of_string (NEString.of_string_exn default_structure));
       }
     | (Some bars, Some structure) ->
       Monolithic {
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | _ -> assert false
   in
@@ -162,12 +161,16 @@ let set_sql_to_view
   k {
     id;
     name;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     conceptors;
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
-    order = Model_builder.Core.Set_order.of_string order;
+    order = Set_order.of_string order;
     remark;
-    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
+    permission = {
+      entry_is_public;
+      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
+      actor_is_omniscient_administrator;
+    };
   }
 
 let book_sql_to_view
@@ -195,5 +198,9 @@ let book_sql_to_view
     sources;
     scddb_id = Option.map Int64.to_int scddb_id;
     warnings = [];
-    permission = Permission_new.make_of_poly ~entry_is_public ~actor_role ~actor_is_omniscient_administrator;
+    permission = {
+      entry_is_public;
+      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
+      actor_is_omniscient_administrator;
+    };
   }
