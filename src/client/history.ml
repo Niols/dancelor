@@ -1,7 +1,6 @@
 open Js_of_ocaml
 open Nes
 open Dancelor_common
-open Model_new
 
 module Log = (val Logs.src_log @@ Logs.Src.create "client.history": Logs.LOG)
 

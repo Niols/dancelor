@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 module Model = Model_builder.Core
-open Model_new
 open Components
 open Html
 open Utils
@@ -45,10 +44,10 @@ let editor =
             ~search: Api.person_search
             ~id_to_yojson: Entry.Id.to_yojson'
             ~id_of_yojson: Entry.Id.of_yojson'
-            ~serialise: Model_new.Person_row.id
+            ~serialise: Person_row.id
             ~unserialise: (Api.call_or_option @@ Person Get_row)
             ~make_descr: (lwt % Person_row.name)
-            ~make_result: (Any_result_new.make_person_result ?in_search: None)
+            ~make_result: (Any_result.make_person_result ?in_search: None)
             ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
@@ -115,7 +114,7 @@ let create mode =
     ~icon: (Model Dance)
     ~mode
     editor
-    ~format: (Formatters_new.Dance.name ~link: true % With_id.map Dance_form.to_name)
+    ~format: (Formatters.Dance.name ~link: true % With_id.map Dance_form.to_name)
     ~href: (Endpoints.Page.href_dance % With_id.id)
     ~submit
     ~unsubmit

@@ -1,5 +1,4 @@
 open Dancelor_common
-open Model_new
 
 (* FIXME: merge [Database.Any] and [Database.Entry] which really seems to be
    doing the same thing, except maybe one has functions that can be exposed to

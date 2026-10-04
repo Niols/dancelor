@@ -1,7 +1,5 @@
 open NesUnix
 open Dancelor_common
-open Model_new
-open Search_new
 
 include Shared.Make_private_full(struct
   type entry = Model_builder.Core.Book.t

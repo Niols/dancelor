@@ -2,8 +2,6 @@ open Nes
 open Utils
 open Html
 open Dancelor_common
-open Model_new
-open Search_new
 open Components
 
 let copy_link_button ?(object_is_public = false) (id : Any_id.t) =
@@ -51,7 +49,7 @@ let component =
                 ~label: "Actor"
                 ~model_name: "user"
                 ~make_descr: (fun user -> lwt @@ Username.to_string user.User_row.username)
-                ~make_result: (Any_result_new.make_user_result ?in_search: None)
+                ~make_result: (Any_result.make_user_result ?in_search: None)
                 ~results_when_no_search: (Option.to_list % Option.map Actor.to_user_row <$> Environment.actor)
                 ~search: (fun slice input ->
                   match User_query.parse input with

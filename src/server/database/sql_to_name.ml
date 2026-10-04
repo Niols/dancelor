@@ -1,5 +1,4 @@
 open Dancelor_common
-open Model_new
 
 let person_sql_to_name ~id ~name ~(k : Person_name.t -> 'w) : 'w =
   k {id; name}

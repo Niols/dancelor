@@ -52,8 +52,8 @@ let editor =
         ~type_: Text
         ~label: "Transposition (number of semitones)"
         ~placeholder: "eg. +2 or -4"
-        ~serialise: (NEString.of_string_exn % string_of_int % Dancelor_common.Transposition.to_semitones)
-        ~validate: (S.const % Option.to_result ~none: "Not a number of semitones" % Option.map Dancelor_common.Transposition.from_semitones % int_of_string_opt % NEString.to_string)
+        ~serialise: (NEString.of_string_exn % string_of_int % Music.Transposition.to_semitones)
+        ~validate: (S.const % Option.to_result ~none: "Not a number of semitones" % Option.map Music.Transposition.from_semitones % int_of_string_opt % NEString.to_string)
         () ^::
       nil
     )

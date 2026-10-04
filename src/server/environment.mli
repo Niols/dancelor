@@ -4,7 +4,6 @@
     sessions and “remember me” manipulations. *)
 
 open Dancelor_common
-open Model_new
 
 (** The abstract type of an environment. *)
 type t

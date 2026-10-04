@@ -1,7 +1,7 @@
 open Nes
 open Madge
 open Model_new
-open Search_new
+open Search
 
 type (_, _, _) t =
   | Get_type : (unit Entry.Id.t -> 'w, 'w, Model_builder.Core.Any.Type.t) t

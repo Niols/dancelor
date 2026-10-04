@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Endpoints.Issue_report
 open Request
 

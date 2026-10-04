@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 
 val get_row_for : Version_id.t list -> (Version_id.t -> Version_row.t option) Lwt.t
 val get_view : Version_id.t -> Version_view.t option Lwt.t

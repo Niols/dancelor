@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view
@@ -88,7 +86,7 @@ let get_content_versions_for db book_ids =
       in
       let version_params =
         Model_builder.Core.Version_parameters.make
-          ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
+          ?transposition: (Option.map (Music.Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
           ?first_bar: (Option.map Int64.to_int version_parameter_first_bar)
           ?clef: (Option.map Music.Clef.of_string version_parameter_clef)
           ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
@@ -141,7 +139,7 @@ let get_contents_for ~actor_id db book_ids =
           ?display_kind: (Option.map NEString.of_string_exn set_parameter_display_kind)
           ~every_version: (
             Model_builder.Core.Version_parameters.make
-              ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) set_parameter_version_parameter_transposition_semitones)
+              ?transposition: (Option.map (Music.Transposition.from_semitones % Int64.to_int) set_parameter_version_parameter_transposition_semitones)
               ?first_bar: (Option.map Int64.to_int set_parameter_version_parameter_first_bar)
               ?clef: (Option.map Music.Clef.of_string set_parameter_version_parameter_clef)
               ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) set_parameter_version_parameter_structure)
@@ -240,7 +238,7 @@ let get_form_contents_for ~actor_id db book_ids =
           ?display_kind: (Option.map NEString.of_string_exn set_parameter_display_kind)
           ~every_version: (
             Model_builder.Core.Version_parameters.make
-              ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) set_parameter_version_parameter_transposition_semitones)
+              ?transposition: (Option.map (Music.Transposition.from_semitones % Int64.to_int) set_parameter_version_parameter_transposition_semitones)
               ?first_bar: (Option.map Int64.to_int set_parameter_version_parameter_first_bar)
               ?clef: (Option.map Music.Clef.of_string set_parameter_version_parameter_clef)
               ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) set_parameter_version_parameter_structure)
@@ -393,7 +391,7 @@ let update_other_tables db ~book_id ~authors ~sources ~contents =
           ~set_parameter_display_name: (Option.map NEString.to_string @@ Model_builder.Core.Set_parameters.display_name set_params)
           ~set_parameter_display_conceptor: (Option.map NEString.to_string @@ Model_builder.Core.Set_parameters.display_conceptor set_params)
           ~set_parameter_display_kind: (Option.map NEString.to_string @@ Model_builder.Core.Set_parameters.display_kind set_params)
-          ~set_parameter_version_parameter_transposition_semitones: (Option.map (Int64.of_int % Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition set_version_params)
+          ~set_parameter_version_parameter_transposition_semitones: (Option.map (Int64.of_int % Music.Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition set_version_params)
           ~set_parameter_version_parameter_first_bar: (Option.map Int64.of_int @@ Model_builder.Core.Version_parameters.first_bar set_version_params)
           ~set_parameter_version_parameter_clef: (Option.map Music.Clef.to_string @@ Model_builder.Core.Version_parameters.clef set_version_params)
           ~set_parameter_version_parameter_structure: (Option.map (NEString.to_string % Model_builder.Core.Version_parameters.maybe_structure_to_string) @@ Model_builder.Core.Version_parameters.structure set_version_params)
@@ -409,7 +407,7 @@ let update_other_tables db ~book_id ~authors ~sources ~contents =
               ~content_index: (Int64.of_int content_index)
               ~index: (Int64.of_int index)
               ~version_id: (Version_row.id version)
-              ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition params)
+              ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Music.Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition params)
               ~version_parameter_first_bar: (Option.map Int64.of_int @@ Model_builder.Core.Version_parameters.first_bar params)
               ~version_parameter_clef: (Option.map Music.Clef.to_string @@ Model_builder.Core.Version_parameters.clef params)
               ~version_parameter_structure: (Option.map (NEString.to_string % Model_builder.Core.Version_parameters.maybe_structure_to_string) @@ Model_builder.Core.Version_parameters.structure params)

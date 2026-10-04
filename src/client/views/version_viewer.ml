@@ -1,8 +1,6 @@
 open Nes
 open Dancelor_common
 module Model = Model_builder.Core
-open Model_new
-open Search_new
 open Html
 open Utils
 
@@ -43,9 +41,9 @@ let add_to_set_dialog =
     ~source_format: (txt % Version_name.name)
     ~target_type: "set"
     ~target_icon: Icon.(Model Set)
-    ~target_format: (Formatters_new.Set.name % Set_row.to_name)
+    ~target_format: (Formatters.Set.name % Set_row.to_name)
     ~target_href: (Endpoints.Page.href_set % Set_row.id)
-    ~target_result: (Any_result_new.make_set_result ?classes: None ?params: None ?prefix: None ?suffix: None)
+    ~target_result: (Any_result.make_set_result ?classes: None ?params: None ?prefix: None ?suffix: None)
     ~target_search: (fun slice query -> Api.set_search slice query)
     ~target_history: History.get_sets
     ~target_add_source_to_content: (fun (set : Set_row.t) (version : Version_name.t) ->
@@ -63,7 +61,7 @@ let madge_call_tune_or_version tune_or_version_id f =
     Main_page.madge_call_or_404 (Version Get_view) id (fun version -> f version.tune (Some version))
 
 let subtitles (tune : Tune_view.t) =
-  [span (Formatters_new.Tune.description tune)]
+  [span (Formatters.Tune.description tune)]
 
 let actions (tune : Tune_view.t) (version : Version_view.t option) = [
   (
@@ -234,7 +232,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
         Option.fold version.disambiguation ~none: [] ~some: (List.singleton % txtf " %s") @
           match version.arrangers with
           | [] -> []
-          | arrangers -> txt " arranged by " :: Formatters_new.Person.names ~links: true arrangers
+          | arrangers -> txt " arranged by " :: Formatters.Person.names ~links: true arrangers
       );
     ];
     (
@@ -268,7 +266,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
         let show_source_group (source_group : Version_view.source list) =
           span @@
             let source = List.hd source_group in
-            [Formatters_new.Source.name @@ Version_view.source_to_name source] @
+            [Formatters.Source.name @@ Version_view.source_to_name source] @
             (
               List.concat @@
               List.interspersei

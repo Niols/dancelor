@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view
@@ -65,7 +63,7 @@ let get_content_for db set_ids =
       in
       let params =
         Model_builder.Core.Version_parameters.make
-          ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
+          ?transposition: (Option.map (Music.Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
           ?first_bar: (Option.map Int64.to_int version_parameter_first_bar)
           ?clef: (Option.map Music.Clef.of_string version_parameter_clef)
           ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
@@ -151,7 +149,7 @@ let update_other_tables db ~set_id ~conceptors ~contents =
           ~set_id
           ~index: (Int64.of_int index)
           ~version_id: version.Version_row.id
-          ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition params)
+          ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Music.Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition params)
           ~version_parameter_first_bar: (Option.map Int64.of_int @@ Model_builder.Core.Version_parameters.first_bar params)
           ~version_parameter_clef: (Option.map Music.Clef.to_string @@ Model_builder.Core.Version_parameters.clef params)
           ~version_parameter_structure: (Option.map (NEString.to_string % Model_builder.Core.Version_parameters.maybe_structure_to_string) @@ Model_builder.Core.Version_parameters.structure params)

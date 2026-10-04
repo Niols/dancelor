@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_name
 open Sql_to_row
 open Sql_to_view

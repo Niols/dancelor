@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Model_builder.Core
 open Html
 open Utils

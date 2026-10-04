@@ -1,5 +1,4 @@
 open Dancelor_common
-open Model_new
 
 module Make_id_conv (T : sig type t end) = struct
   let get_column : string -> T.t Entry.Id.t = Entry.Id.of_string_exn
@@ -39,7 +38,7 @@ type kind_base = [
   | `Waltz
 ]
 
-let kind_base_to_common : kind_base -> Kind_base.t = function
+let kind_base_to_common : kind_base -> Kind.Base.t = function
   | `Air -> Air
   | `Hornpipe -> Hornpipe
   | `Jig -> Jig
@@ -55,7 +54,7 @@ let kind_base_to_common : kind_base -> Kind_base.t = function
   | `Two_step -> Two_step
   | `Waltz -> Waltz
 
-let kind_base_of_common : Kind_base.t -> kind_base = function
+let kind_base_of_common : Kind.Base.t -> kind_base = function
   | Air -> `Air
   | Hornpipe -> `Hornpipe
   | Jig -> `Jig

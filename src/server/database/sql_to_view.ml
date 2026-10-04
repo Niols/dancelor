@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 
 let person_sql_to_view ~id ~name ~scddb_id ~composed_tunes_are_public ~published_tunes_are_public ~(k : Person_view.t -> 'w) : 'w =
   k {
@@ -27,7 +26,7 @@ let dance_sql_to_view ~id ~name ~extra_names ~kind ~devisers ~scddb_id ~disambig
     id;
     name;
     extra_names;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     devisers;
     scddb_id = Option.map Int64.to_int scddb_id;
     disambiguation;
@@ -162,7 +161,7 @@ let set_sql_to_view
   k {
     id;
     name;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     conceptors;
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
     order = Model_builder.Core.Set_order.of_string order;

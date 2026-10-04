@@ -1,9 +1,8 @@
 (** {1 Search_bar} *)
 
+open Js_of_ocaml_tyxml.Tyxml_js
 open Nes
 open Dancelor_common
-open Search_new
-open Js_of_ocaml_tyxml.Tyxml_js
 
 (** Abstraction of the possible states of the search bar. *)
 type 'result state =

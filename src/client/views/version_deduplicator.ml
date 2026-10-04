@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Html
 open Utils
 
@@ -48,7 +46,7 @@ let confirmation_dialog ~this_version_id ~other_version_id =
             List.map
               (fun source ->
                 li [
-                  Formatters_new.Source.name (Version_form.source_to_name source);
+                  Formatters.Source.name (Version_form.source_to_name source);
                   txtf " (%s)" (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string source.structure);
                 ]
               )
@@ -78,9 +76,9 @@ let confirmation_dialog ~this_version_id ~other_version_id =
     (* that's it for changes to the other version; bundle them together as a change *)
     let other_version_formatted =
       span (
-        Formatters_new.Version.name_disambiguation_and_sources (Version_form.to_row other_version_id other_version) @ [
+        Formatters.Version.name_disambiguation_and_sources (Version_form.to_row other_version_id other_version) @ [
           txt " [";
-          Formatters_new.Version.id other_version_id;
+          Formatters.Version.id other_version_id;
           txt "]"
         ]
       )
@@ -146,7 +144,7 @@ let confirmation_dialog ~this_version_id ~other_version_id =
           let contents = List.map (Pair.map_fst replace_version) set.Set_form.contents in
           ignore <$> Api.call_exn (Set Update) id {set with contents}
         )
-        [txt "replace the version in set "; Formatters_new.Set.name (Set_form.to_name id set); txt "."]
+        [txt "replace the version in set "; Formatters.Set.name (Set_form.to_name id set); txt "."]
     )
     sets;
 
@@ -180,7 +178,7 @@ let confirmation_dialog ~this_version_id ~other_version_id =
         )
         [
           txt "replace the version in book ";
-          Formatters_new.Book.name (Book_form.to_name id book);
+          Formatters.Book.name (Book_form.to_name id book);
           txt "."
         ]
     )
@@ -191,9 +189,9 @@ let confirmation_dialog ~this_version_id ~other_version_id =
     ~action: (fun () -> ignore <$> Api.call_exn (Version Delete) this_version_id)
     (
       [txt "delete the current version, "] @
-      Formatters_new.Version.name_disambiguation_and_sources (Version_form.to_row this_version_id this_version) @ [
+      Formatters.Version.name_disambiguation_and_sources (Version_form.to_row this_version_id this_version) @ [
         txt " [";
-        Formatters_new.Version.id this_version_id;
+        Formatters.Version.id this_version_id;
         txt "].";
       ]
     );

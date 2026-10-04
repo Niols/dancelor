@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Html
 
 type server_status = Reachable | Unreachable

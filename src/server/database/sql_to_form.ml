@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Sql_to_row
 
 let person_sql_to_form ~id: _ ~name ~scddb_id ~(k : Person_form.t -> 'w) : 'w =
@@ -22,7 +21,7 @@ let source_sql_to_form ~id: _ ~name ~short_name ~editors ~scddb_id ~description 
 let dance_sql_to_form ~id: _ ~name ~extra_names ~kind ~devisers ~scddb_id ~disambiguation ~date ~two_chords ~(k : Dance_form.t -> 'w) : 'w =
   k {
     names = NEList.map NEString.of_string_exn (NEList.cons name extra_names);
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     devisers;
     scddb_id = Option.map Int64.to_int scddb_id;
     disambiguation = Option.map NEString.of_string_exn disambiguation;
@@ -124,7 +123,7 @@ let set_sql_to_form
   =
   k {
     name = NEString.of_string_exn name;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     conceptors;
     contents;
     order = Model_builder.Core.Set_order.of_string order;

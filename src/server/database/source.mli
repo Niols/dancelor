@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 
 val get_row_for : Source_id.t list -> (Source_id.t -> Source_row.t option) Lwt.t
 val get_view : Source_id.t -> Source_view.t option Lwt.t

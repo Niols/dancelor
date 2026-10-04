@@ -1,6 +1,4 @@
 open Dancelor_common
-open Model_new
-open Search_new
 
 val get_row_for : actor_id: User_id.t option -> Set_id.t list -> (Set_id.t -> Set_row.t option) Lwt.t
 val get_view : actor_id: User_id.t option -> Set_id.t -> Set_view.t option Lwt.t

@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 
 let person_sql_to_row ~id ~name ~(k : Person_row.t -> 'w) : 'w =
   k {id; name}
@@ -18,7 +17,7 @@ let dance_sql_to_row ~id ~name ~kind ~devisers ~disambiguation ~(k : Dance_row.t
   k {
     id;
     name;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     devisers;
     disambiguation;
   }
@@ -80,7 +79,7 @@ let set_sql_to_row
   k {
     id;
     name;
-    kind = Kind_dance.of_string kind;
+    kind = Kind.Dance.of_string kind;
     conceptors;
     tunes;
     permission = {

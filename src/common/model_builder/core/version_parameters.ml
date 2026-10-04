@@ -36,7 +36,7 @@ let maybe_structure_of_yojson = function
   | _ -> Error "maybe_structure_of_yojson"
 
 type t = {
-  transposition: Transposition.t option; [@default None]
+  transposition: Music.Transposition.t option; [@default None]
   first_bar: int option; [@default None] [@key "first-bar"]
   clef: Music.Clef.t option; [@default None]
   structure: maybe_structure option; [@default None]
@@ -71,7 +71,7 @@ let set_display_name display_name p = {p with display_name = Some display_name}
 (** {2 Composition} *)
 
 let compose first second = {
-  transposition = Option.choose ~tie: Transposition.compose first.transposition second.transposition;
+  transposition = Option.choose ~tie: Music.Transposition.compose first.transposition second.transposition;
   clef = Option.(choose ~tie: second) first.clef second.clef;
   structure = Option.(choose ~tie: second) first.structure second.structure;
   first_bar = Option.(choose ~tie: second) first.first_bar second.first_bar;

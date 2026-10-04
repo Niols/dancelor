@@ -1,7 +1,5 @@
 open NesUnix
 open Dancelor_common
-open Model_new
-open Search_new
 open Sql_to_row
 
 module User_sql = User_sql.Sqlgg(Sqlgg_postgresql)

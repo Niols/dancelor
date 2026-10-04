@@ -2,7 +2,6 @@ open Nes
 open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Dancelor_common
-open Search_new
 open Utils
 open Html
 

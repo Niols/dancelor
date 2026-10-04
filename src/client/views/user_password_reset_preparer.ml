@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Components
 open Html
 open Utils
@@ -32,7 +31,7 @@ let create () =
       ~label: "User"
       ~model_name: "user"
       ~make_descr: (fun user -> lwt @@ Username.to_string user.username)
-      ~make_result: (Any_result_new.make_user_result ?in_search: None)
+      ~make_result: (Any_result.make_user_result ?in_search: None)
       ~results_when_no_search: lwt_nil
       ~search: Api.user_search
       ~id_to_yojson: Entry.Id.to_yojson'

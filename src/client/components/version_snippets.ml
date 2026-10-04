@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Html
 
 let make_svg_gen ?(show_logs = false) status_signal =

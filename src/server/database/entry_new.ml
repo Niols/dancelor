@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Sql_to_row
 
 module Entry_sql = Entry_sql.Sqlgg(Sqlgg_postgresql)

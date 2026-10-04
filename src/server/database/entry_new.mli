@@ -1,5 +1,4 @@
 open Dancelor_common
-open Model_new
 
 type type_ = [
   | `Book

@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Html
 
 let details content = span ~a: [a_class ["opacity-50"]] content
@@ -215,7 +214,7 @@ module Version = struct
     let transposition_block =
       match Model_builder.Core.Version_parameters.transposition params with
       | None -> []
-      | Some transposition -> [txtf " [%+d m2]" @@ Transposition.to_semitones transposition]
+      | Some transposition -> [txtf " [%+d m2]" @@ Music.Transposition.to_semitones transposition]
     in
     display_name_block @ structure_block @ transposition_block
 

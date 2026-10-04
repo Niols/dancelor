@@ -2,8 +2,6 @@
 
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 
 (** {2 Components} *)
 

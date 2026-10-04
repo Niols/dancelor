@@ -4,7 +4,6 @@
 
 open Nes
 open Dancelor_common
-open Model_new
 open Html
 
 (** Status of the server. It starts as {!Reachable} but might change to

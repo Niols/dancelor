@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 module Model = Model_builder.Core
-open Model_new
 open Components
 open Html
 open Utils
@@ -235,7 +234,7 @@ let editor =
     (
       Selector.prepare
         ~make_descr: (lwt % Tune_row.name)
-        ~make_result: (Any_result_new.make_tune_result ?in_search: None)
+        ~make_result: (Any_result.make_tune_result ?in_search: None)
         ~label: "Tune"
         ~model_name: "tune"
         ~create_dialog_content: Tune_editor.create_row
@@ -261,7 +260,7 @@ let editor =
         (
           Selector.prepare
             ~make_descr: (lwt % Person_row.name)
-            ~make_result: (Any_result_new.make_person_result ?in_search: None)
+            ~make_result: (Any_result.make_person_result ?in_search: None)
             ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~label: "Arranger"
             ~model_name: "person"
@@ -293,7 +292,7 @@ let editor =
                 (
                   Selector.prepare
                     ~make_descr: (lwt % Source_row.name)
-                    ~make_result: (Any_result_new.make_source_result ?in_search: None)
+                    ~make_result: (Any_result.make_source_result ?in_search: None)
                     ~label: "Source"
                     ~model_name: "source"
                     ~create_dialog_content: Source_editor.create_row
@@ -368,7 +367,7 @@ let prepare () =
     ~icon: (Model Version)
     editor
     ~href: (Endpoints.Page.href_version % With_id.id)
-    ~format: (Formatters_new.Version.name ~link: true % With_id.map Version_form.to_name)
+    ~format: (Formatters.Version.name ~link: true % With_id.map Version_form.to_name)
     ~submit
     ~unsubmit
     ~preview

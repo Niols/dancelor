@@ -1,10 +1,8 @@
+open Js_of_ocaml
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
-open Js_of_ocaml
 
-module Any_result_new = Any_result_new
+module Any_result = Any_result
 module Icon = Icon
 module Alert = Alert
 module Button = Button

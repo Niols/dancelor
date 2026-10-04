@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 open Html
 open Utils
 
@@ -12,7 +10,7 @@ let view in_search id =
     ~before_title: [Components.Context_links.for_search in_search (Any_id.Source id)]
     ~title: (lwt source.name)
     ~subtitles: [
-      span (Formatters_new.Source.date_and_editors source);
+      span (Formatters.Source.date_and_editors source);
     ]
     ~share: (Sharing_dialog.copy_link_button @@ Source id)
     ~actions: [

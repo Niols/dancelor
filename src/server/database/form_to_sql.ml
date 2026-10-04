@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 
 let person_form_to_sql query id {Person_form.name; scddb_id} =
   query
@@ -21,7 +20,7 @@ let dance_form_to_sql query id {Dance_form.names; kind; two_chords; scddb_id; di
   query
     ~id
     ~name: (NEString.to_string @@ NEList.hd names)
-    ~kind: (Kind_dance.to_string kind)
+    ~kind: (Kind.Dance.to_string kind)
     ~two_chords: (Sql_types.two_chords_of_common two_chords)
     ~scddb_id: (Option.map Int64.of_int scddb_id)
     ~disambiguation: (Option.map NEString.to_string disambiguation)
@@ -92,7 +91,7 @@ let set_form_to_sql
   query
     ~id
     ~name: (NEString.to_string name)
-    ~kind: (Kind_dance.to_string kind)
+    ~kind: (Kind.Dance.to_string kind)
     ~order: (Model_builder.Core.Set_order.to_string order)
 
 let book_form_to_sql

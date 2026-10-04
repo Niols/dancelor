@@ -11,4 +11,4 @@ let to_semitones = id
 let from_semitones = id
 let from_octaves = ( * ) 12
 
-let target_pitch ~source t = Music.Pitch.add source t
+let target_pitch ~source t = Pitch.add source t

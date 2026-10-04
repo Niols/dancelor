@@ -1,9 +1,7 @@
 open Nes
 open Dancelor_common
-open Search_new
 open Html
 open Utils
-open Model_new
 
 module Log = (val Logs.src_log @@ Logs.Src.create "client.components.context-links": Logs.LOG)
 

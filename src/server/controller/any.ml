@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 
 let get_type env id =
   let actor_id = Environment.actor_id env in

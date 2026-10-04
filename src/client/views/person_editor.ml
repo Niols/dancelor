@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 module Model = Dancelor_common.Model_builder.Core
-open Model_new
 open Components
 open Html
 
@@ -53,7 +52,7 @@ let create mode =
     ~mode
     ~submit
     ~unsubmit
-    ~format: (Formatters_new.Person.name ~link: true % With_id.map Person_form.to_name)
+    ~format: (Formatters.Person.name ~link: true % With_id.map Person_form.to_name)
     ~href: (Endpoints.Page.href_person % With_id.id)
 
 (* FIXME: Remove once dance and source editors don't rely on it anymore *)

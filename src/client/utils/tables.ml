@@ -16,16 +16,16 @@ let map_table ?header f list =
   make ?header (tbody (List.map f list))
 
 let dances dances =
-  map_table ~header: [""; ""; ""] Any_result_new.make_dance_result dances
+  map_table ~header: [""; ""; ""] Any_result.make_dance_result dances
 
 let tunes tunes =
-  map_table ~header: [""; ""; ""] Any_result_new.make_tune_result tunes
+  map_table ~header: [""; ""; ""] Any_result.make_tune_result tunes
 
 let versions ?onclick versions =
   map_table
     ~header: [""; ""; ""]
     (fun version ->
-      Any_result_new.make_version_result
+      Any_result.make_version_result
         ?onclick: (Option.map (fun onclick () -> onclick version) onclick)
         version
     )
@@ -34,7 +34,7 @@ let versions ?onclick versions =
 let any ?in_search anys =
   map_table
     ~header: [""; ""; ""; ""; ""]
-    (Any_result_new.make_result ?in_search)
+    (Any_result.make_result ?in_search)
     anys
 
 let placeholder ?(show_thead = true) ?(show_tfoot = true) ?(rows = 3) () = [

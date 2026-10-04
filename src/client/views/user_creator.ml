@@ -1,7 +1,6 @@
 open Nes
 open Dancelor_common
 module Model = Dancelor_common.Model_builder.Core
-open Model_new
 open Components
 open Html
 open Utils

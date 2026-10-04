@@ -1,7 +1,5 @@
 open NesUnix
 open Dancelor_common
-open Model_new
-open Search_new
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.version": Logs.LOG)
 

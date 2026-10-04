@@ -1,7 +1,7 @@
 open Nes
 open Madge
 open Model_new
-open Search_new
+open Search
 open Model_builder.Core
 
 type (_, _, _) t =

@@ -6,7 +6,6 @@
 open NesUnix
 open Dancelor_common
 module Model = Model_builder.Core
-open Model_new
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.model_to_renderer": Logs.LOG)
 
@@ -59,7 +58,7 @@ let version_to_lilypond_content ~version_params version =
     (* add transposition *)
     let lilypond =
       let source = Music.Key.pitch key in
-      let target = Transposition.target_pitch ~source @@ Option.value ~default: Transposition.identity @@ Model.Version_parameters.transposition version_params in
+      let target = Music.Transposition.target_pitch ~source @@ Option.value ~default: Music.Transposition.identity @@ Model.Version_parameters.transposition version_params in
       let (source, target) = Pair.map_both Music.Pitch.to_lilypond_string (source, target) in
       spf "\\transpose %s %s { %s }" source target lilypond
     in

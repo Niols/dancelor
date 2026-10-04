@@ -1,7 +1,7 @@
 open Nes
 open Madge
 open Model_new
-open Search_new
+open Search
 
 type (_, _, _) t =
   | Get_row : (Dance_id.t -> 'w, 'w, Dance_row.t) t

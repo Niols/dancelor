@@ -1,7 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
-open Search_new
 
 val get_row_for : Tune_id.t list -> (Tune_id.t -> Tune_row.t option) Lwt.t
 val get_rows_for_dance : Dance_id.t -> Tune_row.t list Lwt.t

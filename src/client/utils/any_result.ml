@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-open Model_new
 open Html
 
 let row ?(classes = []) ?onclick cells =
@@ -15,7 +14,7 @@ let row ?(classes = []) ?onclick cells =
     )
     (cells)
 
-let inline_details = Formatters_new.details
+let inline_details = Formatters.details
 let block_details content = p ~a: [a_class ["mb-0"; "opacity-50"; "lh-sm"]] [small content]
 
 (* FIXME: add a tooltip explaining what a forbidden value is *)
@@ -32,9 +31,9 @@ let make_source_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []
     ?onclick
     (
       prefix @
-      [td [Formatters_new.Source.name_row ~link: (onclick = None) ?in_search source];
+      [td [Formatters.Source.name_row ~link: (onclick = None) ?in_search source];
       td [txt @@ Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) source.date];
-      td (Formatters_new.Person.names ~links: (onclick = None) ~short: true source.editors);
+      td (Formatters.Person.names ~links: (onclick = None) ~short: true source.editors);
       ] @
       suffix
     )
@@ -45,7 +44,7 @@ let make_person_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []
     ?onclick
     (
       prefix @
-      [td ~a: [a_colspan 3] [Formatters_new.Person.name ~link: (onclick = None) ?in_search person];
+      [td ~a: [a_colspan 3] [Formatters.Person.name ~link: (onclick = None) ?in_search person];
       ] @
       suffix
     )
@@ -69,9 +68,9 @@ let make_dance_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = [])
     ?onclick
     (
       prefix @
-      [td (Formatters_new.Dance.name_and_disambiguation ~link: (onclick = None) ?in_search dance);
+      [td (Formatters.Dance.name_and_disambiguation ~link: (onclick = None) ?in_search dance);
       td [txt @@ Kind.Dance.to_string dance.kind];
-      td (Formatters_new.Person.names ~links: (onclick = None) ~short: true dance.devisers);
+      td (Formatters.Person.names ~links: (onclick = None) ~short: true dance.devisers);
       ] @
       suffix
     )
@@ -80,15 +79,15 @@ let make_dance_plus_set_result ?classes ?onclick ?in_search ?set_params ?(prefix
   row ?classes ?onclick (
     prefix @
     [td (
-      [Formatters_new.Dance.name_row ?in_search dance] @
-      [block_details [txt "Set: "; format_forbidden (Formatters_new.Set.name_row ~link: (onclick = None)) set]] @
+      [Formatters.Dance.name_row ?in_search dance] @
+      [block_details [txt "Set: "; format_forbidden (Formatters.Set.name_row ~link: (onclick = None)) set]] @
       Option.fold
         (Option.bind set_params Model_builder.Core.Set_parameters.display_name)
         ~none: []
         ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]]) @ (
         match set with
         | Forbidden -> []
-        | Allowed set -> [block_details (Formatters_new.Set.tunes ~links: (onclick = None) set)]
+        | Allowed set -> [block_details (Formatters.Set.tunes ~links: (onclick = None) set)]
       )
     );
     td [txt @@ Kind.Dance.to_string dance.kind];
@@ -96,7 +95,7 @@ let make_dance_plus_set_result ?classes ?onclick ?in_search ?set_params ?(prefix
       (
         match set with
         | Forbidden -> []
-        | Allowed set -> Formatters_new.Person.names ~links: (onclick = None) ~short: true set.conceptors
+        | Allowed set -> Formatters.Person.names ~links: (onclick = None) ~short: true set.conceptors
       ) @
         Option.fold
           (Option.bind set_params Model_builder.Core.Set_parameters.display_conceptor)
@@ -110,14 +109,14 @@ let make_dance_plus_versions_result ?classes ?onclick ?in_search ?(prefix = []) 
   row ?classes ?onclick (
     prefix @
     [td [
-      Formatters_new.Dance.name_row ?in_search dance;
+      Formatters.Dance.name_row ?in_search dance;
       block_details [
         txt (if List.is_singleton versions_and_params then "Tune: " else "Tunes: ");
-        Formatters_new.Version.names_disambiguations_sources_and_params versions_and_params
+        Formatters.Version.names_disambiguations_sources_and_params versions_and_params
       ];
     ];
     td [txt @@ Kind.Dance.to_string dance.kind];
-    td [Formatters_new.Version.composers_arrangers_and_params ~short: true versions_and_params]] @
+    td [Formatters.Version.composers_arrangers_and_params ~short: true versions_and_params]] @
     suffix
   )
 
@@ -127,9 +126,9 @@ let make_book_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) 
     ?onclick
     (
       prefix @
-      [td [Formatters_new.Book.name_row ~link: (onclick = None) ?in_search book];
+      [td [Formatters.Book.name_row ~link: (onclick = None) ?in_search book];
       td [txt @@ Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) book.date];
-      td (Formatters_new.Person.names ~links: (onclick = None) ~short: true book.authors);
+      td (Formatters.Person.names ~links: (onclick = None) ~short: true book.authors);
       ] @
       suffix
     )
@@ -141,14 +140,14 @@ let make_set_or_forbidden_result ?classes ?onclick ?in_search ?params ?(prefix =
     (
       prefix @
       [td (
-        [format_forbidden (Formatters_new.Set.name_row ~link: (onclick = None) ?in_search) set] @
+        [format_forbidden (Formatters.Set.name_row ~link: (onclick = None) ?in_search) set] @
         Option.fold
           (Option.bind params Model_builder.Core.Set_parameters.display_name)
           ~none: []
           ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]]) @ (
           match set with
           | Forbidden -> []
-          | Allowed set -> [block_details (Formatters_new.Set.tunes ~links: (onclick = None) set)]
+          | Allowed set -> [block_details (Formatters.Set.tunes ~links: (onclick = None) set)]
         )
       );
       td [txt (match set with Forbidden -> "" | Allowed set -> Kind.Dance.to_string set.kind)];
@@ -156,7 +155,7 @@ let make_set_or_forbidden_result ?classes ?onclick ?in_search ?params ?(prefix =
         (
           match set with
           | Forbidden -> []
-          | Allowed set -> Formatters_new.Person.names ~links: (onclick = None) ~short: true set.conceptors
+          | Allowed set -> Formatters.Person.names ~links: (onclick = None) ~short: true set.conceptors
         ) @
           Option.fold
             (Option.bind params Model_builder.Core.Set_parameters.display_conceptor)
@@ -175,9 +174,9 @@ let make_tune_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) 
     ?onclick
     (
       prefix @
-      [td [Formatters_new.Tune.name_row ~link: (onclick = None) ?in_search tune];
+      [td [Formatters.Tune.name_row ~link: (onclick = None) ?in_search tune];
       td [txt @@ Kind.Base.to_long_string ~capitalised: true tune.kind];
-      td (Formatters_new.Person.names ~links: (onclick = None) ~short: true tune.composers);
+      td (Formatters.Person.names ~links: (onclick = None) ~short: true tune.composers);
       ] @
       suffix
     )
@@ -200,9 +199,9 @@ let make_version_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = [
     ?onclick
     (
       prefix @
-      [td (Formatters_new.Version.name_disambiguation_and_sources ~links: (onclick = None) ?in_search version);
+      [td (Formatters.Version.name_disambiguation_and_sources ~links: (onclick = None) ?in_search version);
       td [format_version_kind_and_structure version];
-      td (Formatters_new.Version.composer_and_arranger ~links: (onclick = None) ~short: true version);
+      td (Formatters.Version.composer_and_arranger ~links: (onclick = None) ~short: true version);
       ] @
       suffix
     )
@@ -210,7 +209,7 @@ let make_version_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = [
 let make_versions_result ?classes ?onclick ?(prefix = []) ?(suffix = []) versions_and_params =
   row ?classes ?onclick (
     prefix @
-    [td [Formatters_new.Version.names_disambiguations_sources_and_params versions_and_params];
+    [td [Formatters.Version.names_disambiguations_sources_and_params versions_and_params];
     td (
       let all_kinds = List.sort_uniq Kind.Base.compare (List.map (fun (version, _) -> version.Version_row.tune.kind) versions_and_params) in
       [
@@ -220,7 +219,7 @@ let make_versions_result ?classes ?onclick ?(prefix = []) ?(suffix = []) version
           | _ -> "Medley"
       ]
     );
-    td [Formatters_new.Version.composers_arrangers_and_params ~short: true versions_and_params]] @
+    td [Formatters.Version.composers_arrangers_and_params ~short: true versions_and_params]] @
     suffix
   )
 

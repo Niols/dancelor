@@ -1,6 +1,4 @@
 open Dancelor_common
-open Model_new
-open Search_new
 
 val get_row_for : actor_id: User_id.t option -> Book_id.t list -> (Book_id.t -> Book_row.t option) Lwt.t
 val get_view : actor_id: User_id.t option -> Book_id.t -> Book_view.t option Lwt.t
