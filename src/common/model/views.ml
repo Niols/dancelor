@@ -155,7 +155,7 @@ module Set_view = struct
     content: (Version_row.t * Version_parameters.t) list; [@default []] (** FIXME: more compact content *)
     order: Set_order.t;
     remark: string option; [@default None]
-    permission: Permission_new.t;
+    permission: Permission.t;
   }
   [@@deriving yojson, fields]
 
@@ -198,7 +198,7 @@ module Book_view = struct
     sources: Source_name.t list; [@default []]
     scddb_id: int option; [@default None]
     warnings: warning list; [@default []]
-    permission: Permission_new.t;
+    permission: Permission.t;
   }
   [@@deriving yojson, fields]
 end

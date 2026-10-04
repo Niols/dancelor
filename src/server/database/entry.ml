@@ -113,7 +113,7 @@ let get_permission db ~actor_id id =
   Option.map
     (fun (entry_is_public, actor_role, actor_is_omniscient_administrator) ->
       {
-        Permission_new.entry_is_public;
+        Permission.entry_is_public;
         actor_role = Option.map Sql_types.actor_role_to_common actor_role;
         actor_is_omniscient_administrator;
       }

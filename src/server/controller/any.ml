@@ -204,7 +204,7 @@ let assert_can_edit_permissions env db id f =
     (* not even read permissions on the item *)
     Shared.reject_can_get ()
   | Some permission ->
-    match Permission_new.share_reason permission with
+    match Permission.share_reason permission with
     | None ->
       (* no permission to share *)
       Madge_server.shortcut_forbidden "You cannot edit permissions for this object"

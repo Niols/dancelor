@@ -290,7 +290,7 @@ let assert_can_create_private f =
   | None -> Oooops_viewer.create `Forbidden
 
 let assert_can_update permission f =
-  match Permission_new.edit_reason permission with
+  match Permission.edit_reason permission with
   | Some edit_reason -> f edit_reason
   | None -> Oooops_viewer.create `Forbidden
 
@@ -301,7 +301,7 @@ let can_update_public _ =
     (* FIXME: This is such a hack! [Permission_new] and [edit_reason] should be
        aware of maintainers and non-omniscient administrator. *)
     lwt @@
-      Permission_new.edit_reason {
+      Permission.edit_reason {
         actor_role = None;
         actor_is_omniscient_administrator = (actor.role = Maintainer || actor.role = Administrator);
         entry_is_public = true;

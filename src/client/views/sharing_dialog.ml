@@ -67,7 +67,7 @@ let component =
               Plus.prepare
                 ~label: "Role"
                 ~cast: (function
-                  | Zero() -> (Owner : Permission_new.actor_role)
+                  | Zero() -> (Owner : Permission.actor_role)
                   | Succ Zero() -> Viewer
                   | _ -> assert false (* types guarantee this is not reachable *)
                 )
@@ -101,7 +101,7 @@ let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
             Some user.User_row.id,
             (
               (
-                (match (role : Permission_new.actor_role) with Owner -> Some 0 | Viewer -> Some 1),
+                (match (role : Permission.actor_role) with Owner -> Some 0 | Viewer -> Some 1),
                 ((), ((), ()))
               ),
               ()

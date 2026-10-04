@@ -1,7 +1,7 @@
 open Nes
 
 module Book_parameters = Book_parameters
-module Permission_new = Permission_new
+module Permission = Permission
 module Set_order = Set_order
 module Set_parameters = Set_parameters
 module Version_content = Version_content
@@ -22,7 +22,7 @@ module Actor = struct
     id: User_id.t;
     username: Username.t;
     github_handle: string option; (* FIXME: probably only the server cares? *)
-    role: Permission_new.role;
+    role: Permission.role;
     omniscience: bool;
     person: Person_row.t option;
   }

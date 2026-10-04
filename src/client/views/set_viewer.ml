@@ -45,7 +45,7 @@ let actions (set : Set_view.t) = [
     (Set_view.to_name set);
   (
     lwt @@
-      match Permission_new.edit_reason set.permission with
+      match Permission.edit_reason set.permission with
       | None -> []
       | Some _ ->
         [
@@ -112,7 +112,7 @@ let view in_search id =
     ~title: (lwt set.name)
     ~subtitles: (subtitles set)
     ~share: (
-      match Permission_new.share_reason set.permission with
+      match Permission.share_reason set.permission with
       | Some _ -> Sharing_dialog.open_dialog_button @@ Set id
       | None -> Sharing_dialog.copy_link_button @@ Set id
     )

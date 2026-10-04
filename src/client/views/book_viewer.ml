@@ -112,7 +112,7 @@ let view in_search id =
     ~title: (lwt book.name)
     ~subtitles: [span (Formatters.Book.date_and_editors book)]
     ~share: (
-      match Permission_new.share_reason book.permission with
+      match Permission.share_reason book.permission with
       | Some _ -> Sharing_dialog.open_dialog_button @@ Book id
       | None -> Sharing_dialog.copy_link_button @@ Book id
     )
@@ -127,7 +127,7 @@ let view in_search id =
       ];
       (
         lwt @@
-          match Permission_new.edit_reason book.permission with
+          match Permission.edit_reason book.permission with
           | None -> []
           | Some _ ->
             [

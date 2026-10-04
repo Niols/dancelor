@@ -265,7 +265,7 @@ let make_result ?classes ?in_search (any : Any_row.t) =
         | None -> Icon.html Icon.(Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"]
         | Some permission ->
           let (icon, tooltip, classes) =
-            match Permission_new.view_reason permission with
+            match Permission.view_reason permission with
             | Public -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
             | Viewer -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
             | Owner -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])

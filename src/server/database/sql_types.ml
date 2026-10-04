@@ -79,23 +79,23 @@ let two_chords_of_common : Dance_view.two_chords -> two_chords = function
 
 type role = [`Normal_user | `Maintainer | `Administrator]
 
-let role_to_common : role -> Permission_new.role = function
+let role_to_common : role -> Permission.role = function
   | `Normal_user -> Normal_user
   | `Maintainer -> Maintainer
   | `Administrator -> Administrator
 
-let role_of_common : Permission_new.role -> role = function
+let role_of_common : Permission.role -> role = function
   | Normal_user -> `Normal_user
   | Maintainer -> `Maintainer
   | Administrator -> `Administrator
 
 type actor_role = [`Owner | `Viewer]
 
-let actor_role_to_common : actor_role -> Permission_new.actor_role = function
+let actor_role_to_common : actor_role -> Permission.actor_role = function
   | `Owner -> Owner
   | `Viewer -> Viewer
 
-let actor_role_of_common : Permission_new.actor_role -> actor_role = function
+let actor_role_of_common : Permission.actor_role -> actor_role = function
   | Owner -> `Owner
   | Viewer -> `Viewer
 

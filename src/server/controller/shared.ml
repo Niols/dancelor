@@ -41,9 +41,9 @@ let assert_can_update db env id k =
   let%lwt permission = Database.Entry.get_permission db ~actor_id id in
   assert_permission
     ~access_type: "update"
-    ~pp_reason: Permission_new.pp_edit_reason
+    ~pp_reason: Permission.pp_edit_reason
     env
-    (Option.bind permission Permission_new.edit_reason)
+    (Option.bind permission Permission.edit_reason)
     (fun _reason -> k ())
 
 let assert_can_delete db env id k =
@@ -51,9 +51,9 @@ let assert_can_delete db env id k =
   let%lwt permission = Database.Entry.get_permission db ~actor_id id in
   assert_permission
     ~access_type: "delete"
-    ~pp_reason: Permission_new.pp_delete_reason
+    ~pp_reason: Permission.pp_delete_reason
     env
-    (Option.bind permission Permission_new.delete_reason)
+    (Option.bind permission Permission.delete_reason)
     (fun _reason -> k ())
 
 let is_connected env = lwt (Environment.actor env <> Anonymous)
