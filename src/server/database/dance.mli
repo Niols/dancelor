@@ -12,7 +12,3 @@ val search : Dance_query.t -> (Dance_row.t * float) list Lwt.t
 val create : Connection.t -> Dance_form.t -> Dance_id.t Lwt.t
 val update : Connection.t -> Dance_id.t -> Dance_form.t -> unit Lwt.t
 val delete : Connection.t -> Dance_id.t -> unit Lwt.t
-
-(** {2 Legacy} *)
-
-val get : Dance_id.t -> Model_builder.Core.Dance.entry option Lwt.t

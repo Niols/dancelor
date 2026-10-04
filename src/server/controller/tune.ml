@@ -13,18 +13,10 @@ include Shared.Make_public_full(struct
   include Database.Tune
 end)
 
-(* Legacy *)
-
-let get _env id =
-  match%lwt Database.Tune.get id with
-  | None -> Permission.reject_can_get ()
-  | Some tune -> lwt tune
-
 (* Dispatch *)
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Tune.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env

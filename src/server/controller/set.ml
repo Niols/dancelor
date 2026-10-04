@@ -23,16 +23,6 @@ let add_version_to_contents env id version_id =
   let%lwt version_row = Version.get_row env version_id in
   update env id {form with contents = form.contents @ [(version_row, Model_builder.Core.Version_parameters.none)]}
 
-(* Legacy *)
-
-let get env id =
-  match%lwt Database.Set.get id with
-  | None -> Permission.reject_can_get ()
-  | Some set ->
-    (* rely on [get_row] to guarantee that we do have access to this *)
-    let%lwt (_ : Set_row.t) = get_row env id in
-    lwt set
-
 let build_pdf env id set_params rendering_params =
   get_form env id >>= fun set ->
   let%lwt set = Model_to_renderer.set_to_renderer_set set set_params in
@@ -43,7 +33,6 @@ let build_pdf env id set_params rendering_params =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Set.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env

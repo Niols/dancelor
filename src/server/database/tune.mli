@@ -12,7 +12,3 @@ val search : Tune_query.t -> (Tune_row.t * float) list Lwt.t
 val create : Connection.t -> Tune_form.t -> Tune_id.t Lwt.t
 val update : Connection.t -> Tune_id.t -> Tune_form.t -> unit Lwt.t
 val delete : Connection.t -> Tune_id.t -> unit Lwt.t
-
-(** {2 Legacy} *)
-
-val get : Tune_id.t -> Model_builder.Core.Tune.entry option Lwt.t

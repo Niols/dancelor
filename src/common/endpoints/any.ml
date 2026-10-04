@@ -2,10 +2,9 @@ open Nes
 open Madge
 open Model_new
 open Search_new
-open Model_builder.Core
 
 type (_, _, _) t =
-  | Get : (unit Entry.Id.t -> 'w, 'w, Any.t) t
+  | Get_type : (unit Entry.Id.t -> 'w, 'w, Model_builder.Core.Any.Type.t) t
   | Get_rows : (Any_id.t list -> 'w, 'w, Any_row.t list) t
   | Newest : (int -> 'w, 'w, Any_row.t list) t
   | Search : (Slice.t -> Any_query.t -> 'w, 'w, Any_row.t Search_result.t) t
@@ -17,7 +16,7 @@ type (_, _, _) t =
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in
   function
-    | Get -> variable (module Entry.Id.S(SUnit)) @@ get (module Any)
+    | Get_type -> literal "get-type" @@ variable (module Entry.Id.S(SUnit)) @@ post (module Model_builder.Core.Any.Type)
     | Get_rows -> literal "get-rows" @@ body "ids" (module JList(Any_id)) @@ post (module JList(Any_row))
     | Newest -> literal "newest" @@ query_json "limit" (module JInt) @@ get (module JList(Any_row))
     | Search -> literal "search" @@ query_json "slice" (module Slice) @@ query_json "query" (module Any_query) @@ get (module Make_search_result(Any_row))

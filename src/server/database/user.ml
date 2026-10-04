@@ -15,6 +15,9 @@ let get_row_for ids : (User_id.t -> User_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
   Utils.fold_to_get_single (User_sql.Fold.get_rows db ~ids) (fun k ~id -> user_sql_to_row ~id ~k: (k id))
 
+let get_row id =
+  (fun f -> f id) <$> get_row_for [id]
+
 let search query : (User_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = ()} = query in
   Connection.with_ @@ fun db ->
@@ -52,44 +55,10 @@ let get_actor_from_username username =
 type t = Entry.User.t
 type entry = t Entry.public
 
-let role_to_common omniscience = function
-  | `Normal_user -> Entry.User.Normal_user
-  | `Maintainer -> Maintainer
-  | `Administrator -> Administrator {omniscience}
-
 let role_of_common = function
   | Entry.User.Normal_user -> (`Normal_user, false)
   | Maintainer -> (`Maintainer, false)
   | Administrator {omniscience} -> (`Administrator, omniscience)
-
-let row_to_user
-    ~id
-    ~username
-    ~role
-    ~omniscience
-    ~github_handle
-    ~created_at
-    ~modified_at
-  =
-  Entry.make
-    ~id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: Entry.Access.Public
-    (
-      Entry.User.make
-        ~username: (Username.of_string_exn username)
-        ~role: (role_to_common omniscience role)
-        ~github_handle
-        ()
-    )
-
-let get id : entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  User_sql.Single.get db ~id (row_to_user ~id)
-
-let get_all () : entry list Lwt.t =
-  Connection.with_ @@ fun db ->
-  User_sql.List.get_all db row_to_user
 
 let get_password_from_username username =
   let username = Username.to_string username in

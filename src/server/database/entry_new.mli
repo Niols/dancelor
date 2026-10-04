@@ -35,9 +35,6 @@ val touch : Connection.t -> 'any Entry.Id.t -> unit Lwt.t
 val update_private_access : Connection.t -> 'any Entry.Id.t -> Entry.Access.Private.t -> unit Lwt.t
 (** Updates the access information for the given entry. *)
 
-val get_type : Connection.t -> 'any Entry.Id.t -> type_ option Lwt.t
-(** Given an id, try to find the corresponding model in the global table. *)
-
 val delete : Connection.t -> 'any Entry.Id.t -> unit Lwt.t
 (** Deletes the given entry. *)
 

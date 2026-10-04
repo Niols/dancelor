@@ -36,7 +36,6 @@ module Version_view_fallback = struct
 end
 
 type (_, _, _) t =
-  | Get : (Version_id.t -> 'w, 'w, Version.entry) t
   | Get_row : (Version_id.t -> 'w, 'w, Version_row.t) t
   | Get_view : (Version_id.t -> 'w, 'w, Version_view.t) t
   | Get_form : (Version_id.t -> 'w, 'w, Version_form.t) t
@@ -74,7 +73,6 @@ let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let query_def_version_params rest = query_json_def "parameters" (module Version_parameters) ~eq: Version_parameters.equal ~def: Version_parameters.none rest in
   let query_def_rendering_params rest = query_json_def "rendering-parameters" (module Rendering_parameters) ~eq: Rendering_parameters.equal ~def: Rendering_parameters.none rest in
   function
-    | Get -> variable (module Version_id) @@ get (module Entry.JPublic(Version_no_lilypond))
     | Get_row -> variable (module Version_id) @@ literal "row" @@ get (module Version_row)
     | Get_view -> variable (module Version_id) @@ literal "view" @@ get (module Version_view)
     | Get_form -> variable (module Version_id) @@ literal "form" @@ get (module Version_form)

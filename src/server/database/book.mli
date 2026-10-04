@@ -10,7 +10,3 @@ val search : actor_id: User_id.t option -> Book_query.t -> (Book_row.t * float) 
 val create : Connection.t -> owner_id: User_id.t -> Book_form.t -> Book_id.t Lwt.t
 val update : Connection.t -> Book_id.t -> Book_form.t -> unit Lwt.t
 val delete : Connection.t -> Book_id.t -> unit Lwt.t
-
-(** {2 Legacy} *)
-
-val get : Book_id.t -> Model_builder.Core.Book.entry option Lwt.t

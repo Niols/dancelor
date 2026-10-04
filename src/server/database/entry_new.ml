@@ -28,16 +28,13 @@ let classify_type : type_ -> [`Public | `Private] = function
   | `Dance | `Person | `Source | `Tune | `User | `Version -> `Public
   | `Set | `Book -> `Private
 
-let get_type db id =
-  Entry_sql.get_type db ~id
-
 (** Handles only the insertion into the ["entry"] table. In
     particular, this function does not handle the ["entry_viewers"]
     and ["entry_owners"] tables; see {!insert_or_update_private}. *)
 let insert_to_entry_table db ~is_public type_ =
   let rec make () =
     let id = Entry.Id.make () in
-    match%lwt get_type db id with
+    match%lwt Entry_sql.get_type_unsafe db ~id with
     | None ->
       let%lwt _ = Entry_sql.register db ~id ~type_ ~is_public in
       lwt @@ Entry.Id.unsafe_coerce id

@@ -1,5 +1,8 @@
 --------------------------------- [ Entries ] ----------------------------------
 
+-- FIXME: rename in something like [get_viewable_entries], introduce also
+-- [get_editable_entries] and the likes.
+
 -- @get_entry_permissions | include: reuse
 SELECT *
 FROM (

@@ -1,4 +1,4 @@
--- @get_type
+-- @get_type_unsafe
 SELECT "type" FROM "entry"
 WHERE "id" = @id;
 
@@ -89,3 +89,11 @@ WHERE "entry_id" = @entry_id;
 UPDATE "entry"
 SET "is_public" = @is_public
 WHERE "id" = @id;
+
+-- @get_type
+WITH "entry_permissions" AS &get_entry_permissions
+SELECT "entry"."type"
+FROM "entry_permissions"
+JOIN "entry" USING ("id")
+WHERE "id" = @id
+LIMIT 1; -- NOTE: to help sqlgg

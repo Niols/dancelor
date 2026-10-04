@@ -104,3 +104,25 @@ let actor_role_to_common : actor_role -> Permission_new.actor_role = function
 let actor_role_of_common : Permission_new.actor_role -> actor_role = function
   | Owner -> `Owner
   | Viewer -> `Viewer
+
+type type_ = [`Person | `User | `Dance | `Source | `Tune | `Version | `Set | `Book]
+
+let type_to_common : type_ -> Model_builder.Core.Any.Type.t = function
+  | `Person -> Person
+  | `User -> User
+  | `Dance -> Dance
+  | `Source -> Source
+  | `Tune -> Tune
+  | `Version -> Version
+  | `Set -> Set
+  | `Book -> Book
+
+let type_of_common : Model_builder.Core.Any.Type.t -> type_ = function
+  | Person -> `Person
+  | User -> `User
+  | Dance -> `Dance
+  | Source -> `Source
+  | Tune -> `Tune
+  | Version -> `Version
+  | Set -> `Set
+  | Book -> `Book

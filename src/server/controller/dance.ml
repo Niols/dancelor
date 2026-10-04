@@ -13,23 +13,10 @@ include Shared.Make_public_full(struct
   include Database.Dance
 end)
 
-(* Legacy *)
-
-let get _env id =
-  match%lwt Database.Dance.get id with
-  | None -> Permission.reject_can_get ()
-  | Some dance -> lwt dance
-
-let tunes env id =
-  let%lwt _ = get env id in
-  let%lwt tunes = Database.Tune.get_rows_for_dance id in
-  lwt tunes
-
 (* Dispatch *)
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Dance.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env
@@ -37,4 +24,3 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Dance.t -> a
   | Create -> create env
   | Update -> update env
   | Delete -> delete env
-  | Tunes -> tunes env

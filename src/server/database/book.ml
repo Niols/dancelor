@@ -8,7 +8,6 @@ open Sql_to_view
 open Sql_to_form
 open Form_to_sql
 
-module Entry_sql = Entry_sql.Sqlgg(Sqlgg_postgresql)
 module Book_sql = Book_sql.Sqlgg(Sqlgg_postgresql)
 
 let get_version_sources_for db book_ids =
@@ -433,18 +432,6 @@ let update db id book =
   ignore <$> book_form_to_sql (fun ~id -> Book_sql.update db ~id) id book;%lwt
   update_other_tables db ~book_id: id ~authors: book.authors ~sources: book.sources ~contents: book.contents
 
-(* let create book access = *)
-(*   Connection.with_ @@ fun db -> *)
-(*   let%lwt id = Entry_new.make_private db `Book access in *)
-(*   book_to_sql ~create_or_update: Book_sql.create db id book;%lwt *)
-(*   lwt id *)
-
-(* let update id book access = *)
-(*   Connection.with_ @@ fun db -> *)
-(*   Entry_new.touch db id;%lwt *)
-(*   Entry_new.update_private_access db id access;%lwt *)
-(*   book_to_sql ~create_or_update: (fun db ~id -> Book_sql.update db ~id) db id book *)
-
 let delete db id =
   ignore <$> Book_sql.delete_all_authors db ~book_id: id;%lwt
   ignore <$> Book_sql.delete_all_content_versions db ~book_id: id;%lwt
@@ -452,117 +439,3 @@ let delete db id =
   ignore <$> Book_sql.delete_all_sources db ~book_id: id;%lwt
   ignore <$> Book_sql.delete db ~id;%lwt
   Entry_new.delete db id
-
-(* Legacy *)
-
-let sql_to_book
-    ~id
-    ~name
-    ~date
-    ~remark
-    ~scddb_id
-    ~created_at
-    ~modified_at
-    ~is_public
-    ~authors
-    ~sources
-    ~content
-    ~owners
-    ~viewers
-  =
-  Entry.make
-    ~id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: (Entry.Access.Private.make ~owners ~viewers ~is_public ())
-    (
-      Model_builder.Core.Book.make
-        ~name: (NEString.of_string_exn name)
-        ~date: (Option.map (Option.get % PartialDate.from_string) date)
-        ~remark: (Option.map NEString.of_string_exn remark)
-        ~scddb_id: (Option.map Int64.to_int scddb_id)
-        ~authors
-        ~sources
-        ~contents: content
-        ()
-    )
-
-let sql_to_content_version ~k = fun
-    ~version_id
-    ~version_parameter_transposition_semitones
-    ~version_parameter_first_bar
-    ~version_parameter_clef
-    ~version_parameter_structure
-    ~version_parameter_trivia
-    ~version_parameter_display_name
-    ~version_parameter_display_composer
-  ->
-  k
-    (
-      version_id,
-      Model_builder.Core.Version_parameters.make
-        ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
-        ?first_bar: (Option.map Int64.to_int version_parameter_first_bar)
-        ?clef: (Option.map Music.Clef.of_string version_parameter_clef)
-        ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
-        ?trivia: version_parameter_trivia
-        ?display_name: (Option.map NEString.of_string_exn version_parameter_display_name)
-        ?display_composer: (Option.map NEString.of_string_exn version_parameter_display_composer)
-        ()
-    )
-
-let sql_to_content_item ~versions_and_params ~k = fun
-    ~page_type
-    ~part_title
-    ~dance_id
-    ~set_id
-    ~set_parameter_display_name
-    ~set_parameter_display_conceptor
-    ~set_parameter_display_kind
-    ~set_parameter_version_parameter_transposition_semitones
-    ~set_parameter_version_parameter_first_bar
-    ~set_parameter_version_parameter_clef
-    ~set_parameter_version_parameter_structure
-    ~set_parameter_version_parameter_trivia
-    ~set_parameter_version_parameter_display_name
-    ~set_parameter_version_parameter_display_composer
-  ->
-  let set_params =
-    Model_builder.Core.Set_parameters.make
-      ?display_name: (Option.map NEString.of_string_exn set_parameter_display_name)
-      ?display_conceptor: (Option.map NEString.of_string_exn set_parameter_display_conceptor)
-      ?display_kind: (Option.map NEString.of_string_exn set_parameter_display_kind)
-      ~every_version: (
-        Model_builder.Core.Version_parameters.make
-          ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) set_parameter_version_parameter_transposition_semitones)
-          ?first_bar: (Option.map Int64.to_int set_parameter_version_parameter_first_bar)
-          ?clef: (Option.map Music.Clef.of_string set_parameter_version_parameter_clef)
-          ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) set_parameter_version_parameter_structure)
-          ?trivia: set_parameter_version_parameter_trivia
-          ?display_name: (Option.map NEString.of_string_exn set_parameter_version_parameter_display_name)
-          ?display_composer: (Option.map NEString.of_string_exn set_parameter_version_parameter_display_composer)
-          ()
-      )
-      ()
-  in
-  k @@
-    match page_type with
-    | `Part -> Model_builder.Core.Book.Part (NEString.of_string_exn @@ Option.get part_title)
-    | `Dance_only -> Dance (Option.get dance_id, Dance_only)
-    | `Dance_versions -> Dance (Option.get dance_id, Dance_versions (NEList.of_list_exn versions_and_params))
-    | `Dance_set -> Dance (Option.get dance_id, Dance_set (Option.get set_id, set_params))
-    | `Versions -> Versions (NEList.of_list_exn versions_and_params)
-    | `Set -> Set (Option.get set_id, set_params)
-    | _ -> assert false
-
-let get id : Model_builder.Core.Book.entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  let%lwt authors = Book_sql.List.get_authors db ~book_id: id (fun ~author_id -> author_id) in
-  let%lwt sources = Book_sql.List.get_sources db ~book_id: id (fun ~source_id -> source_id) in
-  let%lwt (owners, viewers) =
-    List.partition_map (function (`Owner, user_id) -> Left user_id | (`Viewer, user_id) -> Right user_id)
-    <$> Entry_sql.List.get_actors db ~entry_id: id (fun ~user_id ~role -> (role, user_id))
-  in
-  let content_versions = Hashtbl.create 8 in
-  Book_sql.Fold.get_content_versions db ~book_id: id (fun ~content_index -> sql_to_content_version ~k: (fun v () -> Hashtbl.add content_versions content_index v)) ();%lwt
-  let%lwt content = Book_sql.List.get_contents db ~book_id: id (fun ~index -> sql_to_content_item ~versions_and_params: (List.rev @@ Hashtbl.find_all content_versions index) ~k: Fun.id) in
-  Book_sql.Single.get db ~id (sql_to_book ~id ~authors ~sources ~viewers ~owners ~content)

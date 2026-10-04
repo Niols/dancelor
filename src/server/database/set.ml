@@ -8,7 +8,6 @@ open Sql_to_view
 open Sql_to_form
 open Form_to_sql
 
-module Entry_sql = Entry_sql.Sqlgg(Sqlgg_postgresql)
 module Set_sql = Set_sql.Sqlgg(Sqlgg_postgresql)
 
 let get_tune_composers_for db set_ids =
@@ -178,68 +177,3 @@ let delete db id =
   ignore <$> Set_sql.delete_all_content db ~set_id: id;%lwt
   ignore <$> Set_sql.delete db ~id;%lwt
   Entry_new.delete db id
-
-(* Legacy *)
-
-let sql_to_set
-    ~id
-    ~name
-    ~kind
-    ~order
-    ~remark
-    ~created_at
-    ~modified_at
-    ~is_public
-    ~conceptors
-    ~content
-    ~owners
-    ~viewers
-  =
-  Entry.make
-    ~id: id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: (Entry.Access.Private.make ~owners ~viewers ~is_public ())
-    (
-      Model_builder.Core.Set.make
-        ~name: (NEString.of_string_exn name)
-        ~conceptors
-        ~kind: (Kind_dance.of_string kind)
-        ~contents: content
-        ~order: (Model_builder.Core.Set_order.of_string order)
-        ~remark: (Option.map NEString.of_string_exn remark)
-        ()
-    )
-
-let get id : Model_builder.Core.Set.entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  let%lwt conceptors = Set_sql.List.get_conceptors db ~set_id: id (fun ~conceptor_id -> conceptor_id) in
-  let%lwt (owners, viewers) =
-    List.partition_map (function (`Owner, user_id) -> Left user_id | (`Viewer, user_id) -> Right user_id)
-    <$> Entry_sql.List.get_actors db ~entry_id: id (fun ~user_id ~role -> (role, user_id))
-  in
-  let%lwt content =
-    Set_sql.List.get_content db ~set_id: id (fun
-        ~version_id
-        ~version_parameter_transposition_semitones
-        ~version_parameter_first_bar
-        ~version_parameter_clef
-        ~version_parameter_structure
-        ~version_parameter_trivia
-        ~version_parameter_display_name
-        ~version_parameter_display_composer
-      ->
-      (
-        version_id,
-        Model_builder.Core.Version_parameters.make
-          ?transposition: (Option.map (Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
-          ?first_bar: (Option.map Int64.to_int version_parameter_first_bar)
-          ?clef: (Option.map Music.Clef.of_string version_parameter_clef)
-          ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
-          ?trivia: version_parameter_trivia
-          ?display_name: (Option.map NEString.of_string_exn version_parameter_display_name)
-          ?display_composer: (Option.map NEString.of_string_exn version_parameter_display_composer)
-          ()
-      )
-    )
-  in
-  Set_sql.Single.get db ~id (sql_to_set ~id ~conceptors ~viewers ~owners ~content)

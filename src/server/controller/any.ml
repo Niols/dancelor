@@ -3,22 +3,11 @@ open Dancelor_common
 open Model_new
 open Search_new
 
-let get env id =
-  match%lwt Database.Any.get id with
+let get_type env id =
+  let actor_id = Environment.actor_id env in
+  match%lwt Database.Any.get_type ~actor_id id with
   | None -> Permission.reject_can_get ()
-  | Some any ->
-    Model_builder.Core.Any.to_entry'
-      any
-      ~on_public: (fun _entry -> lwt_unit)
-      ~on_private: (fun entry ->
-        Database.with_ @@ fun db ->
-        (* hackish solution to check whether we have access to that particular private entry *)
-        let actor_id = Environment.actor_id env in
-        match%lwt Database.Entry.get_permission db ~actor_id (Entry.id entry) with
-        | None -> Permission.reject_can_get ()
-        | Some _ -> lwt_unit
-      );%lwt
-    lwt any
+  | Some type_ -> lwt type_
 
 let get_rows env ids =
   let (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids) =
@@ -243,7 +232,7 @@ let set_permissions env id {Permissions_form.entry_is_public; actor_roles} =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Any.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
+  | Get_type -> get_type env
   | Get_rows -> get_rows env
   | Newest -> newest env
   | Search -> search env

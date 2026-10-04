@@ -171,16 +171,6 @@ let get_view env book =
   let%lwt warnings = Warnings.all ~actor_id: (Environment.actor_id env) book in
   lwt {book with warnings}
 
-(* Legacy *)
-
-let get env id =
-  match%lwt Database.Book.get id with
-  | None -> Permission.reject_can_get ()
-  | Some book ->
-    (* rely on [get_row] to guarantee that we do have access to this *)
-    let%lwt (_ : Book_row.t) = get_row env id in
-    lwt book
-
 let build_pdf env id book_params rendering_params =
   get_form env id >>= fun book ->
   let actor_id = Environment.actor_id env in
@@ -208,7 +198,6 @@ let build_zip env id book_params rendering_params =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Book.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env

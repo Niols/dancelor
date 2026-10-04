@@ -41,31 +41,3 @@ let update db id person =
 let delete db id =
   ignore <$> Person_sql.delete db ~id;%lwt
   Entry_new.delete db id
-
-(* Legacy *)
-
-let sql_to_person
-    ~id
-    ~name
-    ~scddb_id
-    ~composed_tunes_are_public
-    ~published_tunes_are_public
-    ~created_at
-    ~modified_at
-  =
-  Entry.make
-    ~id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: Entry.Access.Public
-    (
-      Model_builder.Core.Person.make
-        ~name: (NEString.of_string_exn name)
-        ~scddb_id: (Option.map Int64.to_int scddb_id)
-        ~composed_tunes_are_public
-        ~published_tunes_are_public
-        ()
-    )
-
-let get id : Model_builder.Core.Person.entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  Person_sql.Single.get db ~id (sql_to_person ~id)

@@ -1,16 +1,7 @@
-open Nes
-open Dancelor_common
+module Entry_sql = Entry_sql.Sqlgg(Sqlgg_postgresql)
 
-let get id =
-  match%lwt Connection.with_ @@ fun db -> Entry_new.get_type db (Entry.Id.unsafe_coerce id) with
-  | None -> lwt_none
-  | Some `Book -> Option.map Model_builder.Core.Any.book <$> (Book.get @@ Entry.Id.unsafe_coerce id)
-  | Some `Dance -> Option.map Model_builder.Core.Any.dance <$> (Dance.get @@ Entry.Id.unsafe_coerce id)
-  | Some `Person -> Option.map Model_builder.Core.Any.person <$> (Person.get @@ Entry.Id.unsafe_coerce id)
-  | Some `Set -> Option.map Model_builder.Core.Any.set <$> (Set.get @@ Entry.Id.unsafe_coerce id)
-  | Some `Source -> Option.map Model_builder.Core.Any.source <$> (Source.get @@ Entry.Id.unsafe_coerce id)
-  | Some `Tune -> Option.map Model_builder.Core.Any.tune <$> (Tune.get @@ Entry.Id.unsafe_coerce id)
-  | Some `User -> Option.map Model_builder.Core.Any.user <$> (User.get @@ Entry.Id.unsafe_coerce id)
-  | Some `Version -> Option.map Model_builder.Core.Any.version <$> (Version.get @@ Entry.Id.unsafe_coerce id)
+let get_type ~actor_id id =
+  Connection.with_ @@ fun db ->
+  Entry_sql.Single.get_type db ~actor_id ~id (fun ~type_ -> Sql_types.type_to_common type_)
 
 let get_newest = Entry_new.get_newest

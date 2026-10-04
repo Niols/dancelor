@@ -13,12 +13,6 @@ include Shared.Make_public_full(struct
   include Database.Source
 end)
 
-(* Legacy *)
-let get _env id =
-  match%lwt Database.Source.get id with
-  | None -> Permission.reject_can_get ()
-  | Some source -> lwt source
-
 let get_cover _env id =
   Database.Source.with_cover id @@ fun fname ->
   let fname = Option.value fname ~default: (Filename.concat (Config.get ()).share "no-cover.webp") in
@@ -28,7 +22,6 @@ let get_cover _env id =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Source.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env

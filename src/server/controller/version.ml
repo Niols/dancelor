@@ -17,11 +17,6 @@ end)
 
 (* Legacy *)
 
-let get _env id =
-  match%lwt Database.Version.get id with
-  | None -> Permission.reject_can_get ()
-  | Some version -> lwt version
-
 (** Additionnally to the low-level permission system, version content is
     protected by copyright, so we check whether the composer or the publisher of
     the tune agree on this publication *)
@@ -131,7 +126,6 @@ let build_snippets' env version version_params _rendering_params =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Version.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Get_view -> get_view env
   | Get_form -> get_form env

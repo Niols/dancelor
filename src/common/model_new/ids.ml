@@ -82,6 +82,16 @@ module Any_id = struct
     | User of User_id.t
   [@@deriving yojson, variants]
 
+  let of_type id : Model_builder.Core.Any.Type.t -> t = function
+    | Person -> Person (Entry.Id.unsafe_coerce id)
+    | Dance -> Dance (Entry.Id.unsafe_coerce id)
+    | Source -> Source (Entry.Id.unsafe_coerce id)
+    | Tune -> Tune (Entry.Id.unsafe_coerce id)
+    | Version -> Version (Entry.Id.unsafe_coerce id)
+    | Set -> Set (Entry.Id.unsafe_coerce id)
+    | Book -> Book (Entry.Id.unsafe_coerce id)
+    | User -> User (Entry.Id.unsafe_coerce id)
+
   let equal any1 any2 =
     match any1, any2 with
     | Person id1, Person id2 -> Entry.Id.equal' id1 id2

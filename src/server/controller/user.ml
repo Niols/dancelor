@@ -29,11 +29,6 @@ let status_new env =
 
 (* Legacy *)
 
-let get _env id =
-  match%lwt Database.User.get id with
-  | None -> Permission.reject_can_get ()
-  | Some user -> lwt user
-
 let sign_in env username password remember_me =
   Log.info (fun m -> m "Attempt to sign in with username `%s`." (Username.to_string username));
   match Environment.actor env with
@@ -65,7 +60,7 @@ let sign_out env =
   | Anonymous -> lwt_unit
   | Signed_in actor -> Environment.sign_out env actor
 
-let create env user =
+let create env (user : User_create_form.t) =
   Permission.assert_can_administrate env @@ fun _admin ->
   let token = Model.User.Password_reset_token_clear.make () in
   (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
@@ -74,13 +69,13 @@ let create env user =
   let password_reset_token_max_date = Datetime.make_in_the_future (float_of_int @@ 3 * 24 * 3600) in
   let%lwt id =
     Database.User.create
-      ~username: (Model.User.username user)
-      ~role: (Model.User.role user)
-      ~github_handle: (Model.User.github_handle user)
+      ~username: user.username
+      ~role: Normal_user
+      ~github_handle: None
       ~password_reset_token_hash
       ~password_reset_token_max_date
   in
-  let%lwt user = Option.get <$> Database.User.get id in
+  let%lwt user = Option.get <$> Database.User.get_row id in
   lwt (user, token)
 
 let prepare_reset_password env username =
@@ -141,7 +136,6 @@ let set_omniscience env value =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.User.t -> a = fun env endpoint ->
   match endpoint with
-  | Get -> get env
   | Get_row -> get_row env
   | Status -> status env
   | Sign_in -> sign_in env

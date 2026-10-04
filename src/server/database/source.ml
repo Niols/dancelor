@@ -75,36 +75,3 @@ let with_cover id f =
       Lwt_io.write ochan cover;%lwt
       f (Some fname)
     )
-
-(* Legacy *)
-
-let sql_to_source
-    ~id
-    ~name
-    ~short_name
-    ~scddb_id
-    ~description
-    ~date
-    ~editors
-    ~created_at
-    ~modified_at
-  =
-  Entry.make
-    ~id
-    ~meta: (Entry.Meta.make ~created_at ~modified_at ())
-    ~access: Entry.Access.Public
-    (
-      Model_builder.Core.Source.make
-        ~name: (NEString.of_string_exn name)
-        ~short_name: (Option.map NEString.of_string_exn short_name)
-        ~scddb_id: (Option.map Int64.to_int scddb_id)
-        ~description
-        ~date: (Option.map (Option.get % PartialDate.from_string) date)
-        ~editors
-        ()
-    )
-
-let get id : Model_builder.Core.Source.entry option Lwt.t =
-  Connection.with_ @@ fun db ->
-  let%lwt editors = Source_sql.List.get_editors db ~source_id: id (fun ~person_id -> person_id) in
-  Source_sql.Single.get db ~id (sql_to_source ~id ~editors)

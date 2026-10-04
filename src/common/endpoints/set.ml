@@ -5,7 +5,6 @@ open Search_new
 open Model_builder.Core
 
 type (_, _, _) t =
-  | Get : (Set_id.t -> 'w, 'w, Set.entry) t
   | Get_row : (Set_id.t -> 'w, 'w, Set_row.t) t
   | Get_view : (Set_id.t -> 'w, 'w, Set_view.t) t
   | Get_rows : (Set_id.t list -> 'w, 'w, Set_row.t list) t
@@ -21,7 +20,6 @@ type (_, _, _) t =
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in
   function
-    | Get -> variable (module Set_id) @@ get (module Entry.JPrivate(Set))
     | Get_row -> variable (module Set_id) @@ literal "row" @@ get (module Set_row)
     | Get_view -> variable (module Set_id) @@ literal "view" @@ get (module Set_view)
     | Get_form -> variable (module Set_id) @@ literal "form" @@ get (module Set_form)
