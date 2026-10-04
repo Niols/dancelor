@@ -274,13 +274,13 @@ let update_other_tables db ~version_id ~arrangers ~sources ~content =
   )
 
 let create db version =
-  let%lwt id = Entry_new.make_public db `Version in
+  let%lwt id = Entry.make_public db `Version in
   ignore <$> version_form_to_sql (Version_sql.create db) id version;%lwt
   update_other_tables db ~version_id: id ~arrangers: version.arrangers ~sources: version.sources ~content: version.content;%lwt
   lwt id
 
 let update db id version =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> version_form_to_sql (fun ~id -> Version_sql.update db ~id) id version;%lwt
   update_other_tables db ~version_id: id ~arrangers: version.arrangers ~sources: version.sources ~content: version.content
 
@@ -290,4 +290,4 @@ let delete db id =
   ignore <$> Version_sql.delete_all_destructured_parts db ~version_id: id;%lwt
   ignore <$> Version_sql.delete_all_destructured_transitions db ~version_id: id;%lwt
   ignore <$> Version_sql.delete db ~id;%lwt
-  Entry_new.delete db id
+  Entry.delete db id

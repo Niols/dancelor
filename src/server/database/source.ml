@@ -45,20 +45,20 @@ let update_other_tables db ~source_id ~editors =
     editors
 
 let create db source =
-  let%lwt id = Entry_new.make_public db `Source in
+  let%lwt id = Entry.make_public db `Source in
   ignore <$> source_form_to_sql (Source_sql.create db) id source;%lwt
   update_other_tables db ~source_id: id ~editors: source.editors;%lwt
   lwt id
 
 let update db id source =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> source_form_to_sql (fun ~id -> Source_sql.update db ~id) id source;%lwt
   update_other_tables db ~source_id: id ~editors: source.editors
 
 let delete db id =
   ignore <$> Source_sql.delete_all_editors ~source_id: id db;%lwt
   ignore <$> Source_sql.delete db ~id;%lwt
-  Entry_new.delete db id
+  Entry.delete db id
 
 let with_cover id f =
   let%lwt cover =

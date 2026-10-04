@@ -61,13 +61,13 @@ let update_other_tables db ~dance_id ~extra_names ~devisers =
     devisers
 
 let create db dance =
-  let%lwt id = Entry_new.make_public db `Dance in
+  let%lwt id = Entry.make_public db `Dance in
   ignore <$> dance_form_to_sql (Dance_sql.create db) id dance;%lwt
   update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers;%lwt
   lwt id
 
 let update db id dance =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> dance_form_to_sql (fun ~id -> Dance_sql.update db ~id) id dance;%lwt
   update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers
 
@@ -75,4 +75,4 @@ let delete db id =
   ignore <$> Dance_sql.delete_all_extra_names db ~dance_id: id;%lwt
   ignore <$> Dance_sql.delete_all_devisers db ~dance_id: id;%lwt
   ignore <$> Dance_sql.delete db ~id;%lwt
-  Entry_new.delete db id
+  Entry.delete db id

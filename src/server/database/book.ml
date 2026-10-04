@@ -427,13 +427,13 @@ let update_other_tables db ~book_id ~authors ~sources ~contents =
     contents
 
 let create db ~owner_id book =
-  let%lwt id = Entry_new.make_private_new db `Book owner_id in
+  let%lwt id = Entry.make_private_new db `Book owner_id in
   ignore <$> book_form_to_sql (Book_sql.create db) id book;%lwt
   update_other_tables db ~book_id: id ~authors: book.authors ~sources: book.sources ~contents: book.contents;%lwt
   lwt id
 
 let update db id book =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> book_form_to_sql (fun ~id -> Book_sql.update db ~id) id book;%lwt
   update_other_tables db ~book_id: id ~authors: book.authors ~sources: book.sources ~contents: book.contents
 
@@ -443,4 +443,4 @@ let delete db id =
   ignore <$> Book_sql.delete_all_contents db ~book_id: id;%lwt
   ignore <$> Book_sql.delete_all_sources db ~book_id: id;%lwt
   ignore <$> Book_sql.delete db ~id;%lwt
-  Entry_new.delete db id
+  Entry.delete db id

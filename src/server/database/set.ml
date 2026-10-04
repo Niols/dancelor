@@ -168,13 +168,13 @@ let update_other_tables db ~set_id ~conceptors ~contents =
     contents
 
 let create db ~owner_id set =
-  let%lwt id = Entry_new.make_private_new db `Set owner_id in
+  let%lwt id = Entry.make_private_new db `Set owner_id in
   ignore <$> set_form_to_sql (Set_sql.create db) id set;%lwt
   update_other_tables db ~set_id: id ~conceptors: set.conceptors ~contents: set.contents;%lwt
   lwt id
 
 let update db id set =
-  Entry_new.touch db id;%lwt
+  Entry.touch db id;%lwt
   ignore <$> set_form_to_sql (fun ~id -> Set_sql.update db ~id) id set;%lwt
   update_other_tables db ~set_id: id ~conceptors: set.conceptors ~contents: set.contents
 
@@ -182,4 +182,4 @@ let delete db id =
   ignore <$> Set_sql.delete_all_conceptors db ~set_id: id;%lwt
   ignore <$> Set_sql.delete_all_content db ~set_id: id;%lwt
   ignore <$> Set_sql.delete db ~id;%lwt
-  Entry_new.delete db id
+  Entry.delete db id
