@@ -7,7 +7,7 @@ open Model_builder.Core
 type copyright_response_reason =
   | Connected
   | Composer_agrees
-  | Publisher_agrees of Source.entry
+  | Publisher_agrees of Source_name.t
   | Non_copyrighted (** useful to make generic utilities working on copyrighted and non-copyrighted values *)
 [@@deriving yojson]
 
@@ -42,14 +42,13 @@ type (_, _, _) t =
   | Get_form : (Version_id.t -> 'w, 'w, Version_form.t) t
   | Get_view_for_tune : (Tune_id.t -> 'w, 'w, Version_view_fallback.t) t (** looks for a version for the given tune and return it, or falls back on the tune *)
   | Search : (Slice.t -> Version_query.t -> 'w, 'w, Version_row.t Search_result.t) t
-  | Content : (Version_id.t -> 'w, 'w, Version.Content.t copyright_response) t
+  | Content : (Version_id.t -> 'w, 'w, string copyright_response) t
   | Create : (Version_form.t -> 'w, 'w, Version_id.t) t
   | Update : (Version_id.t -> Version_form.t -> 'w, 'w, unit) t
   | Delete : (Version_id.t -> 'w, 'w, unit) t
   | Build_snippets : (Version_id.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Snippet_ids.t Job.registration_response copyright_response) t
   | Build_pdf : (Version_id.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Job_id.t Job.registration_response copyright_response) t
-  | Build_snippets' : (Version.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Snippet_ids.t Job.registration_response) t
-  | Build_snippets'_new : (Version_form.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Snippet_ids.t Job.registration_response) t
+  | Build_snippets' : (Version_form.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Snippet_ids.t Job.registration_response) t
 [@@deriving madge_wrapped_endpoints]
 
 (* NOTE: The version model contains its LilyPond content. This is a big string
@@ -81,12 +80,11 @@ let route : type a w r. (a, w, r) t -> (a, w, r) route =
     | Get_form -> variable (module Version_id) @@ literal "form" @@ get (module Version_form)
     | Get_view_for_tune -> literal "for-tune" @@ variable (module Tune_id) @@ literal "view" @@ get (module Version_view_fallback)
     | Search -> literal "search" @@ query_json "slice" (module Slice) @@ query_json "query" (module Version_query) @@ get (module Make_search_result(Version_row))
-    | Content -> literal "content" @@ variable (module Version_id) @@ get (module Copyright_response(Version.Content))
+    | Content -> literal "content" @@ variable (module Version_id) @@ get (module Copyright_response(JString))
     | Create -> body "version" (module Version_form) @@ post (module Version_id)
     | Update -> variable (module Version_id) @@ body "version" (module Version_form) @@ put (module JUnit)
     | Delete -> variable (module Version_id) @@ delete (module JUnit)
     | Build_snippets -> literal "build-snippets" @@ variable (module Version_id) @@ query_def_version_params @@ query_def_rendering_params @@ post (module Copyright_response(Job.Registration_response(Snippet_ids)))
     | Build_pdf -> literal "build-pdf" @@ variable (module Version_id) @@ query_def_version_params @@ query_def_rendering_params @@ post (module Copyright_response(Job.Registration_response(Job_id)))
     (* Files related to an anonymous version *)
-    | Build_snippets' -> literal "build-snippets" @@ query_json "version" (module Version) @@ query_def_version_params @@ query_def_rendering_params @@ post (module Job.Registration_response(Snippet_ids))
-    | Build_snippets'_new -> literal "build-snippets_new" @@ query_json "version" (module Version_form) @@ query_def_version_params @@ query_def_rendering_params @@ post (module Job.Registration_response(Snippet_ids))
+    | Build_snippets' -> literal "build-snippets" @@ query_json "version" (module Version_form) @@ query_def_version_params @@ query_def_rendering_params @@ post (module Job.Registration_response(Snippet_ids))

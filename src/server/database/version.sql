@@ -31,22 +31,6 @@ SELECT
 FROM "version"
 JOIN "entry" ON "version"."id" = "entry"."id";
 
--- @get_all_for_tune
-SELECT
-    "version"."id",
-    "key",
-    "remark",
-    "disambiguation",
-    "monolithic_lilypond",
-    "monolithic_bars",
-    "monolithic_or_default_structure",
-    "destructured_as_2_4",
-    "created_at",
-    "modified_at"
-FROM "version"
-JOIN "entry" ON "version"."id" = "entry"."id"
-WHERE "tune_id" = @tune_id;
-
 -- @create
 INSERT INTO "version" (
     "id",
@@ -213,17 +197,37 @@ WHERE "id" IN @ids;
 WITH "versions" AS &get_version_views
 SELECT "versions".*
 FROM "versions"
-JOIN "tune" ON "versions"."tune_id" = "tune"."id"
 WHERE "versions"."id" = @id
 LIMIT 1; -- NOTE: to help sqlgg
+
+-- @get_views_for_tune
+WITH "versions" AS &get_version_views
+SELECT "versions".*
+FROM "versions"
+WHERE "versions"."tune_id" IN (@tune_id); -- NOTE: with = @tune_id, sqlgg thinks the query returns a single object
 
 -- @get_form
 WITH "versions" AS &get_version_forms
 SELECT "versions".*
 FROM "versions"
-JOIN "tune" ON "versions"."tune_id" = "tune"."id"
 WHERE "versions"."id" = @id
 LIMIT 1; -- NOTE: to help sqlgg
+
+-- @get_all_forms
+WITH "versions" AS &get_version_forms
+SELECT "versions".*
+FROM "versions";
+
+-- @get_content
+WITH "versions" AS &get_version_forms
+SELECT
+    "id",
+    "monolithic_lilypond",
+    "monolithic_bars",
+    "monolithic_or_default_structure",
+    "destructured_as_2_4"
+FROM "versions"
+WHERE "versions"."id" = @id;
 
 -- @search
 WITH "version_rows" AS &get_version_and_tune_rows

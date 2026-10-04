@@ -1,5 +1,6 @@
 open NesUnix
 open Dancelor_common
+module Model = Model_builder.Core
 open Model_new
 open Search_new
 

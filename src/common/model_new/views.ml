@@ -57,6 +57,9 @@ module Source_view = struct
   }
   [@@deriving yojson, fields]
 
+  let to_name : t -> Source_name.t = fun {id; name; _} ->
+    {id; name}
+
   let to_short_name : t -> Source_short_name.t = fun {id; name; short_name; _} ->
     {id; short_name = Option.value short_name ~default: name}
 end
@@ -111,7 +114,12 @@ module Version_view = struct
     structure: Model_builder.Core.Version.Structure.t;
     details: string option; [@default None]
   }
-  [@@deriving yojson, fields]
+  [@@deriving yojson]
+
+  let source_id s = s.id
+  let source_name s = s.name
+  let source_structure s = s.structure
+  let source_details s = s.details
 
   let source_to_name : source -> Source_name.t = fun {id; name; _} ->
     {id; name}

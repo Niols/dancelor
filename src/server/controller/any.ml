@@ -7,7 +7,7 @@ let get env id =
   match%lwt Database.Any.get id with
   | None -> Permission.reject_can_get ()
   | Some any ->
-    Model.Any.to_entry'
+    Model_builder.Core.Any.to_entry'
       any
       ~on_public: (fun _entry -> lwt_unit)
       ~on_private: (fun entry ->

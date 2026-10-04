@@ -346,7 +346,7 @@ let preview version =
     <$> Page.open_dialog @@ fun return ->
       Page.make'
         ~title: (lwt "Preview")
-        [Components.Version_snippets.make_preview_new ~show_logs: true slug version]
+        [Components.Version_snippets.make_preview ~show_logs: true slug version]
         ~buttons: [
           Button.cancel' ~return ();
           Button.save ~onclick: (fun () -> return (Some ()); lwt_unit) ();

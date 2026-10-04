@@ -113,6 +113,28 @@ let get_view id : Version_view.t option Lwt.t =
       ~k: Fun.id
   )
 
+let get_views_for_tune tune_id =
+  Connection.with_ @@ fun db ->
+  (* FIXME: Rather than getting `All we should get just the ones that we actually care about *)
+  let%lwt tune_extra_names_for = get_tune_extra_names_for db `All in
+  let%lwt tune_dances_for = get_tune_dances_for db `All in
+  let%lwt other_versions_for = get_other_versions_for db `All in
+  let%lwt tune_composers_for = get_tune_composers_with_details_for db `All in
+  let%lwt arrangers_for = get_arrangers_for db `All in
+  let%lwt sources_for = get_version_sources_for db `All in
+  Version_sql.List.get_views_for_tune db ~tune_id: (Entry.Id.to_string tune_id) (fun ~id ~tune_id ->
+    version_sql_to_view
+      ~id
+      ~tune_id
+      ~arrangers: (arrangers_for id)
+      ~sources: (sources_for id)
+      ~tune_extra_names: (tune_extra_names_for tune_id)
+      ~tune_dances: (tune_dances_for tune_id)
+      ~tune_composers: (tune_composers_for tune_id)
+      ~tune_versions: (other_versions_for tune_id)
+      ~k: Fun.id
+  )
+
 let get_form id : Version_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt tune_composers_for = get_tune_composers_for db (`One_of [id]) in
@@ -130,6 +152,54 @@ let get_form id : Version_form.t option Lwt.t =
       ~destructured_parts
       ~destructured_transitions
       ~k: Fun.id
+  )
+
+let get_all_forms () : Version_form.t list Lwt.t =
+  Connection.with_ @@ fun db ->
+  let%lwt tune_composers_for = get_tune_composers_for db `All in
+  let%lwt arrangers_for = get_arrangers_for db `All in
+  let%lwt sources_for = get_version_form_sources_for db `All in
+  let%lwt destructured_parts_for = get_destructured_parts_for db `All in
+  let%lwt destructured_transitions_for = get_destructured_transitions_for db `All in
+  Version_sql.List.get_all_forms db (fun ~id ~tune_id ->
+    version_sql_to_form
+      ~id
+      ~tune_id
+      ~arrangers: (arrangers_for id)
+      ~sources: (sources_for id)
+      ~tune_composers: (tune_composers_for tune_id)
+      ~destructured_parts: (destructured_parts_for id)
+      ~destructured_transitions: (destructured_transitions_for id)
+      ~k: Fun.id
+  )
+
+let get_content id : Model_builder.Core.Version.Content.t option Lwt.t =
+  Connection.with_ @@ fun db ->
+  let%lwt destructured_parts = (fun f -> f id) <$> get_destructured_parts_for db (`One_of [id]) in
+  let%lwt destructured_transitions = (fun f -> f id) <$> get_destructured_transitions_for db (`One_of [id]) in
+  Version_sql.Single.get_content db ~id (fun ~id: _ ~monolithic_lilypond ~monolithic_bars ~monolithic_or_default_structure ~destructured_as_2_4 ->
+    match (monolithic_lilypond, monolithic_bars), (destructured_parts, destructured_transitions), monolithic_or_default_structure with
+    | (None, None), ([], []), None ->
+      Model_builder.Core.Version.Content.No_content
+    | (Some lilypond, Some bars), ([], []), Some structure ->
+      Monolithic {
+        lilypond;
+        bars = Int64.to_int bars;
+        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+      }
+    | (None, None), (parts, transitions), Some default_structure ->
+      (
+        match NEList.of_list parts with
+        | None -> assert false
+        | Some parts ->
+          Destructured {
+            parts;
+            transitions;
+            default_structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure));
+            as_2_4 = destructured_as_2_4;
+          }
+      )
+    | _ -> assert false
   )
 
 let search query : (Version_row.t * float) list Lwt.t =
@@ -333,120 +403,3 @@ let get id : Model_builder.Core.Version.entry option Lwt.t =
       )
   in
   Version_sql.Single.get db ~id (sql_to_version ~id ~arrangers ~sources ~destructured_parts ~destructured_transitions)
-
-let get_all () =
-  Connection.with_ @@ fun db ->
-  let arrangers = Hashtbl.create 8 in
-  let sources = Hashtbl.create 8 in
-  let destructured_parts = Hashtbl.create 8 in
-  let destructured_transitions = Hashtbl.create 8 in
-  Version_sql.Fold.get_all_arrangers
-    db
-    (fun ~version_id ~arranger_id () ->
-      Hashtbl.add arrangers version_id arranger_id
-    )
-    ();%lwt
-  Version_sql.Fold.get_all_sources
-    db
-    (fun ~version_id ~source_id ~structure ~details () ->
-      Hashtbl.add
-        sources
-        version_id
-        {
-          Model_builder.Core.Version.source = source_id;
-          structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
-          details = Option.map NEString.of_string_exn details;
-        }
-    )
-    ();%lwt
-  Version_sql.Fold.get_destructured_parts_for
-    db
-    ~version_ids: `All
-    (fun ~version_id ~part ~melody ~chords () ->
-      Hashtbl.add destructured_parts version_id (
-        Option.get (Model_builder.Core.Version.Part_name.of_string part),
-        {Model_builder.Core.Version.Voices.melody; chords}
-      )
-    )
-    ();%lwt
-  Version_sql.Fold.get_destructured_transitions_for
-    db
-    ~version_ids: `All
-    (fun ~version_id ~from_parts ~to_parts ~melody ~chords () ->
-      Hashtbl.add
-        destructured_transitions
-        version_id
-        (
-          Option.get (Model_builder.Core.Version.Part_name.opens_of_string from_parts),
-          Option.get (Model_builder.Core.Version.Part_name.opens_of_string to_parts),
-          {Model_builder.Core.Version.Voices.melody; chords}
-        )
-    )
-    ();%lwt
-  Version_sql.List.get_all db (fun ~id ->
-    sql_to_version
-      ~id
-      ~arrangers: (List.rev @@ Hashtbl.find_all arrangers id)
-      ~sources: (List.rev @@ Hashtbl.find_all sources id)
-      ~destructured_parts: (check_destructured_parts @@ List.rev @@ Hashtbl.find_all destructured_parts id)
-      ~destructured_transitions: (List.rev @@ Hashtbl.find_all destructured_transitions id)
-  )
-
-let get_all_for_tune tune_id =
-  Connection.with_ @@ fun db ->
-  let arrangers = Hashtbl.create 8 in
-  let sources = Hashtbl.create 8 in
-  let destructured_parts = Hashtbl.create 8 in
-  let destructured_transitions = Hashtbl.create 8 in
-  Version_sql.Fold.get_all_arrangers
-    db
-    (fun ~version_id ~arranger_id () ->
-      Hashtbl.add arrangers version_id arranger_id
-    )
-    ();%lwt
-  Version_sql.Fold.get_all_sources
-    db
-    (fun ~version_id ~source_id ~structure ~details () ->
-      Hashtbl.add
-        sources
-        version_id
-        {
-          Model_builder.Core.Version.source = source_id;
-          structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
-          details = Option.map NEString.of_string_exn details;
-        }
-    )
-    ();%lwt
-  Version_sql.Fold.get_destructured_parts_for
-    db
-    ~version_ids: `All
-    (fun ~version_id ~part ~melody ~chords () ->
-      Hashtbl.add destructured_parts version_id (
-        Option.get (Model_builder.Core.Version.Part_name.of_string part),
-        {Model_builder.Core.Version.Voices.melody; chords}
-      )
-    )
-    ();%lwt
-  Version_sql.Fold.get_destructured_transitions_for
-    db
-    ~version_ids: `All
-    (fun ~version_id ~from_parts ~to_parts ~melody ~chords () ->
-      Hashtbl.add
-        destructured_transitions
-        version_id
-        (
-          Option.get (Model_builder.Core.Version.Part_name.opens_of_string from_parts),
-          Option.get (Model_builder.Core.Version.Part_name.opens_of_string to_parts),
-          {Model_builder.Core.Version.Voices.melody; chords}
-        )
-    )
-    ();%lwt
-  Version_sql.List.get_all_for_tune db ~tune_id (fun ~id ->
-    sql_to_version
-      ~id
-      ~tune_id
-      ~arrangers: (List.rev @@ Hashtbl.find_all arrangers id)
-      ~sources: (List.rev @@ Hashtbl.find_all sources id)
-      ~destructured_parts: (check_destructured_parts @@ List.rev @@ Hashtbl.find_all destructured_parts id)
-      ~destructured_transitions: (List.rev @@ Hashtbl.find_all destructured_transitions id)
-  )

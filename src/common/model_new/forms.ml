@@ -126,7 +126,7 @@ module Version_form = struct
     disambiguation: NEString.t option;
     content: Model_builder.Core.Version.Content.t;
   }
-  [@@deriving eq, yojson]
+  [@@deriving eq, fields, yojson]
 
   let to_name id {tune; _} : Version_name.t =
     {id; name = tune.name}

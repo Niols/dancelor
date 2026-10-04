@@ -9,12 +9,9 @@ open Utils
 let show_lilypond_dialog (version : Version_view.t) =
   let content_promise =
     let%lwt content = Api.call_exn (Version Content) version.id in
-    let content =
-      match content with
-      | Endpoints.Version.Protected -> assert false
-      | Endpoints.Version.Granted {payload; _} -> payload
-    in
-    lwt @@ Model.Version.Content.lilypond ~kind: version.tune.kind ~key: version.key content
+    match content with
+    | Endpoints.Version.Protected -> assert false
+    | Endpoints.Version.Granted {payload; _} -> lwt payload
   in
   ignore
   <$> Page.open_dialog @@ fun return ->
@@ -22,7 +19,7 @@ let show_lilypond_dialog (version : Version_view.t) =
       ~title: (lwt "LilyPond")
       [with_div_placeholder (
         let%lwt content = content_promise in
-        lwt [pre [txt (Option.get content)]]
+        lwt [pre [txt content]]
       )]
       ~buttons: [
         Button.close' ~return ();
@@ -32,7 +29,7 @@ let show_lilypond_dialog (version : Version_view.t) =
           ~classes: ["btn-primary"]
           ~onclick: (fun _ ->
             let%lwt content = content_promise in
-            write_to_clipboard (Option.get content);
+            write_to_clipboard content;
             Toast.open_ ~title: "Copied to clipboard" [txt "The LilyPond content was copied to your clipboard."];
             return (some ());
             lwt_unit

@@ -1,5 +1,6 @@
 open Nes
 open Dancelor_common
+open Model_new
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.routine": Logs.LOG)
 
@@ -10,20 +11,20 @@ let all_versions =
   Lwt_stream.from @@ fun () ->
   Lwt_unix.sleep 600.;%lwt
   Log.debug (fun m -> m "Generating the list of all versions for pre-rendering");
-  (some % Lwt_stream.of_list) <$> Database.Version.get_all ()
+  (some % Lwt_stream.of_list) <$> Database.Version.get_all_forms ()
 
 (** A stream of prerendering jobs for versions in the database. This
     contains only pending and failed jobs, the others do not need to
     run again. *)
 let all_versions_prerendering_job =
   Lwt_stream.filter_map_s
-    (fun version ->
-      match Model.Version.content' version with
+    (fun (version : Version_form.t) ->
+      match version.content with
       | No_content -> lwt_none
       | _ ->
         let%lwt job =
           Controller.Job.register_job ~add_pending: false
-          <$> Controller.Version.render_snippets (Entry.value version)
+          <$> Controller.Version.render_snippets version
         in
         match !(job.state) with
         | Failed _ | Pending -> lwt_some job

@@ -1,13 +1,8 @@
 open Nes
-open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.permission": Logs.LOG)
 
 (** {2 Common tests and assertions} *)
-
-include Permission_builder
-module With_reason = Make(Model.User)
-include With_reason
 
 (** The rejection of {!assert_can_get_public}. This may be used by external code
     to behave in the exact same way and avoid leaking information. *)
