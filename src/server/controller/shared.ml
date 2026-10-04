@@ -8,66 +8,10 @@ open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.shared": Logs.LOG)
 
-module type Db_private = sig
-  type id
-  type row
-  type view
-  type query
-
-  val get_row_for : actor_id: User_id.t option -> id list -> (id -> row option) Lwt.t
-  val get_view : actor_id: User_id.t option -> id -> view option Lwt.t
-  val search : actor_id: User_id.t option -> query -> (row * float) list Lwt.t
-end
-
-module Make_private (Db : Db_private) = struct
-  let get_row_for env ids =
-    Db.get_row_for ~actor_id: (Environment.actor_id env) ids
-
-  let get_row env id =
-    match%lwt (fun f -> f id) <$> get_row_for env [id] with
-    | None -> Permission.reject_can_get ()
-    | Some row -> lwt row
-
-  let get_rows env ids =
-    let%lwt row_for = get_row_for env ids in
-    lwt @@ List.filter_map row_for ids
-
-  let get_view env id =
-    match%lwt Db.get_view ~actor_id: (Environment.actor_id env) id with
-    | None -> Permission.reject_can_get ()
-    | Some view -> lwt view
-
-  let cache : (Environment.cache_key * Db.query, (Db.row * float) Search_result.t Lwt.t) Cache.t =
-    Cache.create ~lifetime: 60 ()
-
-  let search' env query =
-    Cache.use ~cache ~key: (Environment.cache_key env, query) @@ fun () ->
-    let%lwt items = Db.search ~actor_id: (Environment.actor_id env) query in
-    lwt {Search_result.total = List.length items; items}
-
-  let search env slice query =
-    let%lwt {total; items} = search' env query in
-    let items = List.map fst @@ Slice.list ~strict: false slice items in
-    lwt {Search_result.total; items}
-end
-
-module type Db_public = sig
-  type id
-  type row
-  type view
-  type query
-
-  val get_row_for : id list -> (id -> row option) Lwt.t
-  val get_view : id -> view option Lwt.t
-  val search : query -> (row * float) list Lwt.t
-end
-
-module Make_public (Db : Db_public) = Make_private(struct
-  include Db
-  let get_row_for ~actor_id: _ = get_row_for
-  let get_view ~actor_id: _ = get_view
-  let search ~actor_id: _ = search
-end)
+(** A 404 error that is also returned when trying to read an object to which the
+    actor does not have access. This is done to avoid leaking information. *)
+let reject_can_get () =
+  Madge_server.shortcut_not_found "This entry does not exist, or you do not have access to it."
 
 (* NOTE: Extended version that also handles forms and create/update/delete. This
    should become the only version once we are down integrating the forms. *)
@@ -112,7 +56,29 @@ let assert_can_delete db env id k =
     (Option.bind permission Permission_new.delete_reason)
     (fun _reason -> k ())
 
-module type Db_private_full = sig
+let is_connected env = lwt (Environment.actor env <> Anonymous)
+
+let can_administrate env =
+  lwt @@
+    match Environment.actor env with
+    | Anonymous -> false
+    | Signed_in actor -> actor.role = Administrator
+
+let assert_can_administrate env f =
+  match Environment.actor env with
+  | Anonymous ->
+    Log.info (fun m -> m "Refusing admin access to %a." Environment.pp env);
+    Madge_server.shortcut_forbidden "You do not have permission to administrate this instance."
+  | Signed_in actor ->
+    if actor.role = Administrator then
+      f actor
+    else
+      (
+        Log.info (fun m -> m "Refusing admin access to %a." Environment.pp env);
+        Madge_server.shortcut_forbidden "You do not have permission to administrate this instance."
+      )
+
+module type Db_private = sig
   type tag
   type id = tag Id.t
   type row
@@ -130,13 +96,13 @@ module type Db_private_full = sig
   val delete : Database.t -> id -> unit Lwt.t
 end
 
-module Make_private_full (Db : Db_private_full) = struct
+module Make_private (Db : Db_private) = struct
   let get_row_for env ids =
     Db.get_row_for ~actor_id: (Environment.actor_id env) ids
 
   let get_row env id =
     match%lwt (fun f -> f id) <$> get_row_for env [id] with
-    | None -> Permission.reject_can_get ()
+    | None -> reject_can_get ()
     | Some row -> lwt row
 
   let get_rows env ids =
@@ -145,12 +111,12 @@ module Make_private_full (Db : Db_private_full) = struct
 
   let get_view env id =
     match%lwt Db.get_view ~actor_id: (Environment.actor_id env) id with
-    | None -> Permission.reject_can_get ()
+    | None -> reject_can_get ()
     | Some view -> lwt view
 
   let get_form env id =
     match%lwt Db.get_form ~actor_id: (Environment.actor_id env) id with
-    | None -> Permission.reject_can_get ()
+    | None -> reject_can_get ()
     | Some form -> lwt form
 
   let cache : (Environment.cache_key * Db.query, (Db.row * float) Search_result.t Lwt.t) Cache.t =
@@ -182,7 +148,7 @@ module Make_private_full (Db : Db_private_full) = struct
     Db.delete db id
 end
 
-module type Db_public_full = sig
+module type Db_public = sig
   type tag
   type id = tag Id.t
   type row
@@ -200,7 +166,7 @@ module type Db_public_full = sig
   val delete : Database.t -> id -> unit Lwt.t
 end
 
-module Make_public_full (Db : Db_public_full) = Make_private_full(struct
+module Make_public (Db : Db_public) = Make_private(struct
   include Db
   let get_row_for ~actor_id: _ = get_row_for
   let get_view ~actor_id: _ = get_view

@@ -1,7 +1,7 @@
 open NesUnix
 open Dancelor_common
 
-include Shared.Make_public_full(struct
+include Shared.Make_public(struct
   type tag = Dance_tag.t
   type id = Dance_id.t
   type row = Dance_row.t

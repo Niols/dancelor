@@ -3,7 +3,7 @@ open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.version": Logs.LOG)
 
-include Shared.Make_public_full(struct
+include Shared.Make_public(struct
   type tag = Version_tag.t
   type id = Version_id.t
   type row = Version_row.t
@@ -19,7 +19,7 @@ end)
     protected by copyright, so we check whether the composer or the publisher of
     the tune agree on this publication *)
 let with_copyright_check env (version : Version_view.t) f =
-  let%lwt connected = Permission.is_connected env in
+  let%lwt connected = Shared.is_connected env in
   let%lwt composer_agrees =
     let%lwt composers = Lwt_list.map_p (Option.get <%> Database.Person.get_view % Person_name_with_details.id) version.tune.composers in
     let%lwt arrangers = Lwt_list.map_p (Option.get <%> Database.Person.get_view % Person_name.id) version.arrangers in

@@ -1,7 +1,7 @@
 open Nes
 open Dancelor_common
 
-include Shared.Make_private_full(struct
+include Shared.Make_private(struct
   type tag = Set_tag.t
   type id = Set_id.t
   type row = Set_row.t

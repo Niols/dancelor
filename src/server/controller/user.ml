@@ -3,15 +3,34 @@ open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.user": Logs.LOG)
 
-include Shared.Make_public(struct
-  type id = User_id.t
-  type row = User_row.t
-  type query = User_query.t
-  include Database.User
-  (* FIXME: An actual view for users *)
-  type view = User_row.t
-  let get_view id = (fun f -> f id) <$> get_row_for [id]
-end)
+(* FIXME: Move this controller to use [Shared]. This will require introducing
+   proper models for users and such, which we have been planning to do for a
+   long time. *)
+
+let get_row_for _env ids =
+  Database.User.get_row_for ids
+
+let get_row env id =
+  match%lwt (fun f -> f id) <$> get_row_for env [id] with
+  | None -> Shared.reject_can_get ()
+  | Some row -> lwt row
+
+let get_rows env ids =
+  let%lwt row_for = get_row_for env ids in
+  lwt @@ List.filter_map row_for ids
+
+let cache : (Environment.cache_key * User_query.t, (User_row.t * float) Search_result.t Lwt.t) Cache.t =
+  Cache.create ~lifetime: 60 ()
+
+let search' env query =
+  Cache.use ~cache ~key: (Environment.cache_key env, query) @@ fun () ->
+  let%lwt items = Database.User.search query in
+  lwt {Search_result.total = List.length items; items}
+
+let search env slice query =
+  let%lwt {total; items} = search' env query in
+  let items = List.map fst @@ Slice.list ~strict: false slice items in
+  lwt {Search_result.total; items}
 
 let status env =
   lwt @@
@@ -58,7 +77,7 @@ let sign_out env =
   | Signed_in actor -> Environment.sign_out env actor
 
 let create env (user : User_create_form.t) =
-  Permission.assert_can_administrate env @@ fun _admin ->
+  Shared.assert_can_administrate env @@ fun _admin ->
   let token = Password_reset_token_clear.make () in
   (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
      is only available on the server side (NesHashedSecretUnix), not in common code. *)
@@ -74,7 +93,7 @@ let create env (user : User_create_form.t) =
   lwt (user, token)
 
 let prepare_reset_password env username =
-  Permission.assert_can_administrate env @@ fun _admin ->
+  Shared.assert_can_administrate env @@ fun _admin ->
   Log.info (fun m -> m "Preparing password reset for user `%s`." (Username.to_string username));
   match%lwt Database.User.get_actor_from_username username with
   | None ->
@@ -124,7 +143,7 @@ let reset_password username token password =
         )
 
 let set_omniscience env value =
-  Permission.assert_can_administrate env @@ fun actor ->
+  Shared.assert_can_administrate env @@ fun actor ->
   Database.User.set_omniscience actor.id value
 
 (* Dispatch *)

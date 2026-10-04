@@ -1,7 +1,7 @@
 open Nes
 open Dancelor_common
 
-include Shared.Make_public_full(struct
+include Shared.Make_public(struct
   type tag = Source_tag.t
   type id = Source_id.t
   type row = Source_row.t

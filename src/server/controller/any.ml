@@ -4,7 +4,7 @@ open Dancelor_common
 let get_type env id =
   let actor_id = Environment.actor_id env in
   match%lwt Database.Any.get_type ~actor_id id with
-  | None -> Permission.reject_can_get ()
+  | None -> Shared.reject_can_get ()
   | Some type_ -> lwt type_
 
 let get_rows env ids =
@@ -202,7 +202,7 @@ let assert_can_edit_permissions env db id f =
   match%lwt Database.Entry.get_permission db ~actor_id id with
   | None ->
     (* not even read permissions on the item *)
-    Permission.reject_can_get ()
+    Shared.reject_can_get ()
   | Some permission ->
     match Permission_new.share_reason permission with
     | None ->

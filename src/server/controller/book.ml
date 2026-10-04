@@ -1,7 +1,7 @@
 open NesUnix
 open Dancelor_common
 
-include Shared.Make_private_full(struct
+include Shared.Make_private(struct
   type tag = Book_tag.t
   type id = Book_id.t
   type row = Book_row.t
