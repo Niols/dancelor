@@ -1,5 +1,9 @@
 open Nes
 
+module Structure = Structure
+module Part_name = Part_name
+module Voices = Voices
+
 type destructured = {
   parts: Voices.t NEList.t;
   transitions: (Part_name.opens * Part_name.opens * Voices.t) list;

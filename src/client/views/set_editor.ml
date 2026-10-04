@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-module Model = Model_builder.Core
 open Components
 open Html
 open Utils
@@ -97,12 +96,8 @@ let editor =
         ~type_: Text
         ~label: "Order"
         ~placeholder: "eg. 1,2,3,4,2,3,4,1"
-        ~serialise: Model.Set_order.to_string
-        ~validate: (
-          S.const %
-            Option.to_result ~none: "Not a valid order." %
-            Model.Set_order.of_string_opt
-        )
+        ~serialise: Set_order.to_string
+        ~validate: (S.const % Option.to_result ~none: "Not a valid order." % Set_order.of_string_opt)
         () ^::
       nil
     )

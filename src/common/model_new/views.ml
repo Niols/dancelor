@@ -110,14 +110,14 @@ end
 module Version_view = struct
   type content =
     | No_content
-    | Destructured of {default_structure: Model_builder.Core.Version.Structure.t}
-    | Monolithic of {bars: int; structure: Model_builder.Core.Version.Structure.t}
+    | Destructured of {default_structure: Version_content.Structure.t}
+    | Monolithic of {bars: int; structure: Version_content.Structure.t}
   [@@deriving yojson]
 
   type source = {
     id: Source_id.t;
     name: string;
-    structure: Model_builder.Core.Version.Structure.t;
+    structure: Version_content.Structure.t;
     details: string option; [@default None]
   }
   [@@deriving yojson]
@@ -152,8 +152,8 @@ module Set_view = struct
     name: string;
     conceptors: Person_name.t list; [@default []]
     kind: Kind.Dance.t;
-    content: (Version_row.t * Model_builder.Core.Version_parameters.t) list; [@default []] (** FIXME: more compact content *)
-    order: Model_builder.Core.Set_order.t;
+    content: (Version_row.t * Version_parameters.t) list; [@default []] (** FIXME: more compact content *)
+    order: Set_order.t;
     remark: string option; [@default None]
     permission: Permission_new.t;
   }
@@ -177,15 +177,15 @@ module Book_view = struct
 
   type dance_page =
     | Dance_only
-    | Dance_versions of (Version_row.t * Model_builder.Core.Version_parameters.t) list
-    | Dance_set of Set_row.t or_forbidden * Model_builder.Core.Set_parameters.t
+    | Dance_versions of (Version_row.t * Version_parameters.t) list
+    | Dance_set of Set_row.t or_forbidden * Set_parameters.t
   [@@deriving eq, yojson]
 
   type page =
     | Part of string
     | Dance of Dance_row.t * dance_page
-    | Versions of (Version_row.t * Model_builder.Core.Version_parameters.t) list
-    | Set of Set_row.t or_forbidden * Model_builder.Core.Set_parameters.t
+    | Versions of (Version_row.t * Version_parameters.t) list
+    | Set of Set_row.t or_forbidden * Set_parameters.t
   [@@deriving eq, yojson]
 
   type t = {

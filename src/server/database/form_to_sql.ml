@@ -63,8 +63,8 @@ let version_form_to_sql
   let (monolithic_lilypond, monolithic_bars, monolithic_or_default_structure, destructured_as_2_4) =
     match content with
     | No_content -> (None, None, None, false)
-    | Monolithic {lilypond; bars; structure} -> (Some lilypond, Some (Int64.of_int bars), Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure), false)
-    | Destructured {default_structure; as_2_4; _} -> (None, None, Some (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string default_structure), as_2_4)
+    | Monolithic {lilypond; bars; structure} -> (Some lilypond, Some (Int64.of_int bars), Some (NEString.to_string @@ Version_content.Structure.to_string structure), false)
+    | Destructured {default_structure; as_2_4; _} -> (None, None, Some (NEString.to_string @@ Version_content.Structure.to_string default_structure), as_2_4)
   in
   query
     ~id
@@ -92,7 +92,7 @@ let set_form_to_sql
     ~id
     ~name: (NEString.to_string name)
     ~kind: (Kind.Dance.to_string kind)
-    ~order: (Model_builder.Core.Set_order.to_string order)
+    ~order: (Set_order.to_string order)
 
 let book_form_to_sql
     query

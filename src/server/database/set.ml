@@ -62,11 +62,11 @@ let get_content_for db set_ids =
           ~k: Fun.id
       in
       let params =
-        Model_builder.Core.Version_parameters.make
+        Version_parameters.make
           ?transposition: (Option.map (Music.Transposition.from_semitones % Int64.to_int) version_parameter_transposition_semitones)
           ?first_bar: (Option.map Int64.to_int version_parameter_first_bar)
           ?clef: (Option.map Music.Clef.of_string version_parameter_clef)
-          ?structure: (Option.map (Option.get % Model_builder.Core.Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
+          ?structure: (Option.map (Option.get % Version_parameters.maybe_structure_of_string % NEString.of_string_exn) version_parameter_structure)
           ?trivia: version_parameter_trivia
           ?display_name: (Option.map NEString.of_string_exn version_parameter_display_name)
           ?display_composer: (Option.map NEString.of_string_exn version_parameter_display_composer)
@@ -157,13 +157,13 @@ let update_other_tables db ~set_id ~conceptors ~contents =
           ~set_id
           ~index: (Int64.of_int index)
           ~version_id: version.Version_row.id
-          ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Music.Transposition.to_semitones) @@ Model_builder.Core.Version_parameters.transposition params)
-          ~version_parameter_first_bar: (Option.map Int64.of_int @@ Model_builder.Core.Version_parameters.first_bar params)
-          ~version_parameter_clef: (Option.map Music.Clef.to_string @@ Model_builder.Core.Version_parameters.clef params)
-          ~version_parameter_structure: (Option.map (NEString.to_string % Model_builder.Core.Version_parameters.maybe_structure_to_string) @@ Model_builder.Core.Version_parameters.structure params)
-          ~version_parameter_trivia: (Model_builder.Core.Version_parameters.trivia params)
-          ~version_parameter_display_name: (Option.map NEString.to_string @@ Model_builder.Core.Version_parameters.display_name params)
-          ~version_parameter_display_composer: (Option.map NEString.to_string @@ Model_builder.Core.Version_parameters.display_composer params)
+          ~version_parameter_transposition_semitones: (Option.map (Int64.of_int % Music.Transposition.to_semitones) @@ Version_parameters.transposition params)
+          ~version_parameter_first_bar: (Option.map Int64.of_int @@ Version_parameters.first_bar params)
+          ~version_parameter_clef: (Option.map Music.Clef.to_string @@ Version_parameters.clef params)
+          ~version_parameter_structure: (Option.map (NEString.to_string % Version_parameters.maybe_structure_to_string) @@ Version_parameters.structure params)
+          ~version_parameter_trivia: (Version_parameters.trivia params)
+          ~version_parameter_display_name: (Option.map NEString.to_string @@ Version_parameters.display_name params)
+          ~version_parameter_display_composer: (Option.map NEString.to_string @@ Version_parameters.display_composer params)
     )
     contents
 

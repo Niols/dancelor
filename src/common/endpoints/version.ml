@@ -2,7 +2,6 @@ open Nes
 open Madge
 open Model_new
 open Search
-open Model_builder.Core
 
 type copyright_response_reason =
   | Connected

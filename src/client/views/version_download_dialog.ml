@@ -1,7 +1,6 @@
 open Js_of_ocaml
 open Nes
 open Dancelor_common
-open Model_builder.Core
 open Html
 open Utils
 open Components

@@ -200,27 +200,27 @@ module Version = struct
         ]
 
   let parameters params =
-    let params = Option.value params ~default: Model_builder.Core.Version_parameters.none in
+    let params = Option.value params ~default: Version_parameters.none in
     let display_name_block =
-      match Model_builder.Core.Version_parameters.display_name params with
+      match Version_parameters.display_name params with
       | None -> []
       | Some display_name -> [txtf " [as “%s”]" @@ NEString.to_string display_name]
     in
     let structure_block =
-      match Model_builder.Core.Version_parameters.structure params with
+      match Version_parameters.structure params with
       | None | Some Force_no_structure -> []
-      | Some Structure structure -> [txtf " [play %s]" @@ NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure]
+      | Some Structure structure -> [txtf " [play %s]" @@ NEString.to_string @@ Version_content.Structure.to_string structure]
     in
     let transposition_block =
-      match Model_builder.Core.Version_parameters.transposition params with
+      match Version_parameters.transposition params with
       | None -> []
       | Some transposition -> [txtf " [%+d m2]" @@ Music.Transposition.to_semitones transposition]
     in
     display_name_block @ structure_block @ transposition_block
 
   let display_composer params =
-    let params = Option.value params ~default: Model_builder.Core.Version_parameters.none in
-    match Model_builder.Core.Version_parameters.display_composer params with
+    let params = Option.value params ~default: Version_parameters.none in
+    match Version_parameters.display_composer params with
     | None -> []
     | Some display_composer -> [txtf " [as “%s”]" @@ NEString.to_string display_composer]
 

@@ -52,7 +52,7 @@ let version_sql_to_form_source
   =
   k {
     source = source_sql_to_row ~id ~name ~date ~editors ~k: Fun.id;
-    structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+    structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
     details = Option.map NEString.of_string_exn details;
   }
 
@@ -76,13 +76,13 @@ let version_sql_to_form
     ~(k : Version_form.t -> 'w)
     : 'w
   =
-  let content : Model_builder.Core.Version.Content.t =
+  let content : Version_content.t =
     match (monolithic_bars, monolithic_or_default_structure, monolithic_lilypond) with
     | (None, None, None) -> No_content
     | (None, Some default_structure, None) ->
       Destructured {
         default_structure =
-        Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure));
+        Option.get (Version_content.Structure.of_string (NEString.of_string_exn default_structure));
         parts = NEList.of_list_exn destructured_parts;
         transitions = destructured_transitions;
         as_2_4 = destructured_as_2_4;
@@ -91,7 +91,7 @@ let version_sql_to_form
       Monolithic {
         lilypond = monolithic_lilypond;
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | _ -> assert false
   in
@@ -126,7 +126,7 @@ let set_sql_to_form
     kind = Kind.Dance.of_string kind;
     conceptors;
     contents;
-    order = Model_builder.Core.Set_order.of_string order;
+    order = Set_order.of_string order;
   }
 
 let book_sql_to_form

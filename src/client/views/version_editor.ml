@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-module Model = Model_builder.Core
 open Components
 open Html
 open Utils
@@ -9,10 +8,10 @@ let structure =
   Input.prepare
     ~type_: Text
     ~placeholder: "eg. AABB or ABAB"
-    ~serialise: (NEString.to_string % Model.Version.Structure.to_string)
+    ~serialise: (NEString.to_string % Version_content.Structure.to_string)
     ~validate: (
       S.const % Option.to_result ~none: "not a valid structure" %
-        (fun s -> Option.bind (NEString.of_string s) Model.Version.Structure.of_string
+        (fun s -> Option.bind (NEString.of_string s) Version_content.Structure.of_string
         )
     )
 
@@ -21,9 +20,9 @@ let content_monolithic () =
   group
     ~label: "Monolithic"
     ~wrap: (fun (bars, (structure, (lilypond, ()))) ->
-      {Model_builder.Core.Version.Content.bars; structure; lilypond}
+      {Version_content.bars; structure; lilypond}
     )
-    ~unwrap: (fun {Model_builder.Core.Version.Content.bars; structure; lilypond} ->
+    ~unwrap: (fun {Version_content.bars; structure; lilypond} ->
       (bars, (structure, (lilypond, ())))
     )
     (
@@ -56,9 +55,9 @@ let content_destructured () =
   group
     ~label: "Destructured"
     ~wrap: (fun (default_structure, (as_2_4, (parts, (transitions, ())))) ->
-      {Model_builder.Core.Version.Content.default_structure; as_2_4; parts; transitions}
+      {Version_content.default_structure; as_2_4; parts; transitions}
     )
-    ~unwrap: (fun {Model_builder.Core.Version.Content.default_structure; as_2_4; parts; transitions} ->
+    ~unwrap: (fun {Version_content.default_structure; as_2_4; parts; transitions} ->
       (default_structure, (as_2_4, (parts, (transitions, ()))))
     )
     (
@@ -87,12 +86,12 @@ let content_destructured () =
       (
         Star.prepare_non_empty
           ~label: "Parts"
-          ~make_header: (fun n -> div [txtf "Part %c" @@ Model.Version.Part_name.(to_char % of_int) n])
+          ~make_header: (fun n -> div [txtf "Part %c" @@ Version_content.Part_name.(to_char % of_int) n])
           (
             group
               ~label: "Part"
-              ~wrap: (fun (melody, (chords, ())) -> {Model_builder.Core.Version.Voices.melody; chords})
-              ~unwrap: (fun {Model_builder.Core.Version.Voices.melody; chords} -> (melody, (chords, ())))
+              ~wrap: (fun (melody, (chords, ())) -> {Version_content.Voices.melody; chords})
+              ~unwrap: (fun {Version_content.Voices.melody; chords} -> (melody, (chords, ())))
               (
                 cons
                   ~stacking: No_label
@@ -146,8 +145,8 @@ let content_destructured () =
                   (
                     Input.prepare
                       ~type_: Text
-                      ~serialise: Model.Version.Part_name.opens_to_string
-                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Model.Version.Part_name.opens_of_string)
+                      ~serialise: Version_content.Part_name.opens_to_string
+                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Version_content.Part_name.opens_of_string)
                       ~label: "from"
                       ~placeholder: "eg. “A”, “B” or “start”"
                       ()
@@ -155,8 +154,8 @@ let content_destructured () =
                   (
                     Input.prepare
                       ~type_: Text
-                      ~serialise: Model.Version.Part_name.opens_to_string
-                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Model.Version.Part_name.opens_of_string)
+                      ~serialise: Version_content.Part_name.opens_to_string
+                      ~validate: (S.const % Option.to_result ~none: "Not a valid list of part names" % Version_content.Part_name.opens_of_string)
                       ~label: "to"
                       ~placeholder: "eg. “A”, “B” or “end”"
                       ()
@@ -166,9 +165,9 @@ let content_destructured () =
                 pair
                   ~stacking: No_label
                   ~wrap: (fun (melody, chords) ->
-                    {Model_builder.Core.Version.Voices.melody; chords}
+                    {Version_content.Voices.melody; chords}
                   )
-                  ~unwrap: (fun {Model_builder.Core.Version.Voices.melody; chords} ->
+                  ~unwrap: (fun {Version_content.Voices.melody; chords} ->
                     (melody, chords)
                   )
                   (
@@ -202,15 +201,15 @@ let content () =
   Plus.prepare
     ~label: "Content"
     ~cast: (function
-      | Zero() -> Model.Version.Content.No_content
-      | Succ Zero destructured -> Model.Version.Content.Destructured destructured
-      | Succ Succ Zero monolithic -> Model.Version.Content.Monolithic monolithic
+      | Zero() -> Version_content.No_content
+      | Succ Zero destructured -> Version_content.Destructured destructured
+      | Succ Succ Zero monolithic -> Version_content.Monolithic monolithic
       | _ -> assert false (* types guarantee this is not reachable *)
     )
     ~uncast: (function
-      | Model.Version.Content.No_content -> Zero ()
-      | Model.Version.Content.Destructured destructured -> one destructured
-      | Model.Version.Content.Monolithic monolithic -> two monolithic
+      | Version_content.No_content -> Zero ()
+      | Version_content.Destructured destructured -> one destructured
+      | Version_content.Monolithic monolithic -> two monolithic
     )
     ~selected_when_empty: 0
     (

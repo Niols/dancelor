@@ -19,7 +19,7 @@ let add_version_to_contents env id version_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt version_row = Version.get_row env version_id in
-  update env id {form with contents = form.contents @ [Versions (NEList.singleton (version_row, Model_builder.Core.Version_parameters.none))]}
+  update env id {form with contents = form.contents @ [Versions (NEList.singleton (version_row, Version_parameters.none))]}
 
 let add_set_to_contents env id set_id =
   (* FIXME: make all the database endpoints take the database such that
@@ -29,7 +29,7 @@ let add_set_to_contents env id set_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt set_row = Set.get_row env set_id in
-  update env id {form with contents = form.contents @ [Set (set_row, Model_builder.Core.Set_parameters.none)]}
+  update env id {form with contents = form.contents @ [Set (set_row, Set_parameters.none)]}
 
 let add_dance_to_contents env id dance_id =
   (* FIXME: make all the database endpoints take the database such that

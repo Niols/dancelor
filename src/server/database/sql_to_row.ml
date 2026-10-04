@@ -51,7 +51,7 @@ let version_sql_to_row
     | (Some bars, Some structure) ->
       Monolithic {
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | _ -> assert false
   in

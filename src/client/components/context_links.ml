@@ -65,7 +65,7 @@ let make_and_render_gen
     ~(index_total_category_name_lwt : _ Lwt.t)
     ~(page_href : 'page -> Uri.t Lwt.t)
     ~(page_descr : 'page -> string)
-    ~(versions_in_page : 'page -> (Version_id.t * Model_builder.Core.Version_parameters.t) list Lwt.t)
+    ~(versions_in_page : 'page -> (Version_id.t * Version_parameters.t) list Lwt.t)
     ~(previous_next_lwt : ('page list * 'page list) option Lwt.t)
   =
   Lwt.async (fun () ->
@@ -214,12 +214,12 @@ let for_search query (any_id : Any_id.t) =
       in
       let page_href any = lwt @@ Endpoints.Page.href_any_full_new ~in_search: (Endpoints.Page.In_search.inject query) any in
       let page_descr _any = "FIXME" in
-      let versions_in_page : Any_id.t -> (Version_id.t * Model_builder.Core.Version_parameters.t) list Lwt.t = function
+      let versions_in_page : Any_id.t -> (Version_id.t * Version_parameters.t) list Lwt.t = function
         (** NOTE: This is about the versions that are **visible** in the any.
             In particular, we don't return the versions in a book. *)
         | Person _ | Dance _ | Source _ | User _ | Tune _ | Book _ -> lwt_nil
         | Version version ->
-          lwt [(version, Model_builder.Core.Version_parameters.none)]
+          lwt [(version, Version_parameters.none)]
         | Set set ->
           let%lwt set = Api.call_exn (Set Get_view) set in
           lwt @@ List.map (Pair.map_fst Version_row.id) set.content

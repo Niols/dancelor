@@ -82,7 +82,7 @@ let make_dance_plus_set_result ?classes ?onclick ?in_search ?set_params ?(prefix
       [Formatters.Dance.name_row ?in_search dance] @
       [block_details [txt "Set: "; format_forbidden (Formatters.Set.name_row ~link: (onclick = None)) set]] @
       Option.fold
-        (Option.bind set_params Model_builder.Core.Set_parameters.display_name)
+        (Option.bind set_params Set_parameters.display_name)
         ~none: []
         ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]]) @ (
         match set with
@@ -98,7 +98,7 @@ let make_dance_plus_set_result ?classes ?onclick ?in_search ?set_params ?(prefix
         | Allowed set -> Formatters.Person.names ~links: (onclick = None) ~short: true set.conceptors
       ) @
         Option.fold
-          (Option.bind set_params Model_builder.Core.Set_parameters.display_conceptor)
+          (Option.bind set_params Set_parameters.display_conceptor)
           ~none: []
           ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]])
     )] @
@@ -142,7 +142,7 @@ let make_set_or_forbidden_result ?classes ?onclick ?in_search ?params ?(prefix =
       [td (
         [format_forbidden (Formatters.Set.name_row ~link: (onclick = None) ?in_search) set] @
         Option.fold
-          (Option.bind params Model_builder.Core.Set_parameters.display_name)
+          (Option.bind params Set_parameters.display_name)
           ~none: []
           ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]]) @ (
           match set with
@@ -158,7 +158,7 @@ let make_set_or_forbidden_result ?classes ?onclick ?in_search ?params ?(prefix =
           | Allowed set -> Formatters.Person.names ~links: (onclick = None) ~short: true set.conceptors
         ) @
           Option.fold
-            (Option.bind params Model_builder.Core.Set_parameters.display_conceptor)
+            (Option.bind params Set_parameters.display_conceptor)
             ~none: []
             ~some: (fun display_name -> [inline_details [txtf " [as “%s”]" @@ NEString.to_string display_name]])
       )] @
@@ -191,7 +191,7 @@ let format_version_kind_and_structure (version : Version_row.t) =
     txtf
       "%s (%s)"
       (Kind.Version.to_string (bars, version.tune.kind))
-      (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure)
+      (NEString.to_string @@ Version_content.Structure.to_string structure)
 
 let make_version_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (version : Version_row.t) =
   row

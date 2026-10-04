@@ -6,7 +6,7 @@ val get_view : Version_id.t -> Version_view.t option Lwt.t
 val get_form : Version_id.t -> Version_form.t option Lwt.t
 val get_views_for_tune : Tune_id.t -> Version_view.t list Lwt.t
 val get_all_forms : unit -> Version_form.t list Lwt.t
-val get_content : Version_id.t -> Model_builder.Core.Version.Content.t option Lwt.t
+val get_content : Version_id.t -> Version_content.t option Lwt.t
 
 val search : Version_query.t -> (Version_row.t * float) list Lwt.t
 

@@ -45,7 +45,7 @@ let get_destructured_parts_for =
        from the order in the list, while in SQL we store the part name/number. SQL
        sorts for us, but now we need to check that they correspond. *)
     List.mapi (fun i (part, voices) ->
-      if Model_builder.Core.Version.Part_name.to_int part <> i then assert false
+      if Version_content.Part_name.to_int part <> i then assert false
       else voices
     )
   in
@@ -55,8 +55,8 @@ let get_destructured_parts_for =
         (Version_sql.Fold.get_destructured_parts_for db ~version_ids)
         (fun k ~version_id ~part ~melody ~chords ->
           k version_id (
-            Option.get (Model_builder.Core.Version.Part_name.of_string part),
-            {Model_builder.Core.Version.Voices.melody; chords}
+            Option.get (Version_content.Part_name.of_string part),
+            {Version_content.Voices.melody; chords}
           )
         )
     in
@@ -67,9 +67,9 @@ let get_destructured_transitions_for db version_ids =
     (Version_sql.Fold.get_destructured_transitions_for db ~version_ids)
     (fun k ~version_id ~from_parts ~to_parts ~melody ~chords ->
       k version_id (
-        Option.get (Model_builder.Core.Version.Part_name.opens_of_string from_parts),
-        Option.get (Model_builder.Core.Version.Part_name.opens_of_string to_parts),
-        {Model_builder.Core.Version.Voices.melody; chords}
+        Option.get (Version_content.Part_name.opens_of_string from_parts),
+        Option.get (Version_content.Part_name.opens_of_string to_parts),
+        {Version_content.Voices.melody; chords}
       )
     )
 
@@ -171,19 +171,19 @@ let get_all_forms () : Version_form.t list Lwt.t =
       ~k: Fun.id
   )
 
-let get_content id : Model_builder.Core.Version.Content.t option Lwt.t =
+let get_content id : Version_content.t option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt destructured_parts = (fun f -> f id) <$> get_destructured_parts_for db (`One_of [id]) in
   let%lwt destructured_transitions = (fun f -> f id) <$> get_destructured_transitions_for db (`One_of [id]) in
   Version_sql.Single.get_content db ~id (fun ~id: _ ~monolithic_lilypond ~monolithic_bars ~monolithic_or_default_structure ~destructured_as_2_4 ->
     match (monolithic_lilypond, monolithic_bars), (destructured_parts, destructured_transitions), monolithic_or_default_structure with
     | (None, None), ([], []), None ->
-      Model_builder.Core.Version.Content.No_content
+      Version_content.No_content
     | (Some lilypond, Some bars), ([], []), Some structure ->
       Monolithic {
         lilypond;
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | (None, None), (parts, transitions), Some default_structure ->
       (
@@ -193,7 +193,7 @@ let get_content id : Model_builder.Core.Version.Content.t option Lwt.t =
           Destructured {
             parts;
             transitions;
-            default_structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure));
+            default_structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn default_structure));
             as_2_4 = destructured_as_2_4;
           }
       )
@@ -238,7 +238,7 @@ let update_other_tables db ~version_id ~arrangers ~sources ~content =
           db
           ~version_id
           ~source_id: source.id
-          ~structure: (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string structure)
+          ~structure: (NEString.to_string @@ Version_content.Structure.to_string structure)
           ~details: (Option.map NEString.to_string details)
     )
     sources;%lwt
@@ -246,27 +246,27 @@ let update_other_tables db ~version_id ~arrangers ~sources ~content =
   ignore <$> Version_sql.delete_all_destructured_transitions db ~version_id;%lwt
   (
     match content with
-    | Model_builder.Core.Version.Content.No_content | Monolithic _ -> lwt_unit
+    | Version_content.No_content | Monolithic _ -> lwt_unit
     | Destructured {parts; transitions; default_structure = _; as_2_4 = _} ->
       Lwt_list.iteri_s
-        (fun part {Model_builder.Core.Version.Voices.melody; chords} ->
+        (fun part {Version_content.Voices.melody; chords} ->
           ignore
           <$> Version_sql.add_one_destructured_part
               db
               ~version_id
-              ~part: Model_builder.Core.Version.Part_name.(to_string @@ of_int part)
+              ~part: Version_content.Part_name.(to_string @@ of_int part)
               ~melody
               ~chords
         )
         (NEList.to_list parts);%lwt
       Lwt_list.iter_s
-        (fun (from_parts, to_parts, {Model_builder.Core.Version.Voices.melody; chords}) ->
+        (fun (from_parts, to_parts, {Version_content.Voices.melody; chords}) ->
           ignore
           <$> Version_sql.add_one_destructured_transition
               db
               ~version_id
-              ~from_parts: (Model_builder.Core.Version.Part_name.opens_to_string from_parts)
-              ~to_parts: (Model_builder.Core.Version.Part_name.opens_to_string to_parts)
+              ~from_parts: (Version_content.Part_name.opens_to_string from_parts)
+              ~to_parts: (Version_content.Part_name.opens_to_string to_parts)
               ~melody
               ~chords
         )

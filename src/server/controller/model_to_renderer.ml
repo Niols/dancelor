@@ -5,7 +5,6 @@
 
 open NesUnix
 open Dancelor_common
-module Model = Model_builder.Core
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.model_to_renderer": Logs.LOG)
 
@@ -20,7 +19,7 @@ let version_to_lilypond_content ~version_params version =
   (* FIXME: keep in sync with old version above *)
   (* get a LilyPond from the potentially-destructured content *)
   let structure =
-    match Model.Version_parameters.structure version_params with
+    match Version_parameters.structure version_params with
     | Some Force_no_structure -> None
     | Some Structure structure -> Some structure
     | None ->
@@ -29,7 +28,7 @@ let version_to_lilypond_content ~version_params version =
       | Monolithic {structure; _} -> Some structure
       | Destructured {default_structure; _} -> Some default_structure
   in
-  match Model.Version.Content.lilypond ?structure ~kind ~key content with
+  match Version_content.lilypond ?structure ~kind ~key content with
   | None -> None
   | Some lilypond ->
     let instructions =
@@ -43,13 +42,13 @@ let version_to_lilypond_content ~version_params version =
         match structure with
         | None -> None
         | Some structure ->
-          match Model.Version.Structure.best_fold_for structure with
+          match Version_content.Structure.best_fold_for structure with
           | Some _ -> None
-          | None -> Some ("Play " ^ NEString.to_string (Model.Version.Structure.to_string structure))
+          | None -> Some ("Play " ^ NEString.to_string (Version_content.Structure.to_string structure))
     in
     (* update the clef *)
     let lilypond =
-      match Model.Version_parameters.clef version_params with
+      match Version_parameters.clef version_params with
       | None -> lilypond
       | Some clef_parameter ->
         let clef_regex = Str.regexp "\\\\clef *\"?[a-z]*\"?" in
@@ -58,30 +57,30 @@ let version_to_lilypond_content ~version_params version =
     (* add transposition *)
     let lilypond =
       let source = Music.Key.pitch key in
-      let target = Music.Transposition.target_pitch ~source @@ Option.value ~default: Music.Transposition.identity @@ Model.Version_parameters.transposition version_params in
+      let target = Music.Transposition.target_pitch ~source @@ Option.value ~default: Music.Transposition.identity @@ Version_parameters.transposition version_params in
       let (source, target) = Pair.map_both Music.Pitch.to_lilypond_string (source, target) in
       spf "\\transpose %s %s { %s }" source target lilypond
     in
     (* done *)
     Some (lilypond, instructions)
 
-let version_to_renderer_tune ?(version_params = Model.Version_parameters.none) version =
+let version_to_renderer_tune ?(version_params = Version_parameters.none) version =
   (* FIXME: keep in sync with old version above *)
   let {Version_form.tune = {name; kind; composers; _}; content; _} = version in
-  let name = Option.fold ~none: name ~some: NEString.to_string (Model.Version_parameters.display_name version_params) in
+  let name = Option.fold ~none: name ~some: NEString.to_string (Version_parameters.display_name version_params) in
   let slug = NesSlug.to_string @@ NesSlug.of_string name in
   let composer =
     Option.fold
       ~none: (format_persons composers)
       ~some: NEString.to_string
-      (Model.Version_parameters.display_composer version_params)
+      (Version_parameters.display_composer version_params)
   in
   let (lilypond, instructions) =
     match version_to_lilypond_content ~version_params version with
     | Some (lilypond, instructions) -> (lilypond, Option.value instructions ~default: "")
     | None -> ("", "")
   in
-  let first_bar = Model.Version_parameters.first_bar' version_params in
+  let first_bar = Version_parameters.first_bar' version_params in
   let (tempo_unit, tempo_value) =
     match kind with
     | Jig | March_6_8 -> ("4.", 104)
@@ -107,8 +106,8 @@ let version_to_renderer_tune ?(version_params = Model.Version_parameters.none) v
     | Other | Jig_9_8 -> "other"
   in
   let show_bar_numbers =
-    Model.Version.Content.is_monolithic content
-    || Model.Version_parameters.structure version_params <> Some Force_no_structure
+    Version_content.is_monolithic content
+    || Version_parameters.structure version_params <> Some Force_no_structure
   in
   let show_time_signatures = kind = Other in
   (* only show time signatures if “Other” *)
@@ -118,12 +117,12 @@ let part_to_renderer_part name =
   Renderer.{name = NEString.to_string name}
 
 let set_to_renderer_set (set : Set_form.t) set_params : (Renderer.set * Renderer.pdf_metadata) Lwt.t =
-  let name = NEString.to_string @@ Option.value (Model.Set_parameters.display_name set_params) ~default: set.name in
+  let name = NEString.to_string @@ Option.value (Set_parameters.display_name set_params) ~default: set.name in
   let%lwt renderer_set =
     let slug = NesSlug.(to_string % of_string) name in
     let%lwt conceptor =
       lwt @@
-        match Model.Set_parameters.display_conceptor set_params, set.conceptors with
+        match Set_parameters.display_conceptor set_params, set.conceptors with
         | None, [] -> ""
         | None, _ -> "Set by " ^ format_persons set.conceptors
         | Some conceptor, [] -> NEString.to_string conceptor
@@ -131,17 +130,17 @@ let set_to_renderer_set (set : Set_form.t) set_params : (Renderer.set * Renderer
     in
     let kind =
       let none = Kind.Dance.to_pretty_string set.kind in
-      let kind = Option.fold ~none ~some: NEString.to_string (Model.Set_parameters.display_kind set_params) in
+      let kind = Option.fold ~none ~some: NEString.to_string (Set_parameters.display_kind set_params) in
       match set.order with
       | [] -> kind
-      | order -> kind ^ " — Play " ^ Model.Set_order.to_pretty_string order
+      | order -> kind ^ " — Play " ^ Set_order.to_pretty_string order
     in
-    let every_version_params = Model.Set_parameters.every_version set_params in
+    let every_version_params = Set_parameters.every_version set_params in
     let%lwt contents =
       Lwt_list.map_s
         (fun (version, version_params) ->
           let%lwt version = Option.get <$> Database.Version.get_form version.Version_row.id in
-          let version_params = Model.Version_parameters.compose every_version_params version_params in
+          let version_params = Version_parameters.compose every_version_params version_params in
           lwt @@ version_to_renderer_tune version ~version_params
         )
         set.contents
@@ -161,15 +160,15 @@ let set_to_renderer_set (set : Set_form.t) set_params : (Renderer.set * Renderer
 let versions_to_renderer_set versions_and_params set_params =
   let name =
     let name = String.concat ", " ~last: " and " @@ List.map (Tune_row.name % Version_form.tune % fst) (NEList.to_list versions_and_params) in
-    Option.fold ~none: name ~some: NEString.to_string (Model.Set_parameters.display_name set_params)
+    Option.fold ~none: name ~some: NEString.to_string (Set_parameters.display_name set_params)
   in
   let renderer_set =
     let slug = NesSlug.(to_string % of_string) name in
     let conceptor =
-      Option.fold ~none: "" ~some: NEString.to_string (Model.Set_parameters.display_conceptor set_params)
+      Option.fold ~none: "" ~some: NEString.to_string (Set_parameters.display_conceptor set_params)
     in
     let kind =
-      Option.fold ~none: "" ~some: NEString.to_string (Model.Set_parameters.display_kind set_params)
+      Option.fold ~none: "" ~some: NEString.to_string (Set_parameters.display_kind set_params)
     in
     let contents =
       List.map (fun (version, version_params) -> version_to_renderer_tune version ~version_params) (NEList.to_list versions_and_params)
@@ -194,7 +193,7 @@ let dance_to_renderer_set set_params =
     set_params
 
 let page_to_renderer_page ~actor_id (page : Book_form.page) book_params : (Renderer.page * Renderer.pdf_metadata) Lwt.t =
-  let every_set_params = Model.Book_parameters.every_set book_params in
+  let every_set_params = Book_parameters.every_set book_params in
   match page with
   | Part title ->
     lwt (Renderer.Part (part_to_renderer_part title), {Renderer.title = NEString.to_string title; authors = []; subjects = []})
@@ -218,10 +217,10 @@ let page_to_renderer_page ~actor_id (page : Book_form.page) book_params : (Rende
             | Two_chords -> " — Two chords"
           )
         in
-        lwt @@ Model.Set_parameters.make ~display_name ~display_conceptor ~display_kind ()
+        lwt @@ Set_parameters.make ~display_name ~display_conceptor ~display_kind ()
       in
       let dance_params =
-        Model.Set_parameters.compose every_set_params dance_params
+        Set_parameters.compose every_set_params dance_params
       in
       match dance_page with
       | Dance_only ->
@@ -239,7 +238,7 @@ let page_to_renderer_page ~actor_id (page : Book_form.page) book_params : (Rende
         lwt @@ Pair.map_fst Renderer.set @@ versions_to_renderer_set versions_and_params dance_params
       | Dance_set (set, set_params) ->
         let%lwt set = Option.get <$> Database.Set.get_form ~actor_id set.Set_row.id in
-        let set_params = Model.Set_parameters.compose set_params dance_params in
+        let set_params = Set_parameters.compose set_params dance_params in
         Pair.map_fst Renderer.set <$> set_to_renderer_set set set_params
     )
   | Versions versions_and_params ->
@@ -255,7 +254,7 @@ let page_to_renderer_page ~actor_id (page : Book_form.page) book_params : (Rende
     lwt @@ Pair.map_fst Renderer.set @@ versions_to_renderer_set versions_and_params every_set_params
   | Set (set, set_params) ->
     let%lwt set = Option.get <$> Database.Set.get_form ~actor_id set.Set_row.id in
-    let set_params = Model.Set_parameters.compose set_params every_set_params in
+    let set_params = Set_parameters.compose set_params every_set_params in
     Pair.map_fst Renderer.set <$> set_to_renderer_set set set_params
 
 let book_to_renderer_book ~actor_id (book : Book_form.t) book_params : (Renderer.book * Renderer.pdf_metadata) Lwt.t =
@@ -264,7 +263,7 @@ let book_to_renderer_book ~actor_id (book : Book_form.t) book_params : (Renderer
     let slug = NesSlug.(to_string % of_string) name in
     let editor = format_persons book.authors in
     let%lwt contents = Lwt_list.map_s (fun page -> fst <$> page_to_renderer_page ~actor_id page book_params) book.contents in
-    let simple = Option.value ~default: false @@ Model.Book_parameters.simple book_params in
+    let simple = Option.value ~default: false @@ Book_parameters.simple book_params in
     lwt {Renderer.slug; name; editor; contents; simple}
   in
   let pdf_metadata =

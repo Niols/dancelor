@@ -2,7 +2,6 @@ open Nes
 open Madge
 open Model_new
 open Search
-open Model_builder.Core
 
 type (_, _, _) t =
   | Get_row : (Book_id.t -> 'w, 'w, Book_row.t) t

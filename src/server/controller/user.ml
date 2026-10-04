@@ -1,6 +1,5 @@
 open NesUnix
 open Dancelor_common
-module Model = Model_builder.Core
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.user": Logs.LOG)
 

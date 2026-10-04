@@ -43,7 +43,7 @@ let tune_sql_to_version_row_without_tune ~id ~sources ~disambiguation ~arrangers
     | (Some bars, Some structure) ->
       Monolithic {
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | _ -> assert false
   in
@@ -80,7 +80,7 @@ let version_sql_to_source
   k {
     id;
     name;
-    structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+    structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
     details;
   }
 
@@ -112,12 +112,12 @@ let version_sql_to_view
     | (None, Some default_structure) ->
       Destructured {
         default_structure =
-        Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn default_structure));
+        Option.get (Version_content.Structure.of_string (NEString.of_string_exn default_structure));
       }
     | (Some bars, Some structure) ->
       Monolithic {
         bars = Int64.to_int bars;
-        structure = Option.get (Model_builder.Core.Version.Structure.of_string (NEString.of_string_exn structure));
+        structure = Option.get (Version_content.Structure.of_string (NEString.of_string_exn structure));
       }
     | _ -> assert false
   in
@@ -164,7 +164,7 @@ let set_sql_to_view
     kind = Kind.Dance.of_string kind;
     conceptors;
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
-    order = Model_builder.Core.Set_order.of_string order;
+    order = Set_order.of_string order;
     remark;
     permission = {
       entry_is_public;

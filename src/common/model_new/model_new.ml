@@ -1,6 +1,11 @@
 open Nes
 
+module Book_parameters = Book_parameters
 module Permission_new = Permission_new
+module Set_order = Set_order
+module Set_parameters = Set_parameters
+module Version_content = Version_content
+module Version_parameters = Version_parameters
 
 include Base
 include Tags

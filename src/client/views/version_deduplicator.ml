@@ -47,7 +47,7 @@ let confirmation_dialog ~this_version_id ~other_version_id =
               (fun source ->
                 li [
                   Formatters.Source.name (Version_form.source_to_name source);
-                  txtf " (%s)" (NEString.to_string @@ Model_builder.Core.Version.Structure.to_string source.structure);
+                  txtf " (%s)" (NEString.to_string @@ Version_content.Structure.to_string source.structure);
                 ]
               )
               this_version.sources

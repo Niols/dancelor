@@ -6,18 +6,18 @@ open Nes
 
 type maybe_structure =
   | Force_no_structure
-  | Structure of Version.Structure.t
+  | Structure of Version_content.Structure.t
 [@@deriving eq, ord, show {with_path = false}, variants]
 
 let maybe_structure_to_string = function
   | Force_no_structure -> NEString.of_string_exn "none"
-  | Structure structure -> Version.Structure.to_string structure
+  | Structure structure -> Version_content.Structure.to_string structure
 
 let maybe_structure_of_string s =
   if NEString.to_string s = "none" then
     Some Force_no_structure
   else
-    Option.map structure @@ Version.Structure.of_string s
+    Option.map structure @@ Version_content.Structure.of_string s
 
 let maybe_structure_to_yojson s =
   `String (NEString.to_string @@ maybe_structure_to_string s)

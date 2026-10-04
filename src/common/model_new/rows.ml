@@ -61,7 +61,7 @@ module Version_row = struct
   type content =
     | No_content
     | Destructured
-    | Monolithic of {bars: int; structure: Model_builder.Core.Version.Structure.t}
+    | Monolithic of {bars: int; structure: Version_content.Structure.t}
   [@@deriving eq, yojson]
 
   type t = {

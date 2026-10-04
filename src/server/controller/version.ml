@@ -74,7 +74,7 @@ let content env id =
   get_view env id >>= fun version ->
   with_copyright_check env version @@ fun () ->
   let%lwt content = Option.get <$> Database.Version.get_content version.id in
-  lwt @@ Option.get @@ Model_builder.Core.Version.Content.lilypond ~kind: version.tune.kind ~key: version.key content
+  lwt @@ Option.get @@ Version_content.lilypond ~kind: version.tune.kind ~key: version.key content
 
 let build_pdf env id version_params rendering_params =
   Log.debug (fun m -> m "build_pdf %a" Id.pp' id);
@@ -82,8 +82,8 @@ let build_pdf env id version_params rendering_params =
   with_copyright_check env version @@ fun () ->
   (* never show the headers for a simple version *)
   let rendering_params = Rendering_parameters.update ~show_headers: (const (some false)) rendering_params in
-  let set_params = Model_builder.Core.Set_parameters.make ?display_name: (Model_builder.Core.Version_parameters.display_name version_params) () in
-  let version_params = Model_builder.Core.Version_parameters.set_display_name (NEString.of_string_exn " ") version_params in
+  let set_params = Set_parameters.make ?display_name: (Version_parameters.display_name version_params) () in
+  let version_params = Version_parameters.set_display_name (NEString.of_string_exn " ") version_params in
   let%lwt version_form = Option.get <$> Database.Version.get_form version.id in
   let set = Model_to_renderer.versions_to_renderer_set (NEList.singleton (version_form, version_params)) set_params in
   let set_pdf_arg = Model_to_renderer.renderer_set_to_renderer_set_pdf_arg set rendering_params in

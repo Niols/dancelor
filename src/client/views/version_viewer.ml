@@ -1,6 +1,5 @@
 open Nes
 open Dancelor_common
-module Model = Model_builder.Core
 open Html
 open Utils
 
@@ -215,7 +214,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
             txtf
               "Monolithic %d-bar %s version in %s"
               bars
-              (NEString.to_string @@ Model.Version.Structure.to_string structure)
+              (NEString.to_string @@ Version_content.Structure.to_string structure)
               (Music.Key.to_pretty_string version.key);
           ]
         | Destructured {default_structure} ->
@@ -225,7 +224,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
             txtf
               " in %s, shown here as %s"
               (Music.Key.to_pretty_string version.key)
-              (NEString.to_string @@ Model.Version.Structure.to_string default_structure);
+              (NEString.to_string @@ Version_content.Structure.to_string default_structure);
           ]
       );
       div ~a: [a_class ["col-auto"; "text-end"]] (
@@ -276,7 +275,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
                 (fun ({details; structure; _}: Version_view.source) ->
                   [
                     Option.fold details ~none: (txt "") ~some: (txtf " %s");
-                    txtf " as %s" (NEString.to_string (Model.Version.Structure.to_string structure));
+                    txtf " as %s" (NEString.to_string (Version_content.Structure.to_string structure));
                   ]
                 )
                 source_group

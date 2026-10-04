@@ -105,7 +105,7 @@ end
 module Version_form = struct
   type source = {
     source: Source_row.t;
-    structure: Model_builder.Core.Version.Structure.t;
+    structure: Version_content.Structure.t;
     details: NEString.t option;
   }
   [@@deriving eq, yojson]
@@ -125,14 +125,14 @@ module Version_form = struct
     arrangers: Person_row.t list;
     remark: NEString.t option;
     disambiguation: NEString.t option;
-    content: Model_builder.Core.Version.Content.t;
+    content: Version_content.t;
   }
   [@@deriving eq, fields, yojson]
 
   let to_name id {tune; _} : Version_name.t =
     {id; name = tune.name}
 
-  let content_to_row_content : Model_builder.Core.Version.Content.t -> Version_row.content = function
+  let content_to_row_content : Version_content.t -> Version_row.content = function
     | No_content -> No_content
     | Destructured _ -> Destructured
     | Monolithic {lilypond = _; bars; structure} -> Monolithic {bars; structure}
@@ -152,8 +152,8 @@ module Set_form = struct
     name: NEString.t;
     kind: Kind.Dance.t;
     conceptors: Person_row.t list;
-    contents: (Version_row.t * Model_builder.Core.Version_parameters.t) list;
-    order: Model_builder.Core.Set_order.t;
+    contents: (Version_row.t * Version_parameters.t) list;
+    order: Set_order.t;
   }
   [@@deriving eq, yojson]
 
@@ -170,15 +170,15 @@ end
 module Book_form = struct
   type dance_page =
     | Dance_only
-    | Dance_versions of (Version_row.t * Model_builder.Core.Version_parameters.t) NEList.t
-    | Dance_set of Set_row.t * Model_builder.Core.Set_parameters.t
+    | Dance_versions of (Version_row.t * Version_parameters.t) NEList.t
+    | Dance_set of Set_row.t * Set_parameters.t
   [@@deriving eq, yojson]
 
   type page =
     | Part of NEString.t
     | Dance of Dance_row.t * dance_page
-    | Versions of (Version_row.t * Model_builder.Core.Version_parameters.t) NEList.t
-    | Set of Set_row.t * Model_builder.Core.Set_parameters.t
+    | Versions of (Version_row.t * Version_parameters.t) NEList.t
+    | Set of Set_row.t * Set_parameters.t
   [@@deriving eq, yojson]
 
   type t = {

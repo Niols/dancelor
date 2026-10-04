@@ -19,7 +19,7 @@ let add_version_to_contents env id version_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt version_row = Version.get_row env version_id in
-  update env id {form with contents = form.contents @ [(version_row, Model_builder.Core.Version_parameters.none)]}
+  update env id {form with contents = form.contents @ [(version_row, Version_parameters.none)]}
 
 let build_pdf env id set_params rendering_params =
   get_form env id >>= fun set ->
