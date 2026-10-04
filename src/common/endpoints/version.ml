@@ -50,17 +50,6 @@ type (_, _, _) t =
   | Build_snippets' : (Version_form.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Snippet_ids.t Job.registration_response) t
 [@@deriving madge_wrapped_endpoints]
 
-(* NOTE: The version model contains its LilyPond content. This is a big string
-   that is not used in the client. It would be better to have a clean way to
-   describe fields that are not included by default, but for now we will just
-   redact it from the HTTP responses. NOTE: We only redact it from the HTTP
-   _responses_, but not from the requests! *)
-module Version_no_lilypond = struct
-  type t = Version.t
-  let of_yojson = Version.of_yojson
-  let to_yojson = Version.to_yojson % Version.erase_lilypond_from_content
-end
-
 module Copyright_response
     (Payload : Madge.JSONABLE)
   : Madge.JSONABLE with type t = Payload.t copyright_response

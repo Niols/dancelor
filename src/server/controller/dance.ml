@@ -2,7 +2,7 @@ open NesUnix
 open Dancelor_common
 
 include Shared.Make_public_full(struct
-  type entry = Model_builder.Core.Dance.t
+  type tag = Dance_tag.t
   type id = Dance_id.t
   type row = Dance_row.t
   type view = Dance_view.t

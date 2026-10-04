@@ -27,7 +27,7 @@ let confirmation_dialog ~this_version_id ~other_version_id =
       make_change_trackers ()
     in
     (* tune *)
-    if not (Entry.Id.equal' this_version.tune.id other_version.tune.id) then
+    if not (Id.equal' this_version.tune.id other_version.tune.id) then
       failwith "Version de-duplicator: these two versions do not share the same tune.";
     let the_tune = other_version.tune in
     (* key *)
@@ -118,7 +118,7 @@ let confirmation_dialog ~this_version_id ~other_version_id =
 
   (* how to update a version from a set or a book *)
   let replace_version (a_version : Version_row.t) =
-    if Entry.Id.equal' a_version.id this_version_id then
+    if Id.equal' a_version.id this_version_id then
         (Version_form.to_row other_version_id other_version)
     else
       a_version

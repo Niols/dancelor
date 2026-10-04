@@ -4,7 +4,7 @@ open Dancelor_common
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.version": Logs.LOG)
 
 include Shared.Make_public_full(struct
-  type entry = Model_builder.Core.Version.t
+  type tag = Version_tag.t
   type id = Version_id.t
   type row = Version_row.t
   type view = Version_view.t
@@ -70,14 +70,14 @@ let get_view_for_tune env id =
   | None -> (fun t -> Endpoints.Version.Version_view_fallback.Fallback t) <$> Tune.get_view env id
 
 let content env id =
-  Log.debug (fun m -> m "content %a" Entry.Id.pp' id);
+  Log.debug (fun m -> m "content %a" Id.pp' id);
   get_view env id >>= fun version ->
   with_copyright_check env version @@ fun () ->
   let%lwt content = Option.get <$> Database.Version.get_content version.id in
   lwt @@ Option.get @@ Model_builder.Core.Version.Content.lilypond ~kind: version.tune.kind ~key: version.key content
 
 let build_pdf env id version_params rendering_params =
-  Log.debug (fun m -> m "build_pdf %a" Entry.Id.pp' id);
+  Log.debug (fun m -> m "build_pdf %a" Id.pp' id);
   get_view env id >>= fun version ->
   with_copyright_check env version @@ fun () ->
   (* never show the headers for a simple version *)
@@ -109,7 +109,7 @@ let register_snippets_job ?version_params version =
   register_snippets_job_gen tune
 
 let build_snippets env id version_params _rendering_params =
-  Log.debug (fun m -> m "build_snippets %a" Entry.Id.pp' id);
+  Log.debug (fun m -> m "build_snippets %a" Id.pp' id);
   get_view env id >>= fun version ->
   with_copyright_check env version @@ fun () ->
   let%lwt version_form = Option.get <$> Database.Version.get_form version.id in

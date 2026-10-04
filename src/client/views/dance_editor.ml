@@ -42,8 +42,8 @@ let editor =
           Selector.prepare
             ~label: "Deviser"
             ~search: Api.person_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Person_row.id
             ~unserialise: (Api.call_or_option @@ Person Get_row)
             ~make_descr: (lwt % Person_row.name)
@@ -76,9 +76,9 @@ let editor =
       Choices.prepare_radios
         ~label: "Number of chords"
         [
-          Choices.choice ~value: Model.Dance.Dont_know [txt "I don't know"] ~checked: true;
-          Choices.choice ~value: Model.Dance.One_chord [txt "One chord"];
-          Choices.choice ~value: Model.Dance.Two_chords [txt "Two chords"];
+          Choices.choice ~value: Dance_view.Dont_know [txt "I don't know"] ~checked: true;
+          Choices.choice ~value: Dance_view.One_chord [txt "One chord"];
+          Choices.choice ~value: Dance_view.Two_chords [txt "Two chords"];
         ] ^::
       Input.prepare
         ~type_: Text

@@ -80,8 +80,9 @@ let get_row_for ~actor_id ids : (Set_id.t -> Set_row.t option) Lwt.t =
   let%lwt tunes_for = get_tunes_for db (`One_of ids) in
   let%lwt conceptors_for = get_conceptors_for db (`One_of ids) in
   Utils.fold_to_get_single
-    (Set_sql.Fold.get_rows db ~ids ~actor_id)
+    (Set_sql.Fold.get_rows db ~ids: (List.map Id.unsafe_coerce ids) ~actor_id)
     (fun k ~id ->
+      let id = Id.unsafe_coerce id in
       set_sql_to_row
         ~id
         ~tunes: (tunes_for id)
@@ -96,8 +97,14 @@ let get_view ~actor_id id : Set_view.t option Lwt.t =
   Set_sql.Single.get_view
     db
     ~actor_id
-    ~id
-    (set_sql_to_view ~conceptors ~content ~k: Fun.id)
+    ~id: (Id.unsafe_coerce id)
+    (fun ~id ->
+      set_sql_to_view
+        ~id: (Id.unsafe_coerce id)
+        ~conceptors
+        ~content
+        ~k: Fun.id
+    )
 
 let get_form ~actor_id id : Set_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
@@ -122,6 +129,7 @@ let search ~actor_id query : (Set_row.t * float) list Lwt.t =
     ~contains_version: (Utils.option_to_sql contains_version)
     ~contains_tune: (Utils.option_to_sql contains_tune)
     (fun ~score ~id ->
+      let id = Id.unsafe_coerce id in
       set_sql_to_row
         ~id
         ~tunes: (tunes_for id)

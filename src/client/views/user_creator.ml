@@ -14,7 +14,7 @@ let open_token_result_dialog (user : User_row.t) token =
       ~title: (lwt "Created user")
       [p [
         txt "User ";
-        txt (Entry.Id.to_string user.id);
+        txt (Id.to_string user.id);
         txt " was created successfully. Pass them the following link: ";
       ];
       p [

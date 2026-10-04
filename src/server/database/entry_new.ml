@@ -32,11 +32,11 @@ let classify_type : type_ -> [`Public | `Private] = function
     and ["entry_owners"] tables; see {!insert_or_update_private}. *)
 let insert_to_entry_table db ~is_public type_ =
   let rec make () =
-    let id = Entry.Id.make () in
+    let id = Id.make () in
     match%lwt Entry_sql.get_type_unsafe db ~id with
     | None ->
       let%lwt _ = Entry_sql.register db ~id ~type_ ~is_public in
-      lwt @@ Entry.Id.unsafe_coerce id
+      lwt @@ Id.unsafe_coerce id
     | Some _ ->
       make () (* extremely unlikely *)
   in make ()
@@ -44,8 +44,8 @@ let insert_to_entry_table db ~is_public type_ =
 (** Takes a function [f] that handles inserting/updating to the
     ["entry"] table and handles everything else that has to do with
     private access. *)
-let insert_or_update_private db access f =
-  let%lwt id = f ~is_public: (Entry.Access.Private.is_public access) in
+let insert_or_update_private db ~viewers ~owners f =
+  let%lwt id = f () in
   ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
   Lwt_list.iter_s
     (fun viewer ->
@@ -56,7 +56,7 @@ let insert_or_update_private db access f =
           ~user_id: viewer
           ~role: `Viewer
     )
-    (Entry.Access.Private.viewers access);%lwt
+    viewers;%lwt
   Lwt_list.iter_s
     (fun owner ->
       ignore
@@ -66,8 +66,8 @@ let insert_or_update_private db access f =
           ~user_id: owner
           ~role: `Owner
     )
-    (Entry.Access.Private.owners access);%lwt
-  lwt id
+    owners;%lwt
+  lwt @@ Id.unsafe_coerce id
 
 let make_public db type_ =
   assert (classify_type type_ = `Public);
@@ -75,28 +75,16 @@ let make_public db type_ =
      no visibility field. *)
   insert_to_entry_table db type_ ~is_public: true
 
-let make_private db type_ access =
-  assert (classify_type type_ = `Private);
-  insert_or_update_private db access @@ fun ~is_public ->
-  insert_to_entry_table db type_ ~is_public
-
 let make_private_new db type_ owner =
   assert (classify_type type_ = `Private);
-  (* FIXME: instead of making an access value, we should directly pass whatever is necessary *)
-  let access = Entry.Access.Private.make ~owners: [owner] () in
-  insert_or_update_private db access @@ fun ~is_public ->
-  insert_to_entry_table db type_ ~is_public
-
-let update_private_access db id access =
-  ignore
-  <$> insert_or_update_private db access @@ fun ~is_public ->
-    ignore <$> Entry_sql.update_is_public db ~id ~is_public;%lwt
-    lwt id
+  insert_or_update_private db ~viewers: [] ~owners: [owner] @@ fun () ->
+  insert_to_entry_table db type_ ~is_public: false
 
 let touch db id =
-  ignore <$> Entry_sql.touch db ~id
+  ignore <$> Entry_sql.touch db ~id: (Id.unsafe_coerce id)
 
 let delete db id =
+  let id = Id.unsafe_coerce id in
   ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
   ignore <$> Entry_sql.delete db ~id
 
@@ -108,19 +96,20 @@ let get_newest ~actor_id ~limit =
     Entry_sql.List.get_newest db ~actor_id ~limit: (Int64.of_int limit) (fun ~id ~type_ ->
       some @@
         match type_ with
-        | `Book -> Any_id.book @@ Entry.Id.unsafe_coerce id
-        | `Dance -> Any_id.dance @@ Entry.Id.unsafe_coerce id
-        | `Person -> Any_id.person @@ Entry.Id.unsafe_coerce id
-        | `Set -> Any_id.set @@ Entry.Id.unsafe_coerce id
-        | `Source -> Any_id.source @@ Entry.Id.unsafe_coerce id
-        | `Tune -> Any_id.tune @@ Entry.Id.unsafe_coerce id
-        | `User -> Any_id.user @@ Entry.Id.unsafe_coerce id
-        | `Version -> Any_id.version @@ Entry.Id.unsafe_coerce id
+        | `Book -> Any_id.book @@ Id.unsafe_coerce id
+        | `Dance -> Any_id.dance @@ Id.unsafe_coerce id
+        | `Person -> Any_id.person @@ Id.unsafe_coerce id
+        | `Set -> Any_id.set @@ Id.unsafe_coerce id
+        | `Source -> Any_id.source @@ Id.unsafe_coerce id
+        | `Tune -> Any_id.tune @@ Id.unsafe_coerce id
+        | `User -> Any_id.user @@ Id.unsafe_coerce id
+        | `Version -> Any_id.version @@ Id.unsafe_coerce id
     )
   in
   lwt @@ List.filter_map Fun.id newest
 
 let get_permission db ~actor_id id =
+  let id = Id.unsafe_coerce id in
   Option.map
     (fun (entry_is_public, actor_role, actor_is_omniscient_administrator) ->
       {
@@ -132,14 +121,17 @@ let get_permission db ~actor_id id =
   <$> Entry_sql.get_permission db ~actor_id ~id
 
 let get_actor_roles db id =
+  let id = Id.unsafe_coerce id in
   Entry_sql.List.get_actor_roles db ~entry_id: id (fun ~role ->
     user_sql_to_row ~k: (fun actor -> (actor, Sql_types.actor_role_to_common role))
   )
 
 let set_is_public db id is_public =
+  let id = Id.unsafe_coerce id in
   ignore <$> Entry_sql.set_is_public db ~id ~is_public
 
 let set_actor_roles db id actor_roles =
+  let id = Id.unsafe_coerce id in
   ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
   Lwt_list.iter_s
     (fun ({User_row.id = user_id; _}, role) ->

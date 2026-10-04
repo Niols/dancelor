@@ -25,8 +25,8 @@ let versions_and_parameters ?(label = "Versions") () =
             ~model_name: "version"
             ~create_dialog_content: Version_editor.create_row
             ~search: Api.version_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Version_row.id
             ~unserialise: (Api.call_or_option @@ Version Get_row)
             ()
@@ -49,8 +49,8 @@ let set_and_parameters ?(label = "Set") () =
         ~model_name: "set"
         ~create_dialog_content: Set_editor.create_row
         ~search: Api.set_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
+        ~id_to_yojson: Id.to_yojson'
+        ~id_of_yojson: Id.of_yojson'
         ~serialise: Set_row.id
         ~unserialise: (Api.call_or_option @@ Set Get_row)
         ()
@@ -72,8 +72,8 @@ let dance_and_dance_page =
         ~model_name: "dance"
         ~create_dialog_content: Dance_editor.create_row
         ~search: Api.dance_search
-        ~id_to_yojson: Entry.Id.to_yojson'
-        ~id_of_yojson: Entry.Id.of_yojson'
+        ~id_to_yojson: Id.to_yojson'
+        ~id_of_yojson: Id.of_yojson'
         ~serialise: Dance_row.id
         ~unserialise: (Api.call_or_option @@ Dance Get_row)
         ()
@@ -125,8 +125,8 @@ let editor =
           Selector.prepare
             ~label: "Editor"
             ~search: Api.person_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Person_row.id
             ~unserialise: (Api.call_or_option @@ Person Get_row)
             ~make_descr: (lwt % Person_row.name)
@@ -212,8 +212,8 @@ let editor =
             ~model_name: "source"
             ~create_dialog_content: Source_editor.create_row
             ~search: Api.source_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Source_row.id
             ~unserialise: (Api.call_or_option @@ Source Get_row)
             ()

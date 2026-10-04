@@ -300,8 +300,11 @@ let get_row_for ~actor_id ids : (Book_id.t -> Book_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt authors_for = get_authors_for db (`One_of ids) in
   Utils.fold_to_get_single
-    (Book_sql.Fold.get_rows db ~ids ~actor_id)
-    (fun k ~id -> book_sql_to_row ~id ~authors: (authors_for id) ~k: (k id))
+    (Book_sql.Fold.get_rows db ~ids: (List.map Id.unsafe_coerce ids) ~actor_id)
+    (fun k ~id ->
+      let id = Id.unsafe_coerce id in
+      book_sql_to_row ~id ~authors: (authors_for id) ~k: (k id)
+    )
 
 let get_view ~actor_id id : Book_view.t option Lwt.t =
   Connection.with_ @@ fun db ->
@@ -311,8 +314,11 @@ let get_view ~actor_id id : Book_view.t option Lwt.t =
   Book_sql.Single.get_view
     db
     ~actor_id
-    ~id
-    (book_sql_to_view ~authors ~sources ~contents ~k: Fun.id)
+    ~id: (Id.unsafe_coerce id)
+    (fun ~id ->
+      let id = Id.unsafe_coerce id in
+      book_sql_to_view ~id ~authors ~sources ~contents ~k: Fun.id
+    )
 
 let get_form ~actor_id id : Book_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
@@ -338,6 +344,7 @@ let search ~actor_id query : (Book_row.t * float) list Lwt.t =
     ~contains_tune: (Utils.option_to_sql contains_tune)
     ~contains_set: (Utils.option_to_sql contains_set)
     (fun ~score ~id ->
+      let id = Id.unsafe_coerce id in
       book_sql_to_row
         ~id
         ~authors: (authors_for id)

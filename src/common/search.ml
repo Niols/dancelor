@@ -204,14 +204,14 @@ module Dance_query = struct
   [@@deriving yojson]
 
   let parse_operators = fun {Query_parser.parse_operator} ->
-    let deviser = parse_operator "deviser" (List.map Entry.Id.of_string_exn) in
+    let deviser = parse_operator "deviser" (List.map Id.of_string_exn) in
       {deviser}
 
   let parse = Query.make_parser parse_operators
 
   let print_operators = fun {Query_printer.print_operator} query ->
     let {deviser} = query in
-    print_operator "deviser" (List.map Entry.Id.to_string) deviser
+    print_operator "deviser" (List.map Id.to_string) deviser
 
   let print = Query.make_printer print_operators
 end
@@ -226,14 +226,14 @@ module Source_query = struct
   [@@deriving yojson]
 
   let parse_operators = fun {Query_parser.parse_operator} ->
-    let editor = parse_operator "editor" (List.map Entry.Id.of_string_exn) in
+    let editor = parse_operator "editor" (List.map Id.of_string_exn) in
       {editor}
 
   let parse = Query.make_parser parse_operators
 
   let print_operators = fun {Query_printer.print_operator} query ->
     let {editor} = query in
-    print_operator "editor" (List.map Entry.Id.to_string) editor
+    print_operator "editor" (List.map Id.to_string) editor
 
   let print = Query.make_printer print_operators
 end
@@ -250,7 +250,7 @@ module Tune_query = struct
 
   let parse_operators = fun {Query_parser.parse_operator} ->
     let kind = parse_operator "kind" (List.map Kind_base.of_string) in
-    let composer = parse_operator "composer" (List.map Entry.Id.of_string_exn) in
+    let composer = parse_operator "composer" (List.map Id.of_string_exn) in
       {kind; composer}
 
   let parse = Query.make_parser parse_operators
@@ -258,7 +258,7 @@ module Tune_query = struct
   let print_operators = fun {Query_printer.print_operator} query ->
     let {kind; composer} = query in
     print_operator "kind" (List.map (Kind_base.to_long_string ~capitalised: false)) kind;
-    print_operator "composer" (List.map Entry.Id.to_string) composer
+    print_operator "composer" (List.map Id.to_string) composer
 
   let print = Query.make_printer print_operators
 end
@@ -277,7 +277,7 @@ module Version_query = struct
   let parse_operators = fun {Query_parser.parse_operator} ->
     let tune = Tune_query.parse_operators {parse_operator} in
     let key = parse_operator "key" (List.map Music.Key.of_string) in
-    let source = parse_operator "source" (List.map Entry.Id.of_string_exn) in
+    let source = parse_operator "source" (List.map Id.of_string_exn) in
       {tune; key; source}
 
   let parse = Query.make_parser parse_operators
@@ -286,7 +286,7 @@ module Version_query = struct
     let {tune; key; source} = query in
     Tune_query.print_operators {print_operator} tune;
     print_operator "key" (List.map Music.Key.to_string) key;
-    print_operator "source" (List.map Entry.Id.to_string) source
+    print_operator "source" (List.map Id.to_string) source
 
   let print = Query.make_printer print_operators
 end
@@ -303,18 +303,18 @@ module Set_query = struct
   [@@deriving yojson]
 
   let parse_operators = fun {Query_parser.parse_operator} ->
-    let conceptor = parse_operator "conceptor" (List.map Entry.Id.of_string_exn) in
-    let contains_version = parse_operator "contains-version" (List.map Entry.Id.of_string_exn) in
-    let contains_tune = parse_operator "contains-tune" (List.map Entry.Id.of_string_exn) in
+    let conceptor = parse_operator "conceptor" (List.map Id.of_string_exn) in
+    let contains_version = parse_operator "contains-version" (List.map Id.of_string_exn) in
+    let contains_tune = parse_operator "contains-tune" (List.map Id.of_string_exn) in
       {conceptor; contains_version; contains_tune}
 
   let parse = Query.make_parser parse_operators
 
   let print_operators = fun {Query_printer.print_operator} query ->
     let {conceptor; contains_version; contains_tune} = query in
-    print_operator "conceptor" (List.map Entry.Id.to_string) conceptor;
-    print_operator "contains-version" (List.map Entry.Id.to_string) contains_version;
-    print_operator "contains-tune" (List.map Entry.Id.to_string) contains_tune
+    print_operator "conceptor" (List.map Id.to_string) conceptor;
+    print_operator "contains-version" (List.map Id.to_string) contains_version;
+    print_operator "contains-tune" (List.map Id.to_string) contains_tune
 
   let print = Query.make_printer print_operators
 end
@@ -332,20 +332,20 @@ module Book_query = struct
   [@@deriving yojson]
 
   let parse_operators = fun {Query_parser.parse_operator} ->
-    let author = parse_operator "author" (List.map Entry.Id.of_string_exn) in
-    let contains_version = parse_operator "contains-version" (List.map Entry.Id.of_string_exn) in
-    let contains_tune = parse_operator "contains-tune" (List.map Entry.Id.of_string_exn) in
-    let contains_set = parse_operator "contains-set" (List.map Entry.Id.of_string_exn) in
+    let author = parse_operator "author" (List.map Id.of_string_exn) in
+    let contains_version = parse_operator "contains-version" (List.map Id.of_string_exn) in
+    let contains_tune = parse_operator "contains-tune" (List.map Id.of_string_exn) in
+    let contains_set = parse_operator "contains-set" (List.map Id.of_string_exn) in
       {author; contains_version; contains_tune; contains_set}
 
   let parse = Query.make_parser parse_operators
 
   let print_operators = fun {Query_printer.print_operator} query ->
     let {author; contains_version; contains_tune; contains_set} = query in
-    print_operator "author" (List.map Entry.Id.to_string) author;
-    print_operator "contains-version" (List.map Entry.Id.to_string) contains_version;
-    print_operator "contains-tune" (List.map Entry.Id.to_string) contains_tune;
-    print_operator "contains-set" (List.map Entry.Id.to_string) contains_set
+    print_operator "author" (List.map Id.to_string) author;
+    print_operator "contains-version" (List.map Id.to_string) contains_version;
+    print_operator "contains-tune" (List.map Id.to_string) contains_tune;
+    print_operator "contains-set" (List.map Id.to_string) contains_set
 
   let print = Query.make_printer print_operators
 end

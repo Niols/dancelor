@@ -44,7 +44,7 @@ let pp fmt env =
     (
       match !(env.session).actor with
       | Anonymous -> "<anynomous>"
-      | Signed_in actor -> Entry.Id.to_string actor.id
+      | Signed_in actor -> Id.to_string actor.id
     )
     env.session_id
     Datetime.pp
@@ -91,7 +91,7 @@ let process_remember_me_cookie env remember_me_cookie =
     let key = Database.User.Remember_me_key.inject key in
     let token = Database.User.Remember_me_token_clear.inject token in
     Log.info (fun m -> m "Attempt to get remembered with id `%s`." id);
-    match Entry.Id.of_string id with
+    match Id.of_string id with
     | None ->
       Log.info (fun m -> m "Rejecting because id is not valid.");
       register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
@@ -219,7 +219,7 @@ let sign_in env (actor : Actor.t) ~remember_me =
           ~secure: true
           ~httpOnly: true
           "rememberMe"
-          (Entry.Id.to_string actor.id ^ ":" ^ key ^ ":" ^ token)
+          (Id.to_string actor.id ^ ":" ^ key ^ ":" ^ token)
           ~max_age: remember_me_token_max_age
       );
     lwt_unit

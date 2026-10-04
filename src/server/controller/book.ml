@@ -2,7 +2,7 @@ open NesUnix
 open Dancelor_common
 
 include Shared.Make_private_full(struct
-  type entry = Model_builder.Core.Book.t
+  type tag = Book_tag.t
   type id = Book_id.t
   type row = Book_row.t
   type view = Book_view.t
@@ -75,14 +75,14 @@ module Warnings = struct
 
   let duplicate_set ~actor_id book =
     let%lwt sets = sets_from_content ~actor_id book in
-    match List.sort (fun s1 s2 -> Entry.Id.compare' s1.Set_view.id s2.id) sets with
+    match List.sort (fun s1 s2 -> Id.compare' s1.Set_view.id s2.id) sets with
     | [] -> lwt_nil
     | first_set :: other_sets ->
       let (_, warnings) =
         List.fold_left
           (fun (previous_set, warnings) current_set ->
             let warnings =
-              if Entry.Id.equal' current_set.Set_view.id previous_set.Set_view.id then
+              if Id.equal' current_set.Set_view.id previous_set.Set_view.id then
                   (Book_view.Duplicate_set (Set_view.to_name current_set) :: warnings)
               else
                 warnings
@@ -96,7 +96,7 @@ module Warnings = struct
 
   let unique_sets_from_content ~actor_id book =
     let%lwt sets = sets_from_content ~actor_id book in
-    lwt @@ List.sort_uniq (fun s1 s2 -> Entry.Id.compare' s1.Set_view.id s2.Set_view.id) sets
+    lwt @@ List.sort_uniq (fun s1 s2 -> Id.compare' s1.Set_view.id s2.Set_view.id) sets
 
   let duplicate_tune ~actor_id book =
     let%lwt sets = unique_sets_from_content ~actor_id book in
@@ -126,7 +126,7 @@ module Warnings = struct
     |> List.of_seq
     |> List.fold_left
         (fun warnings tune ->
-          let set_opts = List.sort_count (Option.compare (fun s1 s2 -> Entry.Id.compare' s1.Set_view.id s2.id)) (Hashtbl.find_all tunes_to_sets tune) in
+          let set_opts = List.sort_count (Option.compare (fun s1 s2 -> Id.compare' s1.Set_view.id s2.id)) (Hashtbl.find_all tunes_to_sets tune) in
           let set_opts = List.map (Pair.map_fst (Option.map Set_view.to_name)) set_opts in
           if List.length set_opts > 1 then
             Book_view.Duplicate_tune (tune, set_opts) :: warnings

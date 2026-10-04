@@ -140,7 +140,7 @@ end
 
 module Version = struct
   let id id =
-    span [a ~a: [a_href @@ Endpoints.Page.href_version id] [txt @@ Entry.Id.to_string id]]
+    span [a ~a: [a_href @@ Endpoints.Page.href_version id] [txt @@ Id.to_string id]]
 
   let name ?(link = true) ?in_search ?in_set (version : Version_name.t) =
     if link then

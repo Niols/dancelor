@@ -120,7 +120,7 @@ let get_views_for_tune tune_id =
   let%lwt tune_composers_for = get_tune_composers_with_details_for db `All in
   let%lwt arrangers_for = get_arrangers_for db `All in
   let%lwt sources_for = get_version_sources_for db `All in
-  Version_sql.List.get_views_for_tune db ~tune_id: (Entry.Id.to_string tune_id) (fun ~id ~tune_id ->
+  Version_sql.List.get_views_for_tune db ~tune_id: (Id.to_string tune_id) (fun ~id ~tune_id ->
     version_sql_to_view
       ~id
       ~tune_id

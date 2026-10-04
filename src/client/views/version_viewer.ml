@@ -179,7 +179,7 @@ let actions (tune : Tune_view.t) (version : Version_view.t option) = [
         match%lwt Main_page.can_admin () with
         | false -> lwt_nil
         | true ->
-          let other_versions = List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Entry.Id.equal' v.id version.Version_view.id) tune.versions in
+          let other_versions = List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Id.equal' v.id version.Version_view.id) tune.versions in
           let other_versions = List.map (Tune_view.version_row_without_tune_to_version_row tune) other_versions in
           lwt [
             Button.make
@@ -283,7 +283,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
             ) @
               [txt "."]
         in
-        match List.group ~by: (fun (s1 : Version_view.source) (s2 : Version_view.source) -> Entry.Id.equal' s1.id s2.id) version.Version_view.sources with
+        match List.group ~by: (fun (s1 : Version_view.source) (s2 : Version_view.source) -> Id.equal' s1.id s2.id) version.Version_view.sources with
         | [] -> []
         | source_groups ->
           [
@@ -309,7 +309,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
     let (title, versions) =
       match version with
       | None -> ("Versions", tune.versions)
-      | Some version -> ("Other versions", List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Entry.Id.equal' v.id version.Version_view.id) tune.versions)
+      | Some version -> ("Other versions", List.filter (fun (v : Tune_view.version_row_without_tune) -> not @@ Id.equal' v.id version.Version_view.id) tune.versions)
     in
     let versions = List.map (Tune_view.version_row_without_tune_to_version_row tune) versions in
     [

@@ -56,8 +56,8 @@ let component =
                   | Error msg -> lwt_error msg
                   | Ok query -> ok <$> Api.call_exn (User Search) slice query
                 )
-                ~id_to_yojson: Entry.Id.to_yojson'
-                ~id_of_yojson: Entry.Id.of_yojson'
+                ~id_to_yojson: Id.to_yojson'
+                ~id_of_yojson: Id.of_yojson'
                 ~serialise: User_row.id
                 ~unserialise: (Api.call_or_option @@ User Get_row)
                 ()
@@ -173,7 +173,7 @@ let open_dialog_button id =
             let other_actors =
               List.filter
                 (fun ({User_row.id = actor_id'; _}, _) ->
-                  not @@ Option.equal Entry.Id.equal' (Some actor_id') actor_id
+                  not @@ Option.equal Id.equal' (Some actor_id') actor_id
                 )
                 permissions.actor_roles
             in

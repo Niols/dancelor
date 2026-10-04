@@ -272,9 +272,6 @@ let book_to_renderer_book ~actor_id (book : Book_form.t) book_params : (Renderer
   in
   lwt (renderer_book, pdf_metadata)
 
-let book_to_renderer_book' book book_params =
-  book_to_renderer_book (Entry.value book) book_params
-
 let grab_renderer_book_pdf_args rendering_params =
   let specificity =
     String.concat ", " ~last: " and " @@

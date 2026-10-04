@@ -46,8 +46,8 @@ let editor =
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
             ~search: Api.person_search
-            ~id_to_yojson: Entry.Id.to_yojson'
-            ~id_of_yojson: Entry.Id.of_yojson'
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
             ~serialise: Person_row.id
             ~unserialise: (Api.call_or_option @@ Person Get_row)
             ()
@@ -69,8 +69,8 @@ let editor =
                 ~model_name: "version"
                 ~create_dialog_content: Version_editor.create_row
                 ~search: Api.version_search
-                ~id_to_yojson: Entry.Id.to_yojson'
-                ~id_of_yojson: Entry.Id.of_yojson'
+                ~id_to_yojson: Id.to_yojson'
+                ~id_of_yojson: Id.of_yojson'
                 ~serialise: Version_row.id
                 ~unserialise: (Api.call_or_option @@ Version Get_row)
                 ()

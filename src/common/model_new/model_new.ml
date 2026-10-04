@@ -2,6 +2,8 @@ open Nes
 
 module Permission_new = Permission_new
 
+include Base
+include Tags
 include Ids
 include Names
 include Rows

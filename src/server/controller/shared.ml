@@ -113,8 +113,8 @@ let assert_can_delete db env id k =
     (fun _reason -> k ())
 
 module type Db_private_full = sig
-  type entry
-  type id = entry Entry.Id.t
+  type tag
+  type id = tag Id.t
   type row
   type view
   type form
@@ -183,8 +183,8 @@ module Make_private_full (Db : Db_private_full) = struct
 end
 
 module type Db_public_full = sig
-  type entry
-  type id = entry Entry.Id.t
+  type tag
+  type id = tag Id.t
   type row
   type view
   type form

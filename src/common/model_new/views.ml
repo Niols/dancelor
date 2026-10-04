@@ -27,6 +27,12 @@ module Person_view = struct
 end
 
 module Dance_view = struct
+  type two_chords =
+    | Dont_know
+    | One_chord
+    | Two_chords
+  [@@deriving eq, yojson]
+
   type t = {
     id: Dance_id.t;
     name: string;
@@ -36,7 +42,7 @@ module Dance_view = struct
     scddb_id: int option; [@default None]
     disambiguation: string option; [@default None]
     date: PartialDate.t option; [@default None]
-    two_chords: Model_builder.Core.Dance.two_chords;
+    two_chords: two_chords;
     tunes: Tune_row.t list; [@default []]
   }
   [@@deriving yojson, fields]

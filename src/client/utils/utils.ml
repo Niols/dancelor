@@ -58,11 +58,6 @@ let quick_explorer_links links =
     );
   ]
 
-let href_any_for_sharing any =
-  let current = Uri.of_string (Js.to_string Dom_html.window##.location##.href) in
-  let path = Endpoints.Page.(href Any) @@ Entry.id @@ Model_builder.Core.Any.to_entry any in
-  Uri.to_string @@ Uri.with_query (Uri.with_path current (Uri.path path)) []
-
 let href_any_for_sharing_new any =
   let current = Uri.of_string (Js.to_string Dom_html.window##.location##.href) in
   let path = Endpoints.Page.(href Any) @@ Any_id.to_entry_id any in

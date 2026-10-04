@@ -1,6 +1,7 @@
 open Nes
 open Names
 open Rows
+open Views
 
 module With_id = struct
   type ('id, 'form) t = {
@@ -53,7 +54,7 @@ module Dance_form = struct
     names: NEString.t NEList.t;
     kind: Kind.Dance.t;
     devisers: Person_row.t list;
-    two_chords: Model_builder.Core.Dance.two_chords;
+    two_chords: Dance_view.two_chords;
     scddb_id: int option;
     disambiguation: NEString.t option;
     date: PartialDate.t option;

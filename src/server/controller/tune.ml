@@ -2,7 +2,7 @@ open Nes
 open Dancelor_common
 
 include Shared.Make_public_full(struct
-  type entry = Model_builder.Core.Tune.t
+  type tag = Tune_tag.t
   type id = Tune_id.t
   type row = Tune_row.t
   type view = Tune_view.t

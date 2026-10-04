@@ -1,7 +1,7 @@
 open QCheck2
 
 module Id = struct
-  type 'any t = [%import: 'any Dancelor_common.Entry.Id.t]
+  type 'tag t = [%import: 'tag Dancelor_common.Id.t]
 
   let gen _ =
     let open Gen in
@@ -18,7 +18,7 @@ module Id = struct
     for i = 10 to 13 do Bytes.set str i (List.nth alphanumerals (i - 2)) done;
     let str = Bytes.unsafe_to_string str in
     (* convert to and id (which will check it), and we're done! *)
-    pure @@ Option.get @@ Dancelor_common.Entry.Id.of_string str
+    pure @@ Option.get @@ Dancelor_common.Id.of_string str
 end
 
 module Entry = struct
@@ -29,7 +29,7 @@ module Entry = struct
 
   module User = struct
     (* FIXME: not sure this one is actually fine *)
-    type t = Dancelor_common.Model_builder.Core.User.t
+    type t = Dancelor_common.User_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
 end
@@ -71,43 +71,43 @@ module Model = struct
      first argument. *)
 
   module Source = struct
-    type t = Dancelor_common.Model_builder.Core.Source.t
+    type t = Dancelor_common.Source_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
 
   module Person = struct
-    type t = Dancelor_common.Model_builder.Core.Person.t
+    type t = Dancelor_common.Person_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
 
   module Dance = struct
-    type t = Dancelor_common.Model_builder.Core.Dance.t
+    type t = Dancelor_common.Dance_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
 
   module Tune = struct
-    type t = Dancelor_common.Model_builder.Core.Tune.t
+    type t = Dancelor_common.Tune_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
 
   module Version = struct
-    type t = Dancelor_common.Model_builder.Core.Version.t
+    type t = Dancelor_common.Version_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
 
   module Set = struct
-    type t = Dancelor_common.Model_builder.Core.Set.t
+    type t = Dancelor_common.Set_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
 
   module Book = struct
-    type t = Dancelor_common.Model_builder.Core.Book.t
+    type t = Dancelor_common.Book_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
 
   module Any = struct
     module Type = struct
-      type t = [%import: Dancelor_common.Model_builder.Core.Any.Type.t [@with Dancelor_common.Formula.t := Formula.t;]
+      type t = [%import: Dancelor_common.Any_id.Type.t [@with Dancelor_common.Formula.t := Formula.t;]
       ]
       [@@deriving qcheck2]
     end

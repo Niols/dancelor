@@ -1,5 +1,5 @@
 module Endpoints = Endpoints
-module Entry = Entry
+module Id = Id
 module Job_id = Job_id
 module Kind = Kind
 module Logger = Logger

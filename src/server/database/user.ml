@@ -50,14 +50,6 @@ let get_actor_from_username username =
 
 (* Legacy *)
 
-type t = Entry.User.t
-type entry = t Entry.public
-
-let role_of_common = function
-  | Entry.User.Normal_user -> (`Normal_user, false)
-  | Maintainer -> (`Maintainer, false)
-  | Administrator {omniscience} -> (`Administrator, omniscience)
-
 let get_password_from_username username =
   let username = Username.to_string username in
   Connection.with_ @@ fun db ->
@@ -79,8 +71,7 @@ let get_password_reset_token_from_username username =
       )
     )
 
-let create ~username ~role ~github_handle ~password_reset_token_hash ~password_reset_token_max_date =
-  let (role, omniscience) = role_of_common role in
+let create ~username ~password_reset_token_hash ~password_reset_token_max_date =
   Connection.with_ @@ fun db ->
   let%lwt id = Entry_new.make_public db `User in
   let%lwt _ =
@@ -88,9 +79,9 @@ let create ~username ~role ~github_handle ~password_reset_token_hash ~password_r
       db
       ~id
       ~username: (Username.to_string username)
-      ~role
-      ~omniscience
-      ~github_handle
+      ~role: `Normal_user
+      ~omniscience: false
+      ~github_handle: None
       ~password_reset_token_hash: (some @@ HashedSecret.unsafe_to_string @@ Password_reset_token_hashed.project password_reset_token_hash)
       ~password_reset_token_max_date: (Some password_reset_token_max_date)
   in
