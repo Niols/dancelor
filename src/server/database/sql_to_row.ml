@@ -23,12 +23,7 @@ let dance_sql_to_row ~id ~name ~kind ~devisers ~disambiguation ~(k : Dance_row.t
   }
 
 let tune_sql_to_row ~id ~name ~kind ~composers ~(k : Tune_row.t -> 'w) : 'w =
-  k {
-    id;
-    name;
-    kind = Sql_types.kind_base_to_common kind;
-    composers;
-  }
+  k {id; name; kind; composers}
 
 let version_sql_to_row
     ~id
@@ -82,11 +77,7 @@ let set_sql_to_row
     kind = Kind.Dance.of_string kind;
     conceptors;
     tunes;
-    permission = {
-      entry_is_public;
-      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
-      actor_is_omniscient_administrator;
-    };
+    permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
   }
 
 let book_sql_to_row
@@ -105,11 +96,7 @@ let book_sql_to_row
     name;
     date = Option.map (Option.get % PartialDate.from_string) date;
     authors;
-    permission = {
-      entry_is_public;
-      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
-      actor_is_omniscient_administrator;
-    };
+    permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
   }
 
 let user_sql_to_row

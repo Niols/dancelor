@@ -28,7 +28,7 @@ let search query : (Person_row.t * float) list Lwt.t =
     (fun ~score -> person_sql_to_row ~k: (Pair.snoc score))
 
 let create db person =
-  let%lwt id = Entry.make_public db `Person in
+  let%lwt id = Entry.make_public db Person in
   let%lwt _ = person_form_to_sql (Person_sql.create db) id person in
   lwt id
 

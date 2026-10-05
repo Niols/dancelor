@@ -21,7 +21,7 @@ let dance_form_to_sql query id {Dance_form.names; kind; two_chords; scddb_id; di
     ~id
     ~name: (NEString.to_string @@ NEList.hd names)
     ~kind: (Kind.Dance.to_string kind)
-    ~two_chords: (Sql_types.two_chords_of_common two_chords)
+    ~two_chords
     ~scddb_id: (Option.map Int64.of_int scddb_id)
     ~disambiguation: (Option.map NEString.to_string disambiguation)
     ~date: (Option.map PartialDate.to_string date)
@@ -42,7 +42,7 @@ let tune_form_to_sql
   query
     ~id
     ~name: (NEString.to_string @@ NEList.hd names)
-    ~kind: (Sql_types.kind_base_of_common kind)
+    ~kind
     ~remark: (Option.map NEString.to_string remark)
     ~scddb_id: (Option.map Int64.of_int scddb_id)
     ~date: (Option.map PartialDate.to_string date)

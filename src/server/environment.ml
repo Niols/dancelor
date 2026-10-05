@@ -88,8 +88,8 @@ let process_remember_me_cookie env remember_me_cookie =
   match String.split_3_on_char ':' remember_me_cookie with
   | None -> lwt_unit
   | Some (id, key, token) ->
-    let key = Database.User.Remember_me_key.inject key in
-    let token = Database.User.Remember_me_token_clear.inject token in
+    let key = Database.Remember_me_key.inject key in
+    let token = Database.Remember_me_token_clear.inject token in
     Log.info (fun m -> m "Attempt to get remembered with id `%s`." id);
     match Id.of_string id with
     | None ->
@@ -105,7 +105,7 @@ let process_remember_me_cookie env remember_me_cookie =
       | Some actor ->
         match%lwt Database.User.find_remember_me_token actor.id key with
         | None ->
-          Log.info (fun m -> m "Rejecting because user does not have the “remember me” key `%a`." Database.User.Remember_me_key.pp key);
+          Log.info (fun m -> m "Rejecting because user does not have the “remember me” key `%a`." Database.Remember_me_key.pp key);
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
           lwt_unit
         | Some (_, token_max_date) when Datetime.in_the_past token_max_date ->
@@ -113,7 +113,7 @@ let process_remember_me_cookie env remember_me_cookie =
           Database.User.remove_one_remember_me_token actor.id key;%lwt
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
           lwt_unit
-        | Some (hashed_token, _) when not @@ HashedSecret.is ~clear: (Database.User.Remember_me_token_clear.project token) (Database.User.Remember_me_token_hashed.project hashed_token) ->
+        | Some (hashed_token, _) when not @@ HashedSecret.is ~clear: (Database.Remember_me_token_clear.project token) (Database.Remember_me_token_hash.project hashed_token) ->
           Log.info (fun m -> m "Rejecting because tokens do not match.");
           (* someone got their hand on a "remember me" key - invalidate all known tokens *)
           (* NOTE: Similar to password reset tokens, we should be able to compare directly but need to project. *)
@@ -201,10 +201,10 @@ let sign_in env (actor : Actor.t) ~remember_me =
     let key = uid () in
     let token = uid () in
     (
-      let key_typed = Database.User.Remember_me_key.inject key in
+      let key_typed = Database.Remember_me_key.inject key in
       (* NOTE: We should use Remember_me_token_hashed.make here, but HashedSecret.make
          is only available on the server side (NesHashedSecretUnix), not in common code. *)
-      let hashed_token = Database.User.Remember_me_token_hashed.inject @@ HashedSecret.make ~clear: token in
+      let hashed_token = Database.Remember_me_token_hash.inject @@ HashedSecret.make ~clear: token in
       (* the max date stored in database is one more minute than the max age that
          will be sent as cookie, to be sure not to lie to our clients *)
       let max_date = Datetime.make_in_the_future (float_of_int @@ 60 + remember_me_token_max_age) in

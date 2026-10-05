@@ -45,7 +45,7 @@ let update_other_tables db ~source_id ~editors =
     editors
 
 let create db source =
-  let%lwt id = Entry.make_public db `Source in
+  let%lwt id = Entry.make_public db Source in
   ignore <$> source_form_to_sql (Source_sql.create db) id source;%lwt
   update_other_tables db ~source_id: id ~editors: source.editors;%lwt
   lwt id

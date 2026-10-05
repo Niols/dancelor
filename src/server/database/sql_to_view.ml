@@ -31,7 +31,7 @@ let dance_sql_to_view ~id ~name ~extra_names ~kind ~devisers ~scddb_id ~disambig
     scddb_id = Option.map Int64.to_int scddb_id;
     disambiguation;
     date = Option.map (Option.get % PartialDate.from_string) date;
-    two_chords = Sql_types.two_chords_to_common two_chords;
+    two_chords;
     tunes;
   }
 
@@ -60,7 +60,7 @@ let tune_sql_to_view ~id ~name ~extra_names ~kind ~composers ~dances ~remark ~sc
     id;
     name;
     extra_names;
-    kind = Sql_types.kind_base_to_common kind;
+    kind;
     composers;
     dances;
     remark;
@@ -166,11 +166,7 @@ let set_sql_to_view
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
     order = Set_order.of_string order;
     remark;
-    permission = {
-      entry_is_public;
-      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
-      actor_is_omniscient_administrator;
-    };
+    permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
   }
 
 let book_sql_to_view
@@ -198,9 +194,5 @@ let book_sql_to_view
     sources;
     scddb_id = Option.map Int64.to_int scddb_id;
     warnings = [];
-    permission = {
-      entry_is_public;
-      actor_role = Option.map Sql_types.actor_role_to_common actor_role;
-      actor_is_omniscient_administrator;
-    };
+    permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
   }

@@ -4,17 +4,6 @@ open Sql_to_row
 
 module Entry_sql = Entry_sql.Sqlgg(Sqlgg_postgresql)
 
-type type_ = [
-  | `Book
-  | `Dance
-  | `Person
-  | `Set
-  | `Source
-  | `Tune
-  | `User
-  | `Version
-]
-
 type visibility = [
   | `Owners_only
   | `Everyone
@@ -23,9 +12,9 @@ type visibility = [
 
 type visibility_or_public = [visibility | `Public]
 
-let classify_type : type_ -> [`Public | `Private] = function
-  | `Dance | `Person | `Source | `Tune | `User | `Version -> `Public
-  | `Set | `Book -> `Private
+let classify_type : Any_id.Type.t -> [`Public | `Private] = function
+  | Dance | Person | Source | Tune | User | Version -> `Public
+  | Set | Book -> `Private
 
 (** Handles only the insertion into the ["entry"] table. In
     particular, this function does not handle the ["entry_viewers"]
@@ -54,7 +43,7 @@ let insert_or_update_private db ~viewers ~owners f =
           db
           ~entry_id: id
           ~user_id: viewer
-          ~role: `Viewer
+          ~role: Viewer
     )
     viewers;%lwt
   Lwt_list.iter_s
@@ -64,7 +53,7 @@ let insert_or_update_private db ~viewers ~owners f =
           db
           ~entry_id: id
           ~user_id: owner
-          ~role: `Owner
+          ~role: Owner
     )
     owners;%lwt
   lwt @@ Id.unsafe_coerce id
@@ -96,14 +85,14 @@ let get_newest ~actor_id ~limit =
     Entry_sql.List.get_newest db ~actor_id ~limit: (Int64.of_int limit) (fun ~id ~type_ ->
       some @@
         match type_ with
-        | `Book -> Any_id.book @@ Id.unsafe_coerce id
-        | `Dance -> Any_id.dance @@ Id.unsafe_coerce id
-        | `Person -> Any_id.person @@ Id.unsafe_coerce id
-        | `Set -> Any_id.set @@ Id.unsafe_coerce id
-        | `Source -> Any_id.source @@ Id.unsafe_coerce id
-        | `Tune -> Any_id.tune @@ Id.unsafe_coerce id
-        | `User -> Any_id.user @@ Id.unsafe_coerce id
-        | `Version -> Any_id.version @@ Id.unsafe_coerce id
+        | Book -> Any_id.book @@ Id.unsafe_coerce id
+        | Dance -> Any_id.dance @@ Id.unsafe_coerce id
+        | Person -> Any_id.person @@ Id.unsafe_coerce id
+        | Set -> Any_id.set @@ Id.unsafe_coerce id
+        | Source -> Any_id.source @@ Id.unsafe_coerce id
+        | Tune -> Any_id.tune @@ Id.unsafe_coerce id
+        | User -> Any_id.user @@ Id.unsafe_coerce id
+        | Version -> Any_id.version @@ Id.unsafe_coerce id
     )
   in
   lwt @@ List.filter_map Fun.id newest
@@ -112,19 +101,13 @@ let get_permission db ~actor_id id =
   let id = Id.unsafe_coerce id in
   Option.map
     (fun (entry_is_public, actor_role, actor_is_omniscient_administrator) ->
-      {
-        Permission.entry_is_public;
-        actor_role = Option.map Sql_types.actor_role_to_common actor_role;
-        actor_is_omniscient_administrator;
-      }
+      {Permission.entry_is_public; actor_role; actor_is_omniscient_administrator}
     )
   <$> Entry_sql.get_permission db ~actor_id ~id
 
 let get_actor_roles db id =
   let id = Id.unsafe_coerce id in
-  Entry_sql.List.get_actor_roles db ~entry_id: id (fun ~role ->
-    user_sql_to_row ~k: (fun actor -> (actor, Sql_types.actor_role_to_common role))
-  )
+  Entry_sql.List.get_actor_roles db ~entry_id: id (fun ~role -> user_sql_to_row ~k: (fun actor -> (actor, role)))
 
 let set_is_public db id is_public =
   let id = Id.unsafe_coerce id in
@@ -135,6 +118,6 @@ let set_actor_roles db id actor_roles =
   ignore <$> Entry_sql.delete_all_actors db ~entry_id: id;%lwt
   Lwt_list.iter_s
     (fun ({User_row.id = user_id; _}, role) ->
-      ignore <$> Entry_sql.add_one_actor db ~entry_id: id ~user_id ~role: (Sql_types.actor_role_of_common role)
+      ignore <$> Entry_sql.add_one_actor db ~entry_id: id ~user_id ~role
     )
     actor_roles

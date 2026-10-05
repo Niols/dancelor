@@ -168,7 +168,7 @@ let update_other_tables db ~set_id ~conceptors ~contents =
     contents
 
 let create db ~owner_id set =
-  let%lwt id = Entry.make_private db `Set owner_id in
+  let%lwt id = Entry.make_private db Set owner_id in
   ignore <$> set_form_to_sql (Set_sql.create db) id set;%lwt
   update_other_tables db ~set_id: id ~conceptors: set.conceptors ~contents: set.contents;%lwt
   lwt id
