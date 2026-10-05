@@ -16,6 +16,7 @@
 
         propagatedBuildInputs = with pkgs.ocamlPackages; [
           dates_calc
+          emile
           iso8601
           ppx_monad
           slug

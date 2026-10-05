@@ -28,6 +28,7 @@ val get_password_reset_token_from_username : Username.t -> (Password_reset_token
 
 val create :
   username: Username.t ->
+  email: Email.t ->
   password_reset_token_hash: Password_reset_token_hashed.t ->
   password_reset_token_max_date: Datetime.t ->
   User_id.t Lwt.t

@@ -81,6 +81,7 @@ let create env (user : User_create_form.t) =
   let%lwt id =
     Database.User.create
       ~username: user.username
+      ~email: user.email
       ~password_reset_token_hash
       ~password_reset_token_max_date
   in

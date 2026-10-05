@@ -57,7 +57,8 @@ INSERT INTO "user" (
     "password_reset_token_max_date",
     "role",
     "github_handle",
-    "omniscience"
+    "omniscience",
+    "email"
 )
 VALUES (
     @id,
@@ -66,7 +67,8 @@ VALUES (
     @password_reset_token_max_date,
     @role,
     @github_handle,
-    @omniscience
+    @omniscience,
+    @email
 );
 
 -- @set_password_reset_token

@@ -71,7 +71,7 @@ let get_password_reset_token_from_username username =
       )
     )
 
-let create ~username ~password_reset_token_hash ~password_reset_token_max_date =
+let create ~username ~email ~password_reset_token_hash ~password_reset_token_max_date =
   Connection.with_ @@ fun db ->
   let%lwt id = Entry.make_public db `User in
   let%lwt _ =
@@ -79,6 +79,7 @@ let create ~username ~password_reset_token_hash ~password_reset_token_max_date =
       db
       ~id
       ~username: (Username.to_string username)
+      ~email: (Email.to_string email)
       ~role: `Normal_user
       ~omniscience: false
       ~github_handle: None

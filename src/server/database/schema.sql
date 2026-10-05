@@ -36,8 +36,11 @@ CREATE TABLE "user" (
     "role" "role" NOT NULL,
     "username_search" TEXT GENERATED ALWAYS AS (make_name_search("username")) STORED,
     "github_handle" VARCHAR(64),
+    "email" VARCHAR(256) NOT NULL,
+    "email_verified" BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT "fk_user_id" FOREIGN KEY ("id") REFERENCES "entry" ("id"),
-    CONSTRAINT "fk_user_person_id" FOREIGN KEY ("person_id") REFERENCES "person" ("id")
+    CONSTRAINT "fk_user_person_id" FOREIGN KEY ("person_id") REFERENCES "person" ("id"),
+    CONSTRAINT "uq_user_email" UNIQUE ("email")
 );
 
 CREATE TYPE "actor_role" AS ENUM ('Owner', 'Viewer');

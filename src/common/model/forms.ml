@@ -207,6 +207,7 @@ end
 module User_create_form = struct
   type t = {
     username: Username.t;
+    email: Email.t;
   }
   [@@deriving eq, yojson]
 end

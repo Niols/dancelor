@@ -3,6 +3,7 @@
  (public_name nes)
  (wrapped false)
  (libraries
+  emile
   yojson
   ppx_deriving_yojson.runtime
   unix

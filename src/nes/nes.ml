@@ -25,6 +25,7 @@ module Uri = NesUri
 module Cache = NesCache
 module Datetime = NesDatetime
 module Depart = NesDepart
+module Email = NesEmail
 module PartialDate = NesPartialDate
 module Slice = NesSlice
 module Json = NesJson
