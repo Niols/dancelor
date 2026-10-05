@@ -34,28 +34,24 @@ let
     export FONTCONFIG_FILE=$HOME/fonts.conf
   '';
 
-  myTexlive = pkgs.texliveFull;
-  ## FIXME: minimise, but the old minimisation doesn't work for lualatex anymore:
-  # (pkgs.texlive.combine {
-  #   inherit (pkgs.texlive)
-  #     scheme-minimal
-  #     latexmk
-  #     luatex
-  #     xetex
-  #     etoolbox
-  #     extsizes
-  #     fancyhdr
-  #     fontspec
-  #     geometry
-  #     graphics
-  #     greek-fontenc # dependency of hyperref
-  #     hyperref
-  #     realscripts # for \newif
-  #     texfot
-  #     xltxtra
-  #     xunicode
-  #     ;
-  # })
+  ## LuaLaTeX with only the packages that we need. `texliveBasic` brings
+  ## `latex-bin`, which provides the `lualatex` format. NOTE: the font comes
+  ## from the TeX package `sourcesanspro`, not from `myFontconfigFile`.
+  myTexlive = pkgs.texliveBasic.withPackages (
+    ps: with ps; [
+      etoolbox
+      extsizes
+      fancyhdr
+      fontspec
+      geometry
+      graphics
+      hyperref
+      latexmk
+      luaotfload
+      sourcesanspro
+      texfot
+    ]
+  );
 
   ## A `fonts.conf` file ready to be passed as the `FONTCONFIG_FILE` environment
   ## variable that provides Source Sans Pro _and nothing else_. NOTE: avoid
