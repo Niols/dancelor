@@ -3,6 +3,7 @@ CREATE TYPE "type" AS ENUM ('Person', 'User', 'Dance', 'Source', 'Tune', 'Versio
 CREATE TABLE "entry" (
     -- [sqlgg] module=Sql_types.Untagged_id_conv
     "id" VARCHAR(14) NOT NULL,
+    -- [sqlgg] module=Sql_types.Type_conv
     "type" "type" NOT NULL,
     "created_at" TIMESTAMP NOT NULL,
     "modified_at" TIMESTAMP NOT NULL,
@@ -27,17 +28,24 @@ CREATE TABLE "user" (
     -- [sqlgg] module=Sql_types.User_id_conv
     "id" VARCHAR(14) NOT NULL PRIMARY KEY,
     "username" VARCHAR(256) NOT NULL UNIQUE,
+    -- [sqlgg] module=Sql_types.Password_conv
     "password" VARCHAR(256),
+    -- [sqlgg] module=Sql_types.Password_reset_token_hash_conv
     "password_reset_token_hash" VARCHAR(256),
     "password_reset_token_max_date" TIMESTAMP,
     "omniscience" BOOLEAN NOT NULL,
     -- [sqlgg] module=Sql_types.Person_id_conv
     "person_id" VARCHAR(14) NULL,
+    -- [sqlgg] module=Sql_types.Role_conv
     "role" "role" NOT NULL,
     "username_search" TEXT GENERATED ALWAYS AS (make_name_search("username")) STORED,
     "github_handle" VARCHAR(64),
+    -- [sqlgg] module=Sql_types.Email_conv
+    "email" VARCHAR(256) NOT NULL,
+    "email_verified" BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT "fk_user_id" FOREIGN KEY ("id") REFERENCES "entry" ("id"),
-    CONSTRAINT "fk_user_person_id" FOREIGN KEY ("person_id") REFERENCES "person" ("id")
+    CONSTRAINT "fk_user_person_id" FOREIGN KEY ("person_id") REFERENCES "person" ("id"),
+    CONSTRAINT "uq_user_email" UNIQUE ("email")
 );
 
 CREATE TYPE "actor_role" AS ENUM ('Owner', 'Viewer');
@@ -47,6 +55,7 @@ CREATE TABLE "entry_actors" (
     "entry_id" VARCHAR(14) NOT NULL,
     -- [sqlgg] module=Sql_types.User_id_conv
     "user_id" VARCHAR(14) NOT NULL,
+    -- [sqlgg] module=Sql_types.Actor_role_conv
     "role" "actor_role" NOT NULL,
     CONSTRAINT "fk_entry_actors_entry_id" FOREIGN KEY ("entry_id") REFERENCES "entry" ("id"),
     CONSTRAINT "fk_entry_actors_user_id" FOREIGN KEY ("user_id") REFERENCES "user" ("id"),
@@ -56,7 +65,9 @@ CREATE TABLE "entry_actors" (
 CREATE TABLE "remember_me_tokens" (
     -- [sqlgg] module=Sql_types.User_id_conv
     "user_id" VARCHAR(14) NOT NULL,
+    -- [sqlgg] module=Sql_types.Remember_me_key_conv
     "key" VARCHAR(256) NOT NULL,
+    -- [sqlgg] module=Sql_types.Remember_me_token_hash_conv
     "hash" VARCHAR(256) NOT NULL,
     "max_date" TIMESTAMP NOT NULL,
     CONSTRAINT "fk_user_id" FOREIGN KEY ("user_id") REFERENCES "user" ("id"),
@@ -96,6 +107,7 @@ CREATE TABLE "dance" (
     "scddb_id" INT,
     "disambiguation" VARCHAR(256),
     "date" VARCHAR(32),
+    -- [sqlgg] module=Sql_types.Two_chords_conv
     "two_chords" "two_chords" NOT NULL,
     "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
     CONSTRAINT "fk_dance_id" FOREIGN KEY ("id") REFERENCES "entry" ("id")
@@ -145,6 +157,7 @@ CREATE TABLE "tune" (
     "remark" VARCHAR,
     "scddb_id" INT,
     "date" VARCHAR(32),
+    -- [sqlgg] module=Sql_types.Kind_conv
     "kind" "kind" NOT NULL,
     "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
     CONSTRAINT "fk_tune_id" FOREIGN KEY ("id") REFERENCES "entry" ("id")

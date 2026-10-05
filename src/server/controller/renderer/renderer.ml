@@ -2,7 +2,7 @@
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.renderer": Logs.LOG)
 
-open NesUnix
+open Nes_unix
 
 (** {2 Models for the rendering} *)
 

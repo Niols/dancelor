@@ -1,13 +1,8 @@
-open NesUnix
+open Nes_unix
 open Dancelor_common
 open Sql_to_row
 
 module User_sql = User_sql.Sqlgg(Sqlgg_postgresql)
-module Password_hashed = Fresh.Make(HashedSecret)
-module Password_reset_token_hashed = Fresh.Make(HashedSecret)
-module Remember_me_key = Fresh.Make(String)
-module Remember_me_token_clear = Fresh.Make(String)
-module Remember_me_token_hashed = Fresh.Make(HashedSecret)
 
 let get_row_for ids : (User_id.t -> User_row.t option) Lwt.t =
   Connection.with_ @@ fun db ->
@@ -33,7 +28,7 @@ let get_actor_gen f =
       Actor.id;
       username = Username.of_string_exn username;
       github_handle;
-      role = Sql_types.role_to_common role;
+      role;
       omniscience;
       person =
       match person_id, person_name with
@@ -54,9 +49,7 @@ let get_password_from_username username =
   let username = Username.to_string username in
   Connection.with_ @@ fun db ->
   Option.join
-  <$> User_sql.Single.get_password_from_username db ~username (fun ~password ->
-      Option.map (Password_hashed.inject % HashedSecret.unsafe_of_string) password
-    )
+  <$> User_sql.Single.get_password_from_username db ~username (fun ~password -> password)
 
 let get_password_reset_token_from_username username =
   let username = Username.to_string username in
@@ -65,24 +58,22 @@ let get_password_reset_token_from_username username =
   <$> User_sql.Single.get_password_reset_token_from_username db ~username (fun ~password_reset_token_hash ~password_reset_token_max_date ->
       Option.bind password_reset_token_hash @@ fun password_reset_token_hash ->
       Option.bind password_reset_token_max_date @@ fun password_reset_token_max_date ->
-      Some (
-        (Password_reset_token_hashed.inject @@ HashedSecret.unsafe_of_string password_reset_token_hash),
-        password_reset_token_max_date
-      )
+      Some (password_reset_token_hash, password_reset_token_max_date)
     )
 
-let create ~username ~password_reset_token_hash ~password_reset_token_max_date =
+let create ~username ~email ~password_reset_token_hash ~password_reset_token_max_date =
   Connection.with_ @@ fun db ->
-  let%lwt id = Entry.make_public db `User in
+  let%lwt id = Entry.make_public db User in
   let%lwt _ =
     User_sql.create
       db
       ~id
       ~username: (Username.to_string username)
-      ~role: `Normal_user
+      ~email
+      ~role: Normal_user
       ~omniscience: false
       ~github_handle: None
-      ~password_reset_token_hash: (some @@ HashedSecret.unsafe_to_string @@ Password_reset_token_hashed.project password_reset_token_hash)
+      ~password_reset_token_hash: (Some password_reset_token_hash)
       ~password_reset_token_max_date: (Some password_reset_token_max_date)
   in
   lwt id
@@ -99,7 +90,7 @@ let remove_one_remember_me_token user_id key =
   <$> User_sql.remove_one_remember_me_token
       db
       ~user_id
-      ~key: (Remember_me_key.project key)
+      ~key
 
 let set_password_reset_token id password_reset_token_hash password_reset_token_max_date =
   Connection.with_ @@ fun db ->
@@ -108,35 +99,25 @@ let set_password_reset_token id password_reset_token_hash password_reset_token_m
   <$> User_sql.set_password_reset_token
       db
       ~id
-      ~password_reset_token_hash: (Some (HashedSecret.unsafe_to_string @@ Password_reset_token_hashed.project password_reset_token_hash))
+      ~password_reset_token_hash: (Some password_reset_token_hash)
       ~password_reset_token_max_date: (Some password_reset_token_max_date)
 
 let set_password id password =
   Connection.with_ @@ fun db ->
   ignore <$> remove_all_remember_me_tokens id;%lwt
-  ignore
-  <$> User_sql.set_password
-      db
-      ~id
-      ~password: (some @@ HashedSecret.unsafe_to_string @@ Password_hashed.project password)
+  ignore <$> User_sql.set_password db ~id ~password: (Some password)
 
 let find_remember_me_token user_id key =
   Connection.with_ @@ fun db ->
   User_sql.Single.find_remember_me_token
     db
     ~user_id
-    ~key: (Remember_me_key.project key)
-    (fun ~hash ~max_date -> (Remember_me_token_hashed.inject @@ HashedSecret.unsafe_of_string hash, max_date))
+    ~key
+    (fun ~hash ~max_date -> (hash, max_date))
 
 let add_remember_me_token user_id key hash max_date =
   Connection.with_ @@ fun db ->
-  ignore
-  <$> User_sql.add_remember_me_token
-      db
-      ~user_id
-      ~key: (Remember_me_key.project key)
-      ~hash: (HashedSecret.unsafe_to_string @@ Remember_me_token_hashed.project hash)
-      ~max_date
+  ignore <$> User_sql.add_remember_me_token db ~user_id ~key ~hash ~max_date
 
 let set_omniscience id value =
   Connection.with_ @@ fun db ->

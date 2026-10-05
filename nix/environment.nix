@@ -56,7 +56,7 @@
           ## Development environment
           ++ [ (gitHookBinFor myTopiaryConfig) ]
           ++ (with pkgs; [
-            postgresql
+            postgresql_15
             watchexec
           ])
           ++ (with pkgs.ocamlPackages; [

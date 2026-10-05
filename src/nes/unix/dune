@@ -1,6 +1,6 @@
 (library
  (name nesUnix)
- (public_name nes.unix)
+ (public_name dancelor.nes.unix)
  (wrapped false)
  (libraries nes lwt.unix logs argon2)
  (preprocess

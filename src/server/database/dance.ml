@@ -61,7 +61,7 @@ let update_other_tables db ~dance_id ~extra_names ~devisers =
     devisers
 
 let create db dance =
-  let%lwt id = Entry.make_public db `Dance in
+  let%lwt id = Entry.make_public db Dance in
   ignore <$> dance_form_to_sql (Dance_sql.create db) id dance;%lwt
   update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers;%lwt
   lwt id

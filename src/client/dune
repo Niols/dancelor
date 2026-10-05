@@ -8,8 +8,8 @@
  (libraries
   cohttp-lwt-jsoo
   dancelor.common
-  madge.client
-  nes
+  dancelor.madge.client
+  dancelor.nes
   js_of_ocaml-lwt
   js_of_ocaml-tyxml
   logs.browser
@@ -31,6 +31,5 @@
 
 (install
  (section share)
- (package dancelor)
  (files
   (client.bc.js as client.js)))

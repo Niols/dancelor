@@ -37,13 +37,24 @@ let create () =
       ~validate: (S.const % Option.to_result ~none: "Invalid username format." % Username.from_string)
       ""
   in
+  let%lwt email_input =
+    Input.make
+      ~type_: Text
+      ~placeholder: "millijean1923@rscds.org"
+      ~label: "Email"
+      ~serialise: Email.to_string
+      ~validate: (S.const % Option.to_result ~none: "Invalid email format." % Email.of_string)
+      ""
+  in
   let signal =
     RS.bind (Component.signal username_input) @@ fun username ->
-    S.const @@ Ok {User_create_form.username}
+    RS.bind (Component.signal email_input) @@ fun email ->
+    S.const @@ Ok {User_create_form.username; email}
   in
   Page.make'
     ~title: (lwt "Create user")
     [Component.html username_input;
+    Component.html email_input;
     ]
     ~buttons: [
       Button.make

@@ -1,8 +1,9 @@
 (library
  (name nes)
- (public_name nes)
+ (public_name dancelor.nes)
  (wrapped false)
  (libraries
+  emile
   yojson
   ppx_deriving_yojson.runtime
   unix

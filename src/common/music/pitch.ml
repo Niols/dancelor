@@ -144,13 +144,19 @@ let diff p1 p2 = to_int p1 - to_int p2
 
 let add p1 n = of_int (to_int p1 + n)
 
-let%test_module _ = (module struct
-  let c0 = make C Natural 0
+include struct
+  (* HACK: ppx_inline_test v0.17 expands to an unused `let module M`, which
+     OCaml 5.5 flags with warning 60. *)
+  [@@@warning "-unused-module"]
 
-  let%test _ = add c0 0 = c0
-  let%test _ = add c0 1 = make C Sharp 0
-  let%test _ = add c0 2 = make D Natural 0
-  let%test _ = add c0 15 = make E Flat 1
-  let%test _ = add c0 (-1) = make B Natural (-1)
-  let%test _ = add c0 (-2) = make B Flat (-1)
-end)
+  let%test_module _ = (module struct
+    let c0 = make C Natural 0
+
+    let%test _ = add c0 0 = c0
+    let%test _ = add c0 1 = make C Sharp 0
+    let%test _ = add c0 2 = make D Natural 0
+    let%test _ = add c0 15 = make E Flat 1
+    let%test _ = add c0 (-1) = make B Natural (-1)
+    let%test _ = add c0 (-2) = make B Flat (-1)
+  end)
+end

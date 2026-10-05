@@ -2,7 +2,8 @@
 
 type t [@@deriving eq, ord, yojson]
 
-val of_string : string -> t
+val of_string : string -> t option
+val of_string_exn : string -> t
 (** Parses an ISO 8601 datetime string. *)
 
 val to_string : t -> string

@@ -120,7 +120,7 @@ let get_views_for_tune tune_id =
   let%lwt tune_composers_for = get_tune_composers_with_details_for db `All in
   let%lwt arrangers_for = get_arrangers_for db `All in
   let%lwt sources_for = get_version_sources_for db `All in
-  Version_sql.List.get_views_for_tune db ~tune_id: (Id.to_string tune_id) (fun ~id ~tune_id ->
+  Version_sql.List.get_views_for_tune db ~tune_id (fun ~id ~tune_id ->
     version_sql_to_view
       ~id
       ~tune_id
@@ -211,7 +211,7 @@ let search query : (Version_row.t * float) list Lwt.t =
     ~terms
     ~key: (Option.map (List.map Music.Key.to_string) key)
     ~source: (Utils.option_to_sql source)
-    ~tune_kind: (Option.map (List.map Sql_types.kind_base_of_common) tune.kind)
+    ~tune_kind: tune.kind
     ~tune_composer: (Utils.option_to_sql tune.composer)
     (fun ~score ~id ~tune_id ->
       version_sql_to_row
@@ -274,7 +274,7 @@ let update_other_tables db ~version_id ~arrangers ~sources ~content =
   )
 
 let create db version =
-  let%lwt id = Entry.make_public db `Version in
+  let%lwt id = Entry.make_public db Version in
   ignore <$> version_form_to_sql (Version_sql.create db) id version;%lwt
   update_other_tables db ~version_id: id ~arrangers: version.arrangers ~sources: version.sources ~content: version.content;%lwt
   lwt id

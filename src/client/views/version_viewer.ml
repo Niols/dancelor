@@ -199,7 +199,7 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
     (
       match tune.date with
       | None -> []
-      | Some date -> [txtf "Composed %s." (PartialDate.to_pretty_string ~at: true date)]
+      | Some date -> [txtf "Composed %s." (Partial_date.to_pretty_string ~at: true date)]
     );
   (
     div @@

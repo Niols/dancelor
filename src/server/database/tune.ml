@@ -67,7 +67,7 @@ let search query : (Tune_row.t * float) list Lwt.t =
   Tune_sql.List.search
     db
     ~terms
-    ~kind: (Option.map (List.map Sql_types.kind_base_of_common) kind)
+    ~kind
     ~composer: (Utils.option_to_sql composer)
     (fun ~score ~id -> tune_sql_to_row ~id ~composers: (composers_for id) ~k: (Pair.snoc score))
 
@@ -98,7 +98,7 @@ let update_other_tables db ~tune_id ~extra_names ~composers ~dances =
     dances
 
 let create db tune =
-  let%lwt id = Entry.make_public db `Tune in
+  let%lwt id = Entry.make_public db Tune in
   ignore <$> tune_form_to_sql (Tune_sql.create db) id tune;%lwt
   update_other_tables db ~tune_id: id ~extra_names: (NEList.tl tune.names) ~composers: tune.composers ~dances: tune.dances;%lwt
   lwt id

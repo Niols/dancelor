@@ -32,7 +32,7 @@ let make_source_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []
     (
       prefix @
       [td [Formatters.Source.name_row ~link: (onclick = None) ?in_search source];
-      td [txt @@ Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) source.date];
+      td [txt @@ Option.fold ~none: "" ~some: (Partial_date.to_pretty_string ~short: true) source.date];
       td (Formatters.Person.names ~links: (onclick = None) ~short: true source.editors);
       ] @
       suffix
@@ -127,7 +127,7 @@ let make_book_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) 
     (
       prefix @
       [td [Formatters.Book.name_row ~link: (onclick = None) ?in_search book];
-      td [txt @@ Option.fold ~none: "" ~some: (PartialDate.to_pretty_string ~short: true) book.date];
+      td [txt @@ Option.fold ~none: "" ~some: (Partial_date.to_pretty_string ~short: true) book.date];
       td (Formatters.Person.names ~links: (onclick = None) ~short: true book.authors);
       ] @
       suffix

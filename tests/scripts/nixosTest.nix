@@ -24,7 +24,9 @@ in
         testMode = true;
       };
 
-      environment.systemPackages = [ pkgs.postgresql ];
+      services.postgresql.package = pkgs.postgresql_15;
+
+      environment.systemPackages = [ pkgs.postgresql_15 ];
 
       ## Add a small systemd unit that injects the test database into
       ## PostgreSQL. It must run after PostgreSQL has booted up but
@@ -42,7 +44,7 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           User = "dancelor";
-          ExecStart = "${pkgs.postgresql}/bin/psql --dbname=dancelor --file=${../database.sql}";
+          ExecStart = "${pkgs.postgresql_15}/bin/psql --dbname=dancelor --file=${../database.sql}";
         };
       };
       systemd.services.dancelor = {

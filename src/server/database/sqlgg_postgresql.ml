@@ -219,7 +219,7 @@ let get_column_Any = get_column_string
 let get_column_Any_nullable = get_column_string_nullable
 let get_column_Decimal = get_column_decimal
 let get_column_Decimal_nullable = get_column_decimal_nullable
-let get_column_Datetime row col = Datetime.of_string (get_col row col)
+let get_column_Datetime row col = Datetime.of_string_exn (get_col row col)
 let get_column_Datetime_nullable row col = nullable get_column_Datetime row col
 let get_column_Json = get_column_json
 let get_column_Json_nullable = get_column_json_nullable
@@ -280,26 +280,29 @@ let finish_params p =
 let no_params stmt =
   async_exec stmt.connection stmt.sql
 
-let select conn sql f callback =
-  f {sql; connection = conn} >>= fun r ->
+let select conn (q : Sqlgg_traits.Query.t) f callback =
+  f {sql = q.sql; connection = conn} >>= fun r ->
   for i = 0 to r#ntuples - 1 do callback (r, i) done;
   Lwt.return_unit
 
-let select_one_maybe conn sql f callback =
-  f {sql; connection = conn} >>= fun r ->
+let select_one_maybe conn (q : Sqlgg_traits.Query.t) f callback =
+  f {sql = q.sql; connection = conn} >>= fun r ->
   if r#ntuples = 0 then Lwt.return_none
   else Lwt.return_some (callback (r, 0))
 
-let select_one conn sql f callback =
-  select_one_maybe conn sql f callback >>= function
+let select_one conn q f callback =
+  select_one_maybe conn q f callback >>= function
     | Some x -> Lwt.return x
     | None -> raise (Oops "select_one: no rows returned")
 
-let execute conn sql f =
-  f {sql; connection = conn} >>= fun r ->
+let execute conn (q : Sqlgg_traits.Query.t) f =
+  f {sql = q.sql; connection = conn} >>= fun r ->
   let affected_rows =
     match r#cmd_tuples with
     | "" -> 0L
     | s -> Int64.of_string s
   in
   Lwt.return {affected_rows; insert_id = None}
+
+let execute_unprepared conn (q : Sqlgg_traits.Query.t) =
+  execute conn q no_params
