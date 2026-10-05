@@ -77,7 +77,7 @@ module Source = struct
     let date =
       match source.date with
       | None -> []
-      | Some date -> [txt (spf "Published %s" (PartialDate.to_pretty_string ~at: true date))]
+      | Some date -> [txt (spf "Published %s" (Partial_date.to_pretty_string ~at: true date))]
     in
     let editors =
       match source.editors with
@@ -276,7 +276,7 @@ module Book = struct
     let date =
       match book.date with
       | None -> []
-      | Some date -> [txt (spf "Published %s" (NesPartialDate.to_pretty_string ~at: true date))]
+      | Some date -> [txt (spf "Published %s" (Partial_date.to_pretty_string ~at: true date))]
     in
     let editors =
       match book.authors with

@@ -1,5 +1,5 @@
 include Nes
 
 module Process = NesProcess
-module HashedSecret = NesHashedSecretUnix
+module Hashed_secret = NesHashed_secret_unix
 module Filesystem = NesFilesystem

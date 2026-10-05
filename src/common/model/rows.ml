@@ -37,7 +37,7 @@ module Source_row = struct
   type t = {
     id: Source_id.t;
     name: string;
-    date: PartialDate.t option; [@default None]
+    date: Partial_date.t option; [@default None]
     editors: Person_name.t list; [@default []]
   }
   [@@deriving eq, yojson, fields]
@@ -95,7 +95,7 @@ module Book_row = struct
   type t = {
     id: Book_id.t;
     name: string;
-    date: PartialDate.t option; [@default None]
+    date: Partial_date.t option; [@default None]
     authors: Person_name.t list; [@default []]
     permission: Permission.t;
   }

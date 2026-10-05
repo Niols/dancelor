@@ -48,12 +48,12 @@ let editor =
         ~type_: Text
         ~label: "Date of publication"
         ~placeholder: "eg. 2019 or 2012-03-14"
-        ~serialise: (Option.fold ~none: "" ~some: PartialDate.to_string)
+        ~serialise: (Option.fold ~none: "" ~some: Partial_date.to_string)
         ~validate: (
           S.const %
             Option.fold
               ~none: (Ok None)
-              ~some: (Result.map some % Option.to_result ~none: "Not a valid date" % PartialDate.from_string) %
+              ~some: (Result.map some % Option.to_result ~none: "Not a valid date" % Partial_date.from_string) %
             Option.of_string_nonempty
         )
         () ^::

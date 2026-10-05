@@ -41,7 +41,7 @@ module Dance_view = struct
     devisers: Person_name.t list; [@default []]
     scddb_id: int option; [@default None]
     disambiguation: string option; [@default None]
-    date: PartialDate.t option; [@default None]
+    date: Partial_date.t option; [@default None]
     two_chords: two_chords;
     tunes: Tune_row.t list; [@default []]
   }
@@ -59,7 +59,7 @@ module Source_view = struct
     editors: Person_name.t list; [@default []]
     scddb_id: int option; [@default None]
     description: string option; [@default None]
-    date: PartialDate.t option; [@default None]
+    date: Partial_date.t option; [@default None]
   }
   [@@deriving yojson, fields]
 
@@ -89,7 +89,7 @@ module Tune_view = struct
     dances: Dance_row.t list; [@default []]
     remark: string option; [@default None]
     scddb_id: int option; [@default None]
-    date: PartialDate.t option; [@default None]
+    date: Partial_date.t option; [@default None]
     versions: version_row_without_tune list; [@default []]
   }
   [@@deriving yojson, fields]
@@ -192,7 +192,7 @@ module Book_view = struct
     id: Book_id.t;
     name: string;
     authors: Person_name.t list; [@default []]
-    date: PartialDate.t option; [@default None]
+    date: Partial_date.t option; [@default None]
     contents: page list;
     remark: string option; [@default None]
     sources: Source_name.t list; [@default []]

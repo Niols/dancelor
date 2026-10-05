@@ -18,7 +18,7 @@ let source_sql_to_view ~id ~name ~short_name ~editors ~scddb_id ~description ~da
     editors;
     scddb_id = Option.map Int64.to_int scddb_id;
     description;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
   }
 
 let dance_sql_to_view ~id ~name ~extra_names ~kind ~devisers ~scddb_id ~disambiguation ~date ~two_chords ~tunes ~(k : Dance_view.t -> 'w) : 'w =
@@ -30,7 +30,7 @@ let dance_sql_to_view ~id ~name ~extra_names ~kind ~devisers ~scddb_id ~disambig
     devisers;
     scddb_id = Option.map Int64.to_int scddb_id;
     disambiguation;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
     two_chords;
     tunes;
   }
@@ -65,7 +65,7 @@ let tune_sql_to_view ~id ~name ~extra_names ~kind ~composers ~dances ~remark ~sc
     dances;
     remark;
     scddb_id = Option.map Int64.to_int scddb_id;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
     versions;
   }
 
@@ -187,7 +187,7 @@ let book_sql_to_view
   k {
     id;
     name;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
     authors;
     contents;
     remark;

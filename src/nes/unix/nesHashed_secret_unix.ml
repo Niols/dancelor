@@ -1,6 +1,6 @@
 open NesPervasives
 
-include Nes.HashedSecret
+include Nes.Hashed_secret
 
 (* Default value taken from the examples of [ocaml-argon2], but also checked to
    be equal or stronger to the ones of the [argon2] Rust crate. *)
@@ -15,13 +15,13 @@ let encoded_len = Argon2.encoded_len ~t_cost ~m_cost ~parallelism ~salt_len ~has
 
 let make ~clear =
   let salt = String.init salt_len (fun _ -> Char.chr (Random.int 256)) in
-  Nes.HashedSecret.unsafe_of_string @@
+  Nes.Hashed_secret.unsafe_of_string @@
   snd @@
   Result.get_ok @@
   Argon2.hash ~t_cost ~m_cost ~parallelism ~kind ~hash_len ~encoded_len ~version ~salt ~pwd: clear
 
 let is ~clear hashedSecret =
-  let encoded = Nes.HashedSecret.unsafe_to_string hashedSecret in
+  let encoded = Nes.Hashed_secret.unsafe_to_string hashedSecret in
   match Argon2.verify ~kind ~encoded ~pwd: clear with
   | Ok _ -> Ok true
   | Error Argon2.ErrorCodes.VERIFY_MISMATCH -> Ok false

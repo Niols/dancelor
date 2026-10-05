@@ -1,4 +1,4 @@
-open NesUnix
+open Nes_unix
 open Model_unix
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.environment": Logs.LOG)
@@ -113,7 +113,7 @@ let process_remember_me_cookie env remember_me_cookie =
           Database.User.remove_one_remember_me_token actor.id key;%lwt
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
           lwt_unit
-        | Some (hashed_token, _) when not @@ HashedSecret.is ~clear: (Remember_me_token_clear.project token) (Remember_me_token_hash.project hashed_token) ->
+        | Some (hashed_token, _) when not @@ Hashed_secret.is ~clear: (Remember_me_token_clear.project token) (Remember_me_token_hash.project hashed_token) ->
           Log.info (fun m -> m "Rejecting because tokens do not match.");
           (* someone got their hand on a "remember me" key - invalidate all known tokens *)
           (* NOTE: Similar to password reset tokens, we should be able to compare directly but need to project. *)

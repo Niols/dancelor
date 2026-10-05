@@ -1,4 +1,4 @@
-open NesUnix
+open Nes_unix
 open Model_unix
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.user": Logs.LOG)

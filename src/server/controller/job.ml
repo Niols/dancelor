@@ -1,4 +1,4 @@
-open NesUnix
+open Nes_unix
 open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.job": Logs.LOG)

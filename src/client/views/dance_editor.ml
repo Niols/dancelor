@@ -56,12 +56,12 @@ let editor =
         ~type_: Text
         ~label: "Date of devising"
         ~placeholder: "eg. 2019 or 2012-03-14"
-        ~serialise: (NEString.of_string_exn % PartialDate.to_string)
+        ~serialise: (NEString.of_string_exn % Partial_date.to_string)
         (* FIXME: make PartialDate.to_string return NEString.t *)
         ~validate: (
           S.const %
             Option.to_result ~none: "Enter a valid date, eg. 2019, 2015-10, or 2012-03-14." %
-            PartialDate.from_string %
+            Partial_date.from_string %
             NEString.to_string
         )
         () ^::

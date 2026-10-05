@@ -34,7 +34,7 @@ module Source_form = struct
     editors: Person_row.t list;
     scddb_id: int option;
     description: string option;
-    date: PartialDate.t option;
+    date: Partial_date.t option;
   }
   [@@deriving eq, yojson]
 
@@ -57,7 +57,7 @@ module Dance_form = struct
     two_chords: Dance_view.two_chords;
     scddb_id: int option;
     disambiguation: NEString.t option;
-    date: PartialDate.t option;
+    date: Partial_date.t option;
   }
   [@@deriving eq, yojson]
 
@@ -87,7 +87,7 @@ module Tune_form = struct
     dances: Dance_row.t list;
     remark: NEString.t option;
     scddb_id: int option;
-    date: PartialDate.t option;
+    date: Partial_date.t option;
   }
   [@@deriving eq, yojson]
 
@@ -184,7 +184,7 @@ module Book_form = struct
   type t = {
     name: NEString.t;
     authors: Person_row.t list;
-    date: PartialDate.t option;
+    date: Partial_date.t option;
     contents: page list;
     remark: NEString.t option;
     sources: Source_row.t list;

@@ -54,7 +54,7 @@ let body (dance : Dance_view.t) = [
     (
       match dance.date with
       | None -> []
-      | Some date -> [txt "Devised "; txt (PartialDate.to_pretty_string ~at: true date); txt "."]
+      | Some date -> [txt "Devised "; txt (Partial_date.to_pretty_string ~at: true date); txt "."]
     );
   div
     [

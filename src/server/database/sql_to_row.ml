@@ -11,7 +11,7 @@ let person_sql_to_tune_composer ~id ~name ~details ~(k : Tune_form.composer -> '
   }
 
 let source_sql_to_row ~id ~name ~date ~editors ~(k : Source_row.t -> 'w) : 'w =
-  k {id; name; date = Option.map (Option.get % PartialDate.from_string) date; editors}
+  k {id; name; date = Option.map (Option.get % Partial_date.from_string) date; editors}
 
 let dance_sql_to_row ~id ~name ~kind ~devisers ~disambiguation ~(k : Dance_row.t -> 'w) : 'w =
   k {
@@ -94,7 +94,7 @@ let book_sql_to_row
   k {
     id;
     name;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
     authors;
     permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
   }

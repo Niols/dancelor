@@ -14,7 +14,7 @@ let source_form_to_sql query id {Source_form.name; short_name; scddb_id; descrip
     ~short_name: (Option.map NEString.to_string short_name)
     ~scddb_id: (Option.map Int64.of_int scddb_id)
     ~description
-    ~date: (Option.map PartialDate.to_string date)
+    ~date: (Option.map Partial_date.to_string date)
 
 let dance_form_to_sql query id {Dance_form.names; kind; two_chords; scddb_id; disambiguation; date; devisers = _} =
   query
@@ -24,7 +24,7 @@ let dance_form_to_sql query id {Dance_form.names; kind; two_chords; scddb_id; di
     ~two_chords
     ~scddb_id: (Option.map Int64.of_int scddb_id)
     ~disambiguation: (Option.map NEString.to_string disambiguation)
-    ~date: (Option.map PartialDate.to_string date)
+    ~date: (Option.map Partial_date.to_string date)
 
 let tune_form_to_sql
     query
@@ -45,7 +45,7 @@ let tune_form_to_sql
     ~kind
     ~remark: (Option.map NEString.to_string remark)
     ~scddb_id: (Option.map Int64.of_int scddb_id)
-    ~date: (Option.map PartialDate.to_string date)
+    ~date: (Option.map Partial_date.to_string date)
 
 let version_form_to_sql
     query
@@ -110,6 +110,6 @@ let book_form_to_sql
   query
     ~id
     ~name: (NEString.to_string name)
-    ~date: (Option.map PartialDate.to_string date)
+    ~date: (Option.map Partial_date.to_string date)
     ~remark: (Option.map NEString.to_string remark)
     ~scddb_id: (Option.map Int64.of_int scddb_id)

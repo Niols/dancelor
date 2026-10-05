@@ -132,14 +132,14 @@ end
 
 module type Fresh_hashed_secret = sig
   type t
-  val inject : HashedSecret.t -> t
-  val project : t -> HashedSecret.t
+  val inject : Hashed_secret.t -> t
+  val project : t -> Hashed_secret.t
 end
 
 module Make_fresh_hashed_secret_conv (X : Fresh_hashed_secret) = struct
-  let get_column : string -> X.t = X.inject % HashedSecret.unsafe_of_string
+  let get_column : string -> X.t = X.inject % Hashed_secret.unsafe_of_string
   let get_column_nullable = Option.map get_column
-  let set_param : X.t -> string = HashedSecret.unsafe_to_string % X.project
+  let set_param : X.t -> string = Hashed_secret.unsafe_to_string % X.project
 end
 
 module Password_conv = Make_fresh_hashed_secret_conv(Password_hash)

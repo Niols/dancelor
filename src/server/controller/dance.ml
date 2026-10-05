@@ -1,4 +1,4 @@
-open NesUnix
+open Nes_unix
 open Dancelor_common
 
 include Shared.Make_public(struct

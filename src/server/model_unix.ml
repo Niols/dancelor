@@ -1,4 +1,4 @@
-open NesUnix
+open Nes_unix
 include Dancelor_common
 
 module type Fresh_hashed_secret_clear = sig
@@ -7,9 +7,9 @@ module type Fresh_hashed_secret_clear = sig
 end
 
 module Make_fresh_hashed_secret (Clear : Fresh_hashed_secret_clear) = struct
-  include Fresh.Make(HashedSecret)
-  let make ~clear = inject @@ HashedSecret.make ~clear: (Clear.project clear)
-  let is ~clear hash = HashedSecret.is ~clear: (Clear.project clear) (project hash)
+  include Fresh.Make(Hashed_secret)
+  let make ~clear = inject @@ Hashed_secret.make ~clear: (Clear.project clear)
+  let is ~clear hash = Hashed_secret.is ~clear: (Clear.project clear) (project hash)
 end
 
 module Password_hash = Make_fresh_hashed_secret(Password_clear)

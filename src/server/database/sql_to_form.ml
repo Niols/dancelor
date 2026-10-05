@@ -15,7 +15,7 @@ let source_sql_to_form ~id: _ ~name ~short_name ~editors ~scddb_id ~description 
     editors;
     scddb_id = Option.map Int64.to_int scddb_id;
     description;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
   }
 
 let dance_sql_to_form ~id: _ ~name ~extra_names ~kind ~devisers ~scddb_id ~disambiguation ~date ~two_chords ~(k : Dance_form.t -> 'w) : 'w =
@@ -25,7 +25,7 @@ let dance_sql_to_form ~id: _ ~name ~extra_names ~kind ~devisers ~scddb_id ~disam
     devisers;
     scddb_id = Option.map Int64.to_int scddb_id;
     disambiguation = Option.map NEString.of_string_exn disambiguation;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
     two_chords;
   }
 
@@ -37,7 +37,7 @@ let tune_sql_to_form ~id: _ ~name ~extra_names ~kind ~composers ~dances ~remark 
     dances;
     remark = Option.map NEString.of_string_exn remark;
     scddb_id = Option.map Int64.to_int scddb_id;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
   }
 
 let version_sql_to_form_source
@@ -143,7 +143,7 @@ let book_sql_to_form
   =
   k {
     name = NEString.of_string_exn name;
-    date = Option.map (Option.get % PartialDate.from_string) date;
+    date = Option.map (Option.get % Partial_date.from_string) date;
     authors;
     contents;
     remark = Option.map NEString.of_string_exn remark;

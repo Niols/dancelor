@@ -3,7 +3,7 @@
     High-level utilities to manipulate hashed values safely, eg. tokens or
     passwords. *)
 
-include module type of Nes.HashedSecret
+include module type of Nes.Hashed_secret
 
 val make : clear: string -> t
 (** Make a password from a clear text. This function will generate a salt
