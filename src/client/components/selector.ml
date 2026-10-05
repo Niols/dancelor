@@ -23,9 +23,11 @@ let prepare_gen (type id)(type model)(type model_validated)
     model ->
     Html_types.tr Html.elt
   )
-  ?(make_more_results =
-  (const (S.const []): model ->
-    Html_types.tr Html.elt list S.t))
+  ?(make_more_results = (
+    const (S.const [])
+    : model ->
+      Html_types.tr Html.elt list S.t
+  ))
   ?(results_when_no_search = lwt_nil)
   ~model_name
   ?(create_dialog_content : ((model, 'any) Editor.mode -> Page.t Lwt.t) option)

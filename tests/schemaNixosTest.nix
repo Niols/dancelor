@@ -18,7 +18,9 @@
         testMode = true;
       };
 
-      environment.systemPackages = [ pkgs.postgresql ];
+      services.postgresql.package = pkgs.postgresql_15;
+
+      environment.systemPackages = [ pkgs.postgresql_15 ];
     };
 
   testScript =

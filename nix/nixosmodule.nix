@@ -146,6 +146,16 @@
           ## client code, but since it's mostly us we can keep it for now.
           ## Better over-specify and have Nix catch our mistakes later.
           ##
+          ## NOTE: We expect a specific major version of PostgreSQL, but we
+          ## leave it to the host to set it; the assertion catches any
+          ## desynchronisation.
+          ##
+          assertions = [
+            {
+              assertion = config.services.postgresql.package.psqlSchema == "15";
+              message = "Dancelor expects PostgreSQL 15, but services.postgresql.package is ${config.services.postgresql.package.name}.";
+            }
+          ];
           services.postgresql = {
             enable = true;
             ensureDatabases = [ "dancelor" ];

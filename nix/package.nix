@@ -73,7 +73,7 @@
           ## Grabbing super's buildInputs is overkill in terms of dependencies,
           ## but most often we will also build the package, so it is fine.
           inherit (super) src nativeBuildInputs;
-          buildInputs = super.buildInputs ++ [ pkgs.ocamlPackages.odoc ];
+          buildInputs = super.buildInputs ++ super.propagatedBuildInputs ++ [ pkgs.ocamlPackages.odoc ];
           buildPhase = "dune build @doc";
           installPhase = "cp -R _build/default/_doc/_html $out";
         };
@@ -86,26 +86,16 @@
           menhir
         ];
         buildInputs = with pkgs.ocamlPackages; [
-          self'.packages.mybuild
           extlib
           integers
           odoc
           ounit
           ppx_deriving
+          ppx_deriving_hash
+          ppx_deriving_variant_string
+          ppx_enumerate
           yojson
         ];
-      };
-
-      ## NOTE: Dependency of sqlgg.
-      packages.mybuild = pkgs.ocamlPackages.buildDunePackage rec {
-        pname = "mybuild";
-        version = "7";
-        src = pkgs.fetchFromGitHub {
-          owner = "ygrek";
-          repo = pname;
-          rev = "v${version}";
-          sha256 = "sha256-3NBu+8orypL7I8PBU7trI5DA4kbtg8wA/qzyCLUUWYM=";
-        };
       };
     };
 }
