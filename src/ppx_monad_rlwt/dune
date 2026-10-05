@@ -1,5 +1,5 @@
 (library
  (name ppx_monad_rlwt)
- (public_name nes.ppx_monad_rlwt)
+ (public_name dancelor.nes.ppx_monad_rlwt)
  (libraries ppx_monad)
  (kind ppx_rewriter))

@@ -1,6 +1,6 @@
 (library
  (name nes)
- (public_name nes)
+ (public_name dancelor.nes)
  (wrapped false)
  (libraries
   emile

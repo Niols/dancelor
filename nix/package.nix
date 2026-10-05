@@ -4,58 +4,6 @@
   perSystem =
     { self', pkgs, ... }:
     {
-      packages.nes = pkgs.ocamlPackages.buildDunePackage {
-        pname = "nes";
-        version = "dev";
-        src = ../.;
-
-        propagatedBuildInputs = with pkgs.ocamlPackages; [
-          dates_calc
-          emile
-          iso8601
-          ppx_monad
-          slug
-          yojson
-        ];
-
-        buildInputs = with pkgs.ocamlPackages; [
-          argon2
-          logs
-          lwt_ppx
-          ppx_deriving_yojson
-          ppx_import
-          ppx_inline_test
-          uri
-        ];
-      };
-
-      packages.madge = pkgs.ocamlPackages.buildDunePackage {
-        pname = "madge";
-        version = "dev";
-        src = ../.;
-
-        propagatedBuildInputs = with pkgs.ocamlPackages; [
-          self'.packages.nes
-        ];
-
-        buildInputs = with pkgs.ocamlPackages; [
-          base
-          cohttp-lwt
-          cohttp-lwt-jsoo
-          cohttp-lwt-unix
-          js_of_ocaml-lwt
-          logs
-          lwt_ppx
-          ppx_deriving_yojson
-          ppx_fields_conv
-          ppx_import
-          ppxlib
-          prometheus-app
-          uri
-          yojson
-        ];
-      };
-
       packages.dancelor = pkgs.ocamlPackages.buildDunePackage {
         pname = "dancelor";
         version = "dev";
@@ -70,12 +18,20 @@
         ])
         ++ (with pkgs; [ sassc ]);
 
+        propagatedBuildInputs = with pkgs.ocamlPackages; [
+          dates_calc
+          emile
+          iso8601
+          ppx_monad
+          slug
+          yojson
+        ];
+
         buildInputs = with pkgs.ocamlPackages; [
-          self'.packages.nes
-          self'.packages.madge
           self'.packages.sqlgg
 
           argon2
+          base
           cohttp
           cohttp-lwt
           cohttp-lwt-jsoo
@@ -97,11 +53,14 @@
           ppx_fields_conv
           ppx_import
           ppx_inline_test
+          ppxlib
           ppx_monad
           ppx_variants_conv
           prometheus-app
           react
           tyxml
+          uri
+          yojson
         ];
       };
 

@@ -3,12 +3,11 @@
 (executable
  (name server)
  (public_name dancelor)
- (package dancelor)
  (libraries
   cohttp-lwt-unix
-  nes.unix
+  dancelor.nes.unix
   dancelor.common
-  madge.server
+  dancelor.madge.server
   integers
   logs
   lwt.unix
@@ -35,7 +34,6 @@
 
 (install
  (section share)
- (package dancelor)
  (files
   (glob_files
    (controller/renderer/*.nix with_prefix renderer))

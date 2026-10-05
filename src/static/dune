@@ -1,5 +1,4 @@
 (install
  (section share)
- (package dancelor)
  (files
   (glob_files_rec *)))
