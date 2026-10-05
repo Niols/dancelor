@@ -1,7 +1,10 @@
 (** {1 Non-empty list} *)
 
-type 'a t [@@deriving eq, ord, show, yojson]
-(** A non-empty list. *)
+type 'a t =
+  (::) of 'a * 'a list
+[@@deriving eq, ord, show, yojson]
+(** A non-empty list. We overload the [(::)] constructor so code with non-empty
+    lists looks natural, pattern-matching and all. *)
 
 val to_list : 'a t -> 'a list
 (** Convert a non-empty list to a regular list. *)

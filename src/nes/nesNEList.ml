@@ -1,12 +1,16 @@
-(* FIXME: type 'a t = (::) of 'a * 'a list and expose it *)
-type 'a t = L of 'a list [@@deriving eq, ord, show]
+type 'a t = (::) of 'a * 'a list [@@deriving eq, ord, show]
 
-let to_list (L xs) = xs
+let to_list : 'a t -> 'a list = fun (x :: xs) -> x :: xs
 
-let of_list = function [] -> None | xs -> Some (L xs)
-let of_list_exn = function [] -> invalid_arg "NEList.of_list_exn" | xs -> L xs
+let of_list : 'a list -> 'a t option = function
+  | [] -> None
+  | x :: xs -> Some (x :: xs)
 
-let cons x xs = L (x :: xs)
+let of_list_exn : 'a list -> 'a t = function
+  | [] -> invalid_arg "NEList.of_list_exn"
+  | x :: xs -> x :: xs
+
+let cons x xs = x :: xs
 
 type 'a mylist = 'a list [@@deriving yojson]
 
@@ -14,18 +18,21 @@ let of_yojson a_of_yojson json =
   Result.bind (mylist_of_yojson a_of_yojson json) @@ fun xs ->
   Option.to_result ~none: "empty list" (of_list xs)
 
-let to_yojson a_to_yojson (L xs) =
-  mylist_to_yojson a_to_yojson xs
+let to_yojson a_to_yojson (x :: xs) =
+  mylist_to_yojson a_to_yojson (x :: xs)
 
-let map f (L xs) = L (List.map f xs)
-let map_lwt_p f (L xs) = let%lwt ys = Lwt_list.map_p f xs in Lwt.return (L ys)
+let map f (x :: xs) = f x :: List.map f xs
+let map_lwt_p f (x :: xs) =
+  let%lwt y = f x in
+  let%lwt ys = Lwt_list.map_p f xs in
+  Lwt.return (y :: ys)
 
-let hd (L xs) = List.hd xs
-let tl (L xs) = List.tl xs
+let hd (x :: _) = x
+let tl (_ :: xs) = xs
 
-let singleton x = L [x]
+let singleton x = x :: []
 
-let is_singleton (L xs) = match xs with [_] -> true | _ -> false
+let is_singleton (_ :: xs) = List.is_empty xs
 
-let mem x (L xs) = List.mem x xs
-let exists f (L xs) = List.exists f xs
+let mem n (x :: xs) = n == x || List.mem n xs
+let exists f (x :: xs) = f x || List.exists f xs
