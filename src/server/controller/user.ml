@@ -1,5 +1,5 @@
 open NesUnix
-open Dancelor_common
+open Model_unix
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.user": Logs.LOG)
 
@@ -57,7 +57,7 @@ let sign_in env username password remember_me =
       | None ->
         Log.info (fun m -> m "Rejecting because user has no password.");
         lwt_none
-      | Some hashedPassword when not @@ HashedSecret.is ~clear: (Password_clear.project password) (Database.Password_hash.project hashedPassword) ->
+      | Some hashed_password when not @@ Password_hash.is ~clear: password hashed_password ->
         (* NOTE: Similar to other tokens, we should be able to compare directly but need to project. *)
         Log.info (fun m -> m "Rejecting because passwords do not match.");
         lwt_none
@@ -76,7 +76,7 @@ let create env (user : User_create_form.t) =
   let token = Password_reset_token_clear.make () in
   (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
      is only available on the server side (NesHashedSecretUnix), not in common code. *)
-  let password_reset_token_hash = Database.Password_reset_token_hash.inject @@ HashedSecret.make ~clear: (Password_reset_token_clear.project token) in
+  let password_reset_token_hash = Password_reset_token_hash.make ~clear: token in
   let password_reset_token_max_date = Datetime.make_in_the_future (float_of_int @@ 3 * 24 * 3600) in
   let%lwt id =
     Database.User.create
@@ -99,7 +99,7 @@ let prepare_reset_password env username =
     let token = Password_reset_token_clear.make () in
     (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
        is only available on the server side (NesHashedSecretUnix), not in common code. *)
-    let hashed_token = Database.Password_reset_token_hash.inject @@ HashedSecret.make ~clear: (Password_reset_token_clear.project token) in
+    let hashed_token = Password_reset_token_hash.make ~clear: token in
     let max_date = Datetime.make_in_the_future (float_of_int @@ 3 * 24 * 3600) in
     Database.User.set_password_reset_token actor.id hashed_token max_date;%lwt
     Log.info (fun m -> m "Password reset token generated for user `%s`." (Username.to_string username));
@@ -124,7 +124,7 @@ let reset_password username token password =
       (* NOTE: We should be able to compare Password_reset_token_clear with
          Password_reset_token_hashed directly, but we need to project because
          HashedSecret.is is only available on the server side. *)
-      if not @@ HashedSecret.is ~clear: (Password_reset_token_clear.project token) (Database.Password_reset_token_hash.project hashed_token) then
+      if not @@ Password_reset_token_hash.is ~clear: token hashed_token then
         (
           Log.info (fun m -> m "Rejecting because tokens do no match.");
           Madge_server.shortcut_forbidden_no_leak ()
@@ -134,7 +134,7 @@ let reset_password username token password =
           Log.info (fun m -> m "Accepting to reset password.");
           (* NOTE: We should use Password_hashed.make here, but HashedSecret.make
              is only available on the server side (NesHashedSecretUnix), not in common code. *)
-          let password = Database.Password_hash.inject @@ HashedSecret.make ~clear: (Password_clear.project password) in
+          let password = Password_hash.make ~clear: password in
           Database.User.set_password actor.id password
         )
 

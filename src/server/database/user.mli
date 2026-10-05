@@ -1,8 +1,7 @@
 (** {1 User} *)
 
 open Nes
-open Dancelor_common
-open Sql_types
+open Model_unix
 
 (** {2 Queries} *)
 

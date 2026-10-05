@@ -1,5 +1,3 @@
-include Sql_types
-
 module Entry = Entry
 module Any = Any
 module Book = Book

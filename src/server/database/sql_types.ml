@@ -1,5 +1,5 @@
 open Nes
-open Dancelor_common
+open Model_unix
 
 module Make_id_conv (Tag : sig type t end) = struct
   let get_column : string -> Tag.t Id.t = Id.of_string_exn
@@ -142,19 +142,10 @@ module Make_fresh_hashed_secret_conv (X : Fresh_hashed_secret) = struct
   let set_param : X.t -> string = HashedSecret.unsafe_to_string % X.project
 end
 
-module Password_hash = Fresh.Make(HashedSecret)
 module Password_conv = Make_fresh_hashed_secret_conv(Password_hash)
-
-module Password_reset_token_hash = Fresh.Make(HashedSecret)
 module Password_reset_token_hash_conv = Make_fresh_hashed_secret_conv(Password_reset_token_hash)
-
-module Remember_me_key = Fresh.Make(String)
 module Remember_me_key_conv = Make_fresh_string_conv(Remember_me_key)
-
-module Remember_me_token_clear = Fresh.Make(String)
 module Remember_me_token_clear_conv = Make_fresh_string_conv(Remember_me_token_clear)
-
-module Remember_me_token_hash = Fresh.Make(HashedSecret)
 module Remember_me_token_hash_conv = Make_fresh_hashed_secret_conv(Remember_me_token_hash)
 
 module Email_conv = struct
