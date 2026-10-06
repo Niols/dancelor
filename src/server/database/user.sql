@@ -98,7 +98,7 @@ SET
 WHERE "id" = @id;
 
 -- @get_rows
-WITH "users" AS &get_user_rows
+WITH "users" AS &user_rows
 SELECT *
 FROM "users"
 WHERE "id" IN @ids;
@@ -126,7 +126,7 @@ SELECT * FROM "actors"
 WHERE "username" = @username;
 
 -- @search
-WITH "user_rows" AS &get_user_rows
+WITH "user_rows" AS &user_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0

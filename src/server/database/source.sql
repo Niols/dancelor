@@ -59,28 +59,36 @@ SELECT "cover"
 FROM "source"
 WHERE "id" = @id;
 
--- NEW MODELS
-
 -- @get_rows
-WITH "sources" AS &get_source_rows
+WITH "sources" AS &source_rows
 SELECT "sources".*
 FROM "sources"
 WHERE "id" IN @ids;
 
 -- @get_view
-WITH "sources" AS &get_source_views
-SELECT "sources".*
-FROM "sources"
+SELECT
+    "id",
+    "name",
+    "short_name",
+    "scddb_id",
+    "description",
+    "date"
+FROM "source"
 WHERE "id" = @id;
 
 -- @get_form
-WITH "sources" AS &get_source_forms
-SELECT "sources".*
-FROM "sources"
+SELECT
+    "id",
+    "name",
+    "short_name",
+    "scddb_id",
+    "description",
+    "date"
+FROM "source"
 WHERE "id" = @id;
 
 -- @search
-WITH "source_rows" AS &get_source_rows
+WITH "source_rows" AS &source_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
@@ -95,7 +103,7 @@ WHERE
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
 -- @get_editors_for
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT
     "source_id",
     "persons".*

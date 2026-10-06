@@ -77,7 +77,7 @@ FROM "entities"
 WHERE "id" = @id;
 
 -- @get_actor_roles
-WITH "users" AS &get_user_rows
+WITH "users" AS &user_rows
 SELECT
     "entity_actors"."role",
     "users".*

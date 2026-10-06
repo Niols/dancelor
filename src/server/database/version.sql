@@ -152,41 +152,87 @@ INSERT INTO "version_destructured_transitions" (
     @chords
 );
 
--- NEW MODELS
+-- @version_and_tune_rows | include: reuse
+WITH "versions" AS &version_rows
+SELECT
+    "versions".*,
+    "tune"."name" AS "tune_name",
+    "tune"."kind" AS "tune_kind"
+FROM "versions"
+JOIN "tune" ON "versions"."tune_id" = "tune"."id";
 
 -- @get_rows
-WITH "versions" AS &get_version_and_tune_rows
+WITH "versions" AS &version_and_tune_rows
 SELECT *
 FROM "versions"
 WHERE "id" IN @ids;
 
+-- @version_views | include: reuse
+SELECT
+    -- ids
+    "version"."id",
+    "tune"."id" AS "tune_id",
+    -- version
+    "version"."disambiguation",
+    "version"."key",
+    "version"."remark",
+    "version"."monolithic_bars",
+    "version"."monolithic_or_default_structure",
+    -- tune
+    "tune"."name" AS "tune_name",
+    "tune"."kind" AS "tune_kind",
+    "tune"."remark" AS "tune_remark",
+    "tune"."scddb_id" AS "tune_scddb_id",
+    "tune"."date" AS "tune_date"
+FROM "version"
+JOIN "tune" ON "version"."tune_id" = "tune"."id";
+
 -- @get_view
-WITH "versions" AS &get_version_views
+WITH "versions" AS &version_views
 SELECT "versions".*
 FROM "versions"
 WHERE "versions"."id" = @id
 LIMIT 1; -- NOTE: to help sqlgg
 
 -- @get_views_for_tune
-WITH "versions" AS &get_version_views
+WITH "versions" AS &version_views
 SELECT "versions".*
 FROM "versions"
 WHERE "versions"."tune_id" IN (@tune_id); -- NOTE: with = @tune_id, sqlgg thinks the query returns a single object
 
+-- @version_forms | include: reuse
+SELECT
+    -- ids
+    "version"."id",
+    "tune"."id" AS "tune_id",
+    -- version
+    "version"."disambiguation",
+    "version"."key",
+    "version"."remark",
+    "version"."monolithic_bars",
+    "version"."monolithic_or_default_structure",
+    "version"."monolithic_lilypond",
+    "version"."destructured_as_2_4",
+    -- tune
+    "tune"."name" AS "tune_name",
+    "tune"."kind" AS "tune_kind"
+FROM "version"
+JOIN "tune" ON "version"."tune_id" = "tune"."id";
+
 -- @get_form
-WITH "versions" AS &get_version_forms
+WITH "versions" AS &version_forms
 SELECT "versions".*
 FROM "versions"
 WHERE "versions"."id" = @id
 LIMIT 1; -- NOTE: to help sqlgg
 
 -- @get_all_forms
-WITH "versions" AS &get_version_forms
+WITH "versions" AS &version_forms
 SELECT "versions".*
 FROM "versions";
 
 -- @get_content
-WITH "versions" AS &get_version_forms
+WITH "versions" AS &version_forms
 SELECT
     "id",
     "monolithic_lilypond",
@@ -197,7 +243,7 @@ FROM "versions"
 WHERE "versions"."id" = @id;
 
 -- @search
-WITH "version_rows" AS &get_version_and_tune_rows
+WITH "version_rows" AS &version_and_tune_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
@@ -215,14 +261,14 @@ WHERE
     AND @tune_composer { Some { EXISTS (SELECT 1 FROM "tune_composers" WHERE "tune_id" = "version"."tune_id" AND "composer_id" IN @tune_composer) } | None { TRUE } }
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
--- @get_tune_ids_for_versions | include: reuse
+-- @tune_ids_for_versions | include: reuse
 SELECT DISTINCT "tune_id"
 FROM "version"
 WHERE @version_ids { One_of { "id" IN @version_ids } | All { TRUE } };
 
 -- @get_tune_composers_for
-WITH "tunes" AS &get_tune_ids_for_versions,
-     "persons" AS &get_person_rows
+WITH "tunes" AS &tune_ids_for_versions,
+     "persons" AS &person_rows
 SELECT "tune_id", "persons".*
 FROM "tune_composers"
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
@@ -230,8 +276,8 @@ JOIN "tunes" USING ("tune_id")
 ORDER BY "index";
 
 -- @get_tune_composers_with_details_for
-WITH "tunes" AS &get_tune_ids_for_versions,
-     "persons" AS &get_person_rows
+WITH "tunes" AS &tune_ids_for_versions,
+     "persons" AS &person_rows
 SELECT "tune_id", "persons".*, "details"
 FROM "tune_composers"
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
@@ -239,43 +285,43 @@ JOIN "tunes" USING ("tune_id")
 ORDER BY "index";
 
 -- @get_arrangers_for
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT "version_id", "persons".*
 FROM "version_arrangers"
 JOIN "persons" ON "version_arrangers"."arranger_id" = "persons"."id"
 WHERE @version_ids { One_of { "version_id" IN @version_ids } | All { TRUE } };
 
 -- @get_sources_for
-WITH "sources" AS &get_source_short_names
+WITH "sources" AS &source_short_names
 SELECT "version_id", "sources".*
 FROM "version_sources"
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id"
 WHERE @version_ids { One_of { "version_id" IN @version_ids } | All { TRUE } };
 
 -- @get_version_sources_for
-WITH "sources" AS &get_source_names
+WITH "sources" AS &source_names
 SELECT "version_id", "sources".*, "structure", "details"
 FROM "version_sources"
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id"
 WHERE @version_ids { One_of { "version_id" IN @version_ids } | All { TRUE } };
 
 -- @get_version_form_sources_for
-WITH "sources" AS &get_source_rows
+WITH "sources" AS &source_rows
 SELECT "version_id", "sources".*, "structure", "details"
 FROM "version_sources"
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id"
 WHERE @version_ids { One_of { "version_id" IN @version_ids } | All { TRUE } };
 
 -- @get_tune_extra_names_for
-WITH "tunes" AS &get_tune_ids_for_versions
+WITH "tunes" AS &tune_ids_for_versions
 SELECT "tune_id", "extra_name"
 FROM "tune_extra_names"
 JOIN "tunes" USING ("tune_id")
 ORDER BY "extra_name";
 
 -- @get_devisers_for_dances_of
-WITH "tunes" AS &get_tune_ids_for_versions,
-     "persons" AS &get_person_rows
+WITH "tunes" AS &tune_ids_for_versions,
+     "persons" AS &person_rows
 SELECT "dance_id", "persons".*
 FROM "recommended_tunes"
 JOIN "tunes" USING ("tune_id")
@@ -283,7 +329,7 @@ JOIN "dance_devisers" USING ("dance_id")
 JOIN "persons" ON "dance_devisers"."deviser_id" = "persons"."id";
 
 -- @get_editors_for_sources_of
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT "source_id", "persons".*
 FROM "version_sources"
 JOIN "source_editors" USING ("source_id")
@@ -291,15 +337,15 @@ JOIN "persons" ON "source_editors"."person_id" = "persons"."id"
 WHERE @version_ids { One_of { "version_id" IN @version_ids } | All { TRUE } };
 
 -- @get_dances_for
-WITH "tunes" AS &get_tune_ids_for_versions,
-     "dances" AS &get_dance_rows
+WITH "tunes" AS &tune_ids_for_versions,
+     "dances" AS &dance_rows
 SELECT "tune_id", "dances".*
 FROM "recommended_tunes"
 JOIN "tunes" USING ("tune_id")
 JOIN "dances" ON "recommended_tunes"."dance_id" = "dances"."id";
 
 -- @get_other_versions_for
-WITH "versions" AS &get_version_rows
+WITH "versions" AS &version_rows
 SELECT *
 FROM "versions"
 WHERE EXISTS (
@@ -311,7 +357,7 @@ WHERE EXISTS (
 );
 
 -- @get_sources_for_other_versions_of
-WITH "sources" AS &get_source_short_names
+WITH "sources" AS &source_short_names
 SELECT
     "version_id",
     "sources".*
@@ -327,7 +373,7 @@ WHERE EXISTS (
 );
 
 -- @get_arrangers_for_other_versions_of
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT
     "version_id",
     "persons".*

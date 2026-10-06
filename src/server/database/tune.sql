@@ -114,29 +114,43 @@ INSERT INTO "recommended_tunes" (
     @dance_id
 );
 
--- NEW MODELS
+-- @tune_rows | include: reuse
+SELECT
+    "id",
+    "name",
+    "kind"
+FROM "tune";
 
 -- @get_rows
-WITH "tunes" AS &get_tune_rows
+WITH "tunes" AS &tune_rows
 SELECT *
 FROM "tunes"
 WHERE "id" IN @ids;
 
 -- @get_view
-WITH "tunes" AS &get_tune_views
-SELECT *
-FROM "tunes"
+SELECT
+    "id",
+    "name",
+    "kind",
+    "remark",
+    "scddb_id",
+    "date"
+FROM "tune"
 WHERE "id" = @id;
 
-
 -- @get_form
-WITH "tunes" AS &get_tune_forms
-SELECT *
-FROM "tunes"
+SELECT
+    "id",
+    "name",
+    "kind",
+    "remark",
+    "scddb_id",
+    "date"
+FROM "tune"
 WHERE "id" = @id;
 
 -- @search
-WITH "tune_rows" AS &get_tune_rows
+WITH "tune_rows" AS &tune_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
@@ -160,7 +174,7 @@ WHERE @tune_ids { One_of { "tune_id" IN @tune_ids } | All { TRUE } }
 ORDER BY "extra_name";
 
 -- @get_composers_for
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT
     "tune_id",
     "persons".*
@@ -170,8 +184,8 @@ WHERE @tune_ids { One_of { "tune_id" IN @tune_ids } | All { TRUE } }
 ORDER BY "index";
 
 -- @get_composers_for_tunes_of_dances
-WITH "tunes" AS &get_tune_ids_for_dances,
-     "persons" AS &get_person_rows
+WITH "tunes" AS &tune_ids_for_dances,
+     "persons" AS &person_rows
 SELECT "tune_id", "persons".*
 FROM "tune_composers"
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
@@ -179,7 +193,7 @@ JOIN "tunes" USING ("tune_id")
 ORDER BY "index";
 
 -- @get_composers_with_details_for
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT "tune_id", "persons".*, "details"
 FROM "tune_composers"
 JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
@@ -187,7 +201,7 @@ WHERE @tune_ids { One_of { "tune_id" IN @tune_ids } | All { TRUE } }
 ORDER BY "index";
 
 -- @get_dances_for
-WITH "dances" AS &get_dance_rows
+WITH "dances" AS &dance_rows
 SELECT "tune_id", "dances".*
 FROM "recommended_tunes"
 JOIN "dances" ON "recommended_tunes"."dance_id" = "dances"."id"
@@ -200,20 +214,20 @@ WHERE @tune_ids { One_of { "tune_id" IN @tune_ids } | All { TRUE } };
 
 -- @get_devisers_for_dances_of
 WITH "dances" AS &get_dance_ids_for_tunes,
-     "persons" AS &get_person_rows
+     "persons" AS &person_rows
 SELECT "dance_id", "persons".*
 FROM "dance_devisers"
 JOIN "persons" ON "dance_devisers"."deviser_id" = "persons"."id"
 JOIN "dances" USING ("dance_id");
 
 -- @get_versions_for
-WITH "versions" AS &get_version_rows
+WITH "versions" AS &version_rows
 SELECT *
 FROM "versions"
 WHERE @tune_ids { One_of { "tune_id" IN @tune_ids } | All { TRUE } };
 
 -- @get_sources_for_versions_of
-WITH "sources" AS &get_source_short_names
+WITH "sources" AS &source_short_names
 SELECT "version_id", "sources".*
 FROM "version_sources"
 JOIN "version" ON "version_sources"."version_id" = "version"."id"
@@ -221,7 +235,7 @@ JOIN "sources" ON "version_sources"."source_id" = "sources"."id"
 WHERE @tune_ids { One_of { "version"."tune_id" IN @tune_ids } | All { TRUE } };
 
 -- @get_arrangers_for_versions_of
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT "version_id", "persons".*
 FROM "version_arrangers"
 JOIN "version" ON "version_arrangers"."version_id" = "version"."id"
@@ -229,7 +243,7 @@ JOIN "persons" ON "version_arrangers"."arranger_id" = "persons"."id"
 WHERE @tune_ids { One_of { "version"."tune_id" IN @tune_ids } | All { TRUE } };
 
 -- @get_rows_for_dance
-WITH "tunes" AS &get_tune_rows
+WITH "tunes" AS &tune_rows
 SELECT "tunes".*
 FROM "recommended_tunes"
 JOIN "tunes" ON "recommended_tunes"."tune_id" = "tunes"."id"
