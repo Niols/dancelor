@@ -47,7 +47,7 @@ end
 module Tune_name = struct
   type t = {
     id: Tune_id.t;
-    name: string
+    name: string;
   }
   [@@deriving eq, yojson, fields]
 end
@@ -55,7 +55,7 @@ end
 module Version_name = struct
   type t = {
     id: Version_id.t;
-    name: string
+    name: string;
   }
   [@@deriving eq, yojson, fields]
 end
@@ -63,7 +63,7 @@ end
 module Set_name = struct
   type t = {
     id: Set_id.t;
-    name: string
+    name: string;
   }
   [@@deriving eq, yojson, fields]
 end
@@ -71,7 +71,15 @@ end
 module Book_name = struct
   type t = {
     id: Book_id.t;
-    name: string
+    name: string;
+  }
+  [@@deriving eq, yojson, fields]
+end
+
+module User_name = struct
+  type t = {
+    id: User_id.t;
+    username: string;
   }
   [@@deriving eq, yojson, fields]
 end

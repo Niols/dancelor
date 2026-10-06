@@ -42,6 +42,8 @@ let dispatch uri =
     | Source View -> Source_viewer.view
     | Source Add -> Source_editor.add ()
     | Source Edit -> Source_editor.edit
+    | User View -> User_viewer.view
+    | User Edit -> User_editor.edit
     | User Create -> User_creator.create ()
     | User Prepare_reset_password -> User_password_reset_preparer.create ()
     | User Password_reset -> User_password_resetter.create

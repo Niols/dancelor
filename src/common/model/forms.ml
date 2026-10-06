@@ -210,4 +210,10 @@ module User_form = struct
     email: Email.t;
   }
   [@@deriving eq, yojson, fields]
+
+  let to_name id {username; _} : User_name.t =
+    {id; username = Username.to_string username}
+
+  let to_row id {username; _} : User_row.t =
+    {id; username}
 end

@@ -25,12 +25,14 @@ let get_view _env id =
   | Some view -> lwt view
 
 let get_form env id =
-  match Option.equal User_id.equal (Environment.actor_id env) (Some id) with
-  | false -> Shared.reject_can_get () (* FIXME: something more appropriate *)
-  | true ->
-    match%lwt Database.User.get_form id with
-    | None -> Shared.reject_can_get ()
-    | Some form -> lwt form
+  let%lwt _ = get_view env id in
+  Shared.assert_can_edit_user env id @@ fun () ->
+  Option.get <$> Database.User.get_form id
+
+let update env id (user : User_form.t) =
+  let%lwt _ = get_view env id in
+  Shared.assert_can_edit_user env id @@ fun () ->
+  Database.User.update id user
 
 let cache : (Environment.cache_key * User_query.t, (User_row.t * float) Search_result.t Lwt.t) Cache.t =
   Cache.create ~lifetime: 60 ()
@@ -99,11 +101,6 @@ let create env (user : User_form.t) =
   in
   let%lwt user = Option.get <$> Database.User.get_row id in
   lwt (user, token)
-
-let update env id (user : User_form.t) =
-  match Option.equal User_id.equal (Environment.actor_id env) (Some id) || Shared.can_administrate env with
-  | false -> Shared.reject_can_get () (* FIXME: something more appropriate *)
-  | true -> Database.User.update id user
 
 let prepare_reset_password env username =
   Shared.assert_can_administrate env @@ fun _admin ->

@@ -18,6 +18,9 @@ module User_row = struct
     username: Username.t;
   }
   [@@deriving eq, yojson, fields]
+
+  let to_name : t -> User_name.t = fun {id; username} ->
+    {id; username = Username.to_string username}
 end
 
 module Dance_row = struct

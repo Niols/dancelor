@@ -77,6 +77,21 @@ let assert_can_administrate env f =
         Madge_server.shortcut_forbidden "You do not have permission to administrate this instance."
       )
 
+let assert_can_edit_user env user_id k =
+  assert_permission
+    ~access_type: "edit"
+    ~pp_reason: (fun fmt _reason -> fpf fmt "FIXME")
+    env
+    (
+      match Option.equal User_id.equal (Environment.actor_id env) (Some user_id) with
+      | true -> Some `Themselves
+      | false ->
+        match can_administrate env with
+        | true -> Some `Admin
+        | false -> None
+    )
+    (fun _reason -> k ())
+
 module type Db_private = sig
   type tag
   type id = tag Id.t

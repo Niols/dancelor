@@ -196,7 +196,15 @@ let header_item =
                       ]
                     else []
                   );
-                  [R.li (
+                  [li [
+                    Button.make_a
+                      ~label: "My profile"
+                      ~icon: (Model User)
+                      ~dropdown: true
+                      ~href: (S.const (Endpoints.Page.(href (User View) None) actor.id))
+                      ()
+                  ];
+                  R.li (
                     S.from_lwt [] @@
                       match%lwt Environment.person_id with
                       | None -> lwt_nil
