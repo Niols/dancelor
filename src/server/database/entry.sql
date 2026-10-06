@@ -1,13 +1,13 @@
 -- @get_type_unsafe
-SELECT "type" FROM "entry"
+SELECT "type" FROM "entities"
 WHERE "id" = @id;
 
 -- @get_is_public
-SELECT "is_public" FROM "entry"
+SELECT "is_public" FROM "entities"
 WHERE "id" = @id;
 
 -- @register
-INSERT INTO "entry" (
+INSERT INTO "entities" (
     "id",
     "type",
     "created_at",
@@ -22,78 +22,78 @@ INSERT INTO "entry" (
 );
 
 -- @delete
-DELETE FROM "entry" WHERE "id" = @id;
+DELETE FROM "entities" WHERE "id" = @id;
 
 -- @touch
-UPDATE "entry"
+UPDATE "entities"
 SET "modified_at" = CURRENT_TIMESTAMP
 WHERE "id" = @id;
 
 -- @update_is_public
-UPDATE "entry"
+UPDATE "entities"
 SET "is_public" = @is_public
 WHERE "id" = @id;
 
 -- @get_actors
 SELECT "user_id", "role"
-FROM "entry_actors"
-WHERE "entry_id" = @entry_id;
+FROM "entity_actors"
+WHERE "entity_id" = @entity_id;
 
 -- @get_all_actors
 SELECT
-    "entry_id",
+    "entity_id",
     "user_id",
     "role"
-FROM "entry_actors"
-JOIN "entry" ON "entry_actors"."entry_id" = "entry"."id"
+FROM "entity_actors"
+JOIN "entities" ON "entity_actors"."entity_id" = "entities"."id"
 WHERE "type" = @type_;
 
 -- @delete_all_actors
-DELETE FROM "entry_actors"
-WHERE "entry_id" = @entry_id;
+DELETE FROM "entity_actors"
+WHERE "entity_id" = @entity_id;
 
 -- @add_one_actor
-INSERT INTO "entry_actors" (
-    "entry_id",
+INSERT INTO "entity_actors" (
+    "entity_id",
     "user_id",
     "role"
 ) VALUES (
-    @entry_id,
+    @entity_id,
     @user_id,
     @role
 );
 
 -- @get_newest
-WITH "entry_permissions" AS &get_entry_permissions
+WITH "viewable_entities" AS &viewable_entities
 SELECT "id", "type"
-FROM "entry" JOIN "entry_permissions" USING ("id")
+FROM "entities" JOIN "viewable_entities" USING ("id")
 ORDER BY "created_at" DESC
 LIMIT @limit;
 
 -- @get_permission
-WITH "entry_permissions" AS &get_entry_permissions
-SELECT "entry_is_public", "actor_role", "actor_is_omniscient_administrator"
-FROM "entry_permissions"
+WITH "entities" AS &viewable_entities
+SELECT "entity_is_public", "actor_role", "actor_is_omniscient_administrator"
+FROM "entities"
 WHERE "id" = @id;
 
 -- @get_actor_roles
 WITH "users" AS &get_user_rows
 SELECT
-    "entry_actors"."role",
+    "entity_actors"."role",
     "users".*
-FROM "entry_actors"
-JOIN "users" ON "entry_actors"."user_id" = "users"."id"
-WHERE "entry_id" = @entry_id;
+FROM "entity_actors"
+JOIN "users" ON "entity_actors"."user_id" = "users"."id"
+WHERE "entity_id" = @entity_id;
 
 -- @set_is_public
-UPDATE "entry"
+UPDATE "entities"
 SET "is_public" = @is_public
 WHERE "id" = @id;
 
 -- @get_type
-WITH "entry_permissions" AS &get_entry_permissions
-SELECT "entry"."type"
-FROM "entry_permissions"
-JOIN "entry" USING ("id")
+WITH "viewable_entities" AS &viewable_entities
+SELECT "entities"."type"
+FROM "viewable_entities"
+JOIN "entities" USING ("id")
 WHERE "id" = @id
 LIMIT 1; -- NOTE: to help sqlgg

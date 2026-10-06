@@ -1,17 +1,3 @@
--- @get
-SELECT
-    "name",
-    "short_name",
-    "scddb_id",
-    "description",
-    "date",
-    "created_at",
-    "modified_at"
-FROM "source"
-JOIN "entry" ON "source"."id" = "entry"."id"
-WHERE "source"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
 -- @create
 INSERT INTO "source" (
     "id",

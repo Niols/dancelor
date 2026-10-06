@@ -95,9 +95,10 @@ module Any_id = struct
     | Set of Set_id.t
     | Book of Book_id.t
     | User of User_id.t
-  [@@deriving yojson, variants]
+  [@@deriving eq, yojson, variants]
 
-  let of_type id : Type.t -> t = function
+  let of_untagged : Type.t -> Untagged.t Id.t -> t = fun type_ id ->
+    match type_ with
     | Person -> Person (Id.unsafe_coerce id)
     | Dance -> Dance (Id.unsafe_coerce id)
     | Source -> Source (Id.unsafe_coerce id)
@@ -107,19 +108,7 @@ module Any_id = struct
     | Book -> Book (Id.unsafe_coerce id)
     | User -> User (Id.unsafe_coerce id)
 
-  let equal any1 any2 =
-    match any1, any2 with
-    | Person id1, Person id2 -> Id.equal' id1 id2
-    | Dance id1, Dance id2 -> Id.equal' id1 id2
-    | Source id1, Source id2 -> Id.equal' id1 id2
-    | Tune id1, Tune id2 -> Id.equal' id1 id2
-    | Version id1, Version id2 -> Id.equal' id1 id2
-    | Set id1, Set id2 -> Id.equal' id1 id2
-    | Book id1, Book id2 -> Id.equal' id1 id2
-    | User id1, User id2 -> Id.equal' id1 id2
-    | _ -> false
-
-  let to_entry_id = function
+  let to_untagged : t -> Untagged.t Id.t = function
     | Person x -> Id.unsafe_coerce x
     | Dance x -> Id.unsafe_coerce x
     | Source x -> Id.unsafe_coerce x

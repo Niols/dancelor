@@ -1,17 +1,3 @@
--- @get
-SELECT
-    "name",
-    "kind",
-    "order",
-    "remark",
-    "created_at",
-    "modified_at",
-    "is_public"
-FROM "set"
-JOIN "entry" ON "set"."id" = "entry"."id"
-WHERE "set"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
 -- @create
 INSERT INTO "set" (
     "id",

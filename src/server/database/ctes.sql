@@ -1,25 +1,22 @@
 --------------------------------- [ Entries ] ----------------------------------
 
--- FIXME: rename in something like [get_viewable_entries], introduce also
--- [get_editable_entries] and the likes.
-
--- @get_entry_permissions | include: reuse
+-- @viewable_entities | include: reuse
 SELECT *
 FROM (
     SELECT
-        "entry"."id",
-        "entry"."is_public" AS "entry_is_public",
-        "entry_actors"."role" AS "actor_role",
+        "entities"."id",
+        "entities"."is_public" AS "entity_is_public",
+        "entity_actors"."role" AS "actor_role",
         COALESCE(
             ("user"."role" = 'Administrator' AND "user"."omniscience"),
             FALSE
         ) AS "actor_is_omniscient_administrator"
-    FROM "entry"
-    LEFT JOIN "entry_actors" ON "entry_actors"."entry_id" = "entry"."id" AND "entry_actors"."user_id" = (@actor_id :: TEXT NULL)
+    FROM "entities"
+    LEFT JOIN "entity_actors" ON "entity_actors"."entity_id" = "entities"."id" AND "entity_actors"."user_id" = (@actor_id :: TEXT NULL)
     LEFT JOIN "user" ON "user"."id" = (@actor_id :: TEXT NULL)
 ) AS "sub"
 WHERE
-    "sub"."entry_is_public"
+    "sub"."entity_is_public"
     OR "sub"."actor_role" IS NOT NULL
     OR "sub"."actor_is_omniscient_administrator";
 
@@ -233,30 +230,30 @@ JOIN "tune" ON "tune"."id" = "version"."tune_id";
 ---------------------------------- [ Sets ] ------------------------------------
 
 -- @get_set_rows | include: reuse
-WITH entries AS &get_entry_permissions
-SELECT "entries".*, "name", "kind"
-FROM "set" JOIN "entries" USING ("id");
+WITH entities AS &viewable_entities
+SELECT "entities".*, "name", "kind"
+FROM "set" JOIN "entities" USING ("id");
 
 -- @get_set_views | include: reuse
-WITH entries AS &get_entry_permissions
+WITH entities AS &viewable_entities
 SELECT
-    "entries".*,
+    "entities".*,
     "name",
     "kind",
     "order",
     "remark"
 FROM "set"
-JOIN "entries" USING ("id");
+JOIN "entities" USING ("id");
 
 -- @get_set_forms | include: reuse
-WITH entries AS &get_entry_permissions
+WITH entities AS &viewable_entities
 SELECT
     "id",
     "name",
     "kind",
     "order"
 FROM "set"
-JOIN "entries" USING ("id");
+JOIN "entities" USING ("id");
 
 -- @get_set_contents | include: reuse
 SELECT
@@ -287,27 +284,27 @@ ORDER BY "index";
 ---------------------------------- [ Books ] -----------------------------------
 
 -- @get_book_rows | include: reuse
-WITH "entries" AS &get_entry_permissions
+WITH "entities" AS &viewable_entities
 SELECT
-    "entries".*,
+    "entities".*,
     "name",
     "date"
 FROM "book"
-JOIN "entries" USING ("id");
+JOIN "entities" USING ("id");
 
 -- @get_book_views | include: reuse
-WITH "entries" AS &get_entry_permissions
+WITH "entities" AS &viewable_entities
 SELECT
-    "entries".*,
+    "entities".*,
     "name",
     "date",
     "remark",
     "scddb_id"
 FROM "book"
-JOIN "entries" USING ("id");
+JOIN "entities" USING ("id");
 
 -- @get_book_forms | include: reuse
-WITH "entries" AS &get_entry_permissions
+WITH "entities" AS &viewable_entities
 SELECT
     "id",
     "name",
@@ -315,4 +312,4 @@ SELECT
     "remark",
     "scddb_id"
 FROM "book"
-JOIN "entries" USING ("id");
+JOIN "entities" USING ("id");

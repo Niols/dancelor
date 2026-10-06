@@ -1,17 +1,3 @@
--- @get
-SELECT
-    "name",
-    "kind",
-    "remark",
-    "scddb_id",
-    "date",
-    "created_at",
-    "modified_at"
-FROM "tune"
-JOIN "entry" ON "tune"."id" = "entry"."id"
-WHERE "tune"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
 -- @create
 INSERT INTO "tune" (
     "id",

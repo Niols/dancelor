@@ -118,7 +118,7 @@ let get_contents_for ~actor_id db book_ids =
         ~set_id
         ~set_name
         ~set_kind
-        ~set_entry_is_public
+        ~set_entity_is_public
         ~set_actor_role
         ~set_actor_is_omniscient_administrator
         ~set_parameter_display_name
@@ -166,13 +166,13 @@ let get_contents_for ~actor_id db book_ids =
       let set =
         Option.map
           (fun set_id ->
-            match set_entry_is_public, (* set_actor_role, *) set_actor_is_omniscient_administrator with
+            match set_entity_is_public, (* set_actor_role, *) set_actor_is_omniscient_administrator with
             | None, (* None, *) None -> Forbidden
-            | Some set_entry_is_public, (* Some set_actor_role, *) Some set_actor_is_omniscient_administrator ->
+            | Some set_entity_is_public, (* Some set_actor_role, *) Some set_actor_is_omniscient_administrator ->
               Allowed (
                 set_sql_to_row
                   ~id: set_id
-                  ~entry_is_public: set_entry_is_public
+                  ~entity_is_public: set_entity_is_public
                   ~actor_role: set_actor_role
                   ~actor_is_omniscient_administrator: set_actor_is_omniscient_administrator
                   ~name: (Option.get set_name)
@@ -217,7 +217,7 @@ let get_form_contents_for ~actor_id db book_ids =
         ~set_id
         ~set_name
         ~set_kind
-        ~set_entry_is_public
+        ~set_entity_is_public
         ~set_actor_role
         ~set_actor_is_omniscient_administrator
         ~set_parameter_display_name
@@ -265,13 +265,13 @@ let get_form_contents_for ~actor_id db book_ids =
       let set =
         Option.map
           (fun set_id ->
-            match set_entry_is_public, (* set_actor_role, *) set_actor_is_omniscient_administrator with
+            match set_entity_is_public, (* set_actor_role, *) set_actor_is_omniscient_administrator with
             | None, (* None, *) None -> Forbidden
-            | Some set_entry_is_public, (* Some set_actor_role, *) Some set_actor_is_omniscient_administrator ->
+            | Some set_entity_is_public, (* Some set_actor_role, *) Some set_actor_is_omniscient_administrator ->
               Allowed (
                 set_sql_to_row
                   ~id: set_id
-                  ~entry_is_public: set_entry_is_public
+                  ~entity_is_public: set_entity_is_public
                   ~actor_role: set_actor_role
                   ~actor_is_omniscient_administrator: set_actor_is_omniscient_administrator
                   ~name: (Option.get set_name)

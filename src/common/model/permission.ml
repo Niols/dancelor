@@ -8,7 +8,7 @@ type actor_role =
 [@@deriving eq, yojson]
 
 type t = {
-  entry_is_public: bool;
+  entity_is_public: bool;
   actor_role: actor_role option;
   actor_is_omniscient_administrator: bool;
 }
@@ -21,15 +21,15 @@ type view_reason =
   | Omniscient_administrator
 [@@deriving show]
 
-let view_reason {entry_is_public; actor_role; actor_is_omniscient_administrator} =
-  match entry_is_public, actor_role, actor_is_omniscient_administrator with
+let view_reason {entity_is_public; actor_role; actor_is_omniscient_administrator} =
+  match entity_is_public, actor_role, actor_is_omniscient_administrator with
   | true, _, _ -> Public
   | _, Some Owner, _ -> Owner
   | _, Some Viewer, _ -> Viewer
   | _, _, true -> Omniscient_administrator
   | _ -> failwith "Permission.view_reason"
 
-(* FIXME: if the entry is public, then maintainers also should be able to edit/delete! *)
+(* FIXME: if the entity is public, then maintainers also should be able to edit/delete! *)
 type edit_reason =
   | Owner
   | Omniscient_administrator

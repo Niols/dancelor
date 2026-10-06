@@ -304,7 +304,7 @@ let can_update_public _ =
       Permission.edit_reason {
         actor_role = None;
         actor_is_omniscient_administrator = (actor.role = Maintainer || actor.role = Administrator);
-        entry_is_public = true;
+        entity_is_public = true;
       }
 
 let can_delete_public = can_update_public

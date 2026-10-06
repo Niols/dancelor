@@ -1076,6 +1076,15 @@ let migrations : migration list = [
     Migrations_sql.m078_2026_10_user_add_email__set_not_null;
     Migrations_sql.m078_2026_10_user_add_email__set_unique;
   ];
+  make_ddls "m079_2026_10_rename_entry_table" [
+    Migrations_sql.m079_2026_10_entities__rename_entry_table;
+    Migrations_sql.m079_2026_10_entities__rename_entities_pk_entry_constraint;
+    Migrations_sql.m079_2026_10_entities__rename_entry_actors_table;
+    Migrations_sql.m079_2026_10_entities__rename_entity_actors_entry_id_column;
+    Migrations_sql.m079_2026_10_entities__rename_entity_actors_uq_entry_actors_entry_id_user_id_constraint;
+    Migrations_sql.m079_2026_10_entities__rename_entity_actors_fk_entry_actors_entry_id_constraint;
+    Migrations_sql.m079_2026_10_entities__rename_entity_actors_fk_entry_actors_user_id_constraint;
+  ];
 ]
 
 exception Migration_failed of string * exn

@@ -1,17 +1,3 @@
--- @get
-SELECT
-    "name",
-    "date",
-    "remark",
-    "scddb_id",
-    "created_at",
-    "modified_at",
-    "is_public"
-FROM "book"
-JOIN "entry" ON "book"."id" = "entry"."id"
-WHERE "book"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
 -- @create
 INSERT INTO "book" (
     "id",
@@ -318,7 +304,7 @@ JOIN "sources" ON "book_sources"."source_id" = "sources"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @get_content_for
-WITH "set_permissions" AS &get_entry_permissions
+WITH "set_permissions" AS &viewable_entities
 SELECT
     "book_id",
     "page_type",
@@ -334,7 +320,7 @@ SELECT
     "set_id",
     "set"."name" AS "set_name",
     "set"."kind" AS "set_kind",
-    "set_permissions"."entry_is_public" AS "set_entry_is_public",
+    "set_permissions"."entity_is_public" AS "set_entity_is_public",
     "set_permissions"."actor_role" AS "set_actor_role",
     "set_permissions"."actor_is_omniscient_administrator" AS "set_actor_is_omniscient_administrator",
     -- set parameters

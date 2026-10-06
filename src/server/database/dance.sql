@@ -1,18 +1,3 @@
--- @get
-SELECT
-    "name",
-    "kind",
-    "two_chords",
-    "scddb_id",
-    "disambiguation",
-    "date",
-    "created_at",
-    "modified_at"
-FROM "dance"
-JOIN "entry" ON "dance"."id" = "entry"."id"
-WHERE "dance"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
 -- @create
 INSERT INTO "dance" (
     "id",

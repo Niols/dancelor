@@ -1,28 +1,3 @@
--- @get
-SELECT
-    "username",
-    "role",
-    "omniscience",
-    "github_handle",
-    "created_at",
-    "modified_at"
-FROM "user"
-JOIN "entry" ON "user"."id" = "entry"."id"
-WHERE "user"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
--- @get_all
-SELECT
-    "entry"."id",
-    "username",
-    "role",
-    "omniscience",
-    "github_handle",
-    "created_at",
-    "modified_at"
-FROM "user"
-JOIN "entry" ON "user"."id" = "entry"."id";
-
 -- @get_from_username
 SELECT
     "user"."id",
@@ -32,7 +7,7 @@ SELECT
     "created_at",
     "modified_at"
 FROM "user"
-JOIN "entry" ON "user"."id" = "entry"."id"
+JOIN "entities" ON "user"."id" = "entities"."id"
 WHERE "username" = @username
 LIMIT 1; -- NOTE: to help sqlgg
 
