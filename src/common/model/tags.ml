@@ -16,7 +16,7 @@ end
 module Make (Params : Params) = struct
   type t
   let pp _ _ = failwithf "Tags.%s.pp" Params.module_name
-  let show _ _ = failwithf "Tags.%s.show" Params.module_name
+  let show _ = failwithf "Tags.%s.show" Params.module_name
   let equal _ _ = failwithf "Tags.%s.equal" Params.module_name
   let to_yojson _ = failwithf "Tags.%s.to_yojson" Params.module_name
   let of_yojson _ = failwithf "Tags.%s.of_yojson" Params.module_name

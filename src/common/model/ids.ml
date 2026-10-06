@@ -1,7 +1,12 @@
 open Tags
 
-module Person_id = struct
-  type t = Person_tag.t Id.t
+module type Tag = sig
+  type t
+  [@@deriving eq, yojson, show]
+end
+
+module Make (Tag : Tag) = struct
+  type t = Tag.t Id.t
   [@@deriving eq, yojson, show {with_path = false}]
 
   (* For URI serialisation *)
@@ -9,68 +14,14 @@ module Person_id = struct
   let of_string = Id.of_string
 end
 
-module User_id = struct
-  type t = User_tag.t Id.t
-  [@@deriving eq, yojson, show {with_path = false}]
-
-  (* For URI serialisation *)
-  let to_string = Id.to_string
-  let of_string = Id.of_string
-end
-
-module Dance_id = struct
-  type t = Dance_tag.t Id.t
-  [@@deriving eq, yojson, show {with_path = false}]
-
-  (* For URI serialisation *)
-  let to_string = Id.to_string
-  let of_string = Id.of_string
-end
-
-module Source_id = struct
-  type t = Source_tag.t Id.t
-  [@@deriving eq, yojson, show {with_path = false}]
-
-  (* For URI serialisation *)
-  let to_string = Id.to_string
-  let of_string = Id.of_string
-end
-
-module Tune_id = struct
-  type t = Tune_tag.t Id.t
-  [@@deriving eq, yojson, show {with_path = false}]
-
-  (* For URI serialisation *)
-  let to_string = Id.to_string
-  let of_string = Id.of_string
-end
-
-module Version_id = struct
-  type t = Version_tag.t Id.t
-  [@@deriving eq, yojson, show {with_path = false}]
-
-  (* For URI serialisation *)
-  let to_string = Id.to_string
-  let of_string = Id.of_string
-end
-
-module Set_id = struct
-  type t = Set_tag.t Id.t
-  [@@deriving eq, yojson, show {with_path = false}]
-
-  (* For URI serialisation *)
-  let to_string = Id.to_string
-  let of_string = Id.of_string
-end
-
-module Book_id = struct
-  type t = Book_tag.t Id.t
-  [@@deriving eq, yojson, show {with_path = false}]
-
-  (* For URI serialisation *)
-  let to_string = Id.to_string
-  let of_string = Id.of_string
-end
+module Person_id = Make(Person_tag)
+module Dance_id = Make(Dance_tag)
+module Source_id = Make(Source_tag)
+module Tune_id = Make(Tune_tag)
+module Version_id = Make(Version_tag)
+module Set_id = Make(Set_tag)
+module Book_id = Make(Book_tag)
+module User_id = Make(User_tag)
 
 module Any_id = struct
   module Type = struct
