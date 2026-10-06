@@ -1,38 +1,29 @@
--- @get
-SELECT
-    "name",
-    "scddb_id",
-    "composed_tunes_are_public",
-    "published_tunes_are_public",
-    "created_at",
-    "modified_at"
-FROM "person"
-JOIN "entry" ON "person"."id" = "entry"."id"
-WHERE "person"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
--- NEW MODELS
-
 -- @get_rows
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT "persons".*
 FROM "persons"
 WHERE "id" IN @ids;
 
 -- @get_view
-WITH "persons" AS &get_person_views
-SELECT "persons".*
-FROM "persons"
+SELECT
+    "id",
+    "name",
+    "scddb_id",
+    "composed_tunes_are_public",
+    "published_tunes_are_public"
+FROM "person"
 WHERE "id" = @id;
 
 -- @get_form
-WITH "persons" AS &get_person_forms
-SELECT "persons".*
-FROM "persons"
+SELECT
+    "id",
+    "name",
+    "scddb_id"
+FROM "person"
 WHERE "id" = @id;
 
 -- @search
-WITH "person_rows" AS &get_person_rows
+WITH "person_rows" AS &person_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0

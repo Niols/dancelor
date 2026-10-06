@@ -1,17 +1,3 @@
--- @get
-SELECT
-    "name",
-    "kind",
-    "order",
-    "remark",
-    "created_at",
-    "modified_at",
-    "is_public"
-FROM "set"
-JOIN "entry" ON "set"."id" = "entry"."id"
-WHERE "set"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
 -- @create
 INSERT INTO "set" (
     "id",
@@ -118,28 +104,44 @@ INSERT INTO "set_content" (
     @version_parameter_display_composer
 );
 
--- NEW MODELS
+-- @set_rows | include: reuse
+WITH "entities" AS &viewable_entities
+SELECT "entities".*, "name", "kind"
+FROM "set" JOIN "entities" USING ("id");
 
 -- @get_rows
-WITH "sets" AS &get_set_rows
+WITH "sets" AS &set_rows
 SELECT *
 FROM "sets"
 WHERE "sets"."id" IN @ids;
 
 -- @get_view
-WITH "sets" AS &get_set_views
-SELECT *
-FROM "sets"
-WHERE "sets"."id" = @id;
+WITH "entities" AS &viewable_entities
+SELECT
+    "entities".*,
+    "name",
+    "kind",
+    "order",
+    "remark"
+FROM "set"
+JOIN "entities" USING ("id")
+WHERE "set"."id" = @id
+LIMIT 1;
 
 -- @get_form
-WITH "sets" AS &get_set_forms
-SELECT *
-FROM "sets"
-WHERE "sets"."id" = @id;
+WITH "entities" AS &viewable_entities
+SELECT
+    "id",
+    "name",
+    "kind",
+    "order"
+FROM "set"
+JOIN "entities" USING ("id")
+WHERE "set"."id" = @id
+LIMIT 1;
 
 -- @search
-WITH "set_rows" AS &get_set_rows
+WITH "set_rows" AS &set_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
@@ -156,7 +158,7 @@ WHERE
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
 -- @get_conceptors_for
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT
     "set_id",
     "persons".*
@@ -165,7 +167,7 @@ JOIN "persons" ON "set_conceptors"."conceptor_id" = "persons"."id"
 WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } };
 
 -- @get_tunes_for
-WITH "versions" AS &get_version_names
+WITH "versions" AS &version_names
 SELECT
     "set_id",
     "versions".*
@@ -175,25 +177,46 @@ WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } }
 ORDER BY "index";
 
 -- @get_content_for
-WITH "set_contents" AS &get_set_contents
-SELECT *
-FROM "set_contents"
-WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } };
+SELECT
+    -- ids
+    "set_id",
+    "version_id",
+    "tune_id",
+    -- version
+    "version"."disambiguation" AS "version_disambiguation",
+    "version"."monolithic_bars" AS "version_monolithic_bars",
+    "version"."monolithic_or_default_structure" AS "version_monolithic_or_default_structure",
+    -- tune
+    "name" AS "tune_name",
+    "kind" AS "tune_kind",
+    -- version parameters
+    "version_parameter_transposition_semitones",
+    "version_parameter_first_bar",
+    "version_parameter_clef",
+    "version_parameter_structure",
+    "version_parameter_trivia",
+    "version_parameter_display_name",
+    "version_parameter_display_composer"
+FROM "set_content"
+JOIN "version" ON "set_content"."version_id" = "version"."id"
+JOIN "tune" ON "version"."tune_id" = "tune"."id"
+WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } }
+ORDER BY "index";
 
--- @get_version_ids_in_set | include: reuse
+-- @version_ids_in_set | include: reuse
 SELECT DISTINCT "version_id"
 FROM "set_content"
 WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } };
 
--- @get_tune_ids_in_set | include: reuse
+-- @tune_ids_in_set | include: reuse
 SELECT DISTINCT "tune_id"
 FROM "set_content"
 JOIN "version" ON "set_content"."version_id" = "version"."id"
 WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } };
 
 -- @get_tune_composers_for
-WITH "tunes" AS &get_tune_ids_in_set,
-     "persons" AS &get_person_rows
+WITH "tunes" AS &tune_ids_in_set,
+     "persons" AS &person_rows
 SELECT "tune_id", "persons".*
 FROM "tunes"
 JOIN "tune_composers" USING ("tune_id")
@@ -201,16 +224,16 @@ JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
 ORDER BY "tune_composers"."index";
 
 -- @get_version_sources_for
-WITH "versions" AS &get_version_ids_in_set,
-     "sources" AS &get_source_short_names
+WITH "versions" AS &version_ids_in_set,
+     "sources" AS &source_short_names
 SELECT "version_id", "sources".*
 FROM "versions"
 JOIN "version_sources" USING ("version_id")
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id";
 
 -- @get_version_arrangers_for
-WITH "versions" AS &get_version_ids_in_set,
-     "persons" AS &get_person_rows
+WITH "versions" AS &version_ids_in_set,
+     "persons" AS &person_rows
 SELECT "version_id", "persons".*
 FROM "versions"
 JOIN "version_arrangers" USING ("version_id")

@@ -146,7 +146,7 @@ let version_sql_to_view
 
 let set_sql_to_view
     ~id
-    ~entry_is_public
+    ~entity_is_public
     ~actor_role
     ~actor_is_omniscient_administrator
     ~name
@@ -166,12 +166,12 @@ let set_sql_to_view
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
     order = Set_order.of_string order;
     remark;
-    permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
+    permission = {entity_is_public; actor_role; actor_is_omniscient_administrator};
   }
 
 let book_sql_to_view
     ~id
-    ~entry_is_public
+    ~entity_is_public
     ~actor_role
     ~actor_is_omniscient_administrator
     ~name
@@ -194,5 +194,18 @@ let book_sql_to_view
     sources;
     scddb_id = Option.map Int64.to_int scddb_id;
     warnings = [];
-    permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
+    permission = {entity_is_public; actor_role; actor_is_omniscient_administrator};
+  }
+
+let user_sql_to_view
+    ~id
+    ~username
+    ~joined
+    ~(k : User_view.t -> 'w)
+    : 'w
+  =
+  k {
+    id;
+    username = Username.of_string_exn username;
+    joined
   }

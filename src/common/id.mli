@@ -6,16 +6,10 @@
 
 (** Type of ids carrying values of type ['value]. *)
 type 'value t
-[@@deriving yojson]
+[@@deriving eq, ord, yojson]
 
 val make : unit -> 'value t
 (** Make a new random id. *)
-
-val equal : ('value -> 'value -> bool) -> 'value t -> 'value t -> bool
-(** For compatibility with [ppx_deriving.std]'s [equal]. Prefer {!equal'}. *)
-
-val compare : ('value -> 'value -> int) -> 'value t -> 'value t -> int
-(** For compatibility with [ppx_deriving.std]'s [compare]. Prefer {!compare'}. *)
 
 val equal' : 'value t -> 'value t -> bool
 val compare' : 'value t -> 'value t -> int

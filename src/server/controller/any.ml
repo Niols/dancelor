@@ -209,20 +209,20 @@ let assert_can_edit_permissions env db id f =
       (* no permission to share *)
       Madge_server.shortcut_forbidden "You cannot edit permissions for this object"
     | Some _reason ->
-      f ~entry_is_public: permission.entry_is_public
+      f ~entity_is_public: permission.entity_is_public
 
 let get_permissions env id =
   Database.with_ @@ fun db ->
-  assert_can_edit_permissions env db id @@ fun ~entry_is_public ->
+  assert_can_edit_permissions env db id @@ fun ~entity_is_public ->
   let%lwt actor_roles = Database.Entry.get_actor_roles db id in
-  lwt {Permissions_form.entry_is_public; actor_roles}
+  lwt {Permissions_form.entity_is_public; actor_roles}
 
-let set_permissions env id {Permissions_form.entry_is_public; actor_roles} =
+let set_permissions env id {Permissions_form.entity_is_public; actor_roles} =
   Database.with_ @@ fun db ->
-  assert_can_edit_permissions env db id @@ fun ~entry_is_public: entry_was_public ->
+  assert_can_edit_permissions env db id @@ fun ~entity_is_public: entity_was_public ->
   (
-    if entry_is_public <> entry_was_public then
-      Database.Entry.set_is_public db id entry_is_public
+    if entity_is_public <> entity_was_public then
+      Database.Entry.set_is_public db id entity_is_public
     else
       lwt_unit
   );%lwt

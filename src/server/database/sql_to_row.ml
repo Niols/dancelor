@@ -61,7 +61,7 @@ let version_sql_to_row
 
 let set_sql_to_row
     ~id
-    ~entry_is_public
+    ~entity_is_public
     ~actor_role
     ~actor_is_omniscient_administrator
     ~name
@@ -77,12 +77,12 @@ let set_sql_to_row
     kind = Kind.Dance.of_string kind;
     conceptors;
     tunes;
-    permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
+    permission = {entity_is_public; actor_role; actor_is_omniscient_administrator};
   }
 
 let book_sql_to_row
     ~id
-    ~entry_is_public
+    ~entity_is_public
     ~actor_role
     ~actor_is_omniscient_administrator
     ~name
@@ -96,7 +96,7 @@ let book_sql_to_row
     name;
     date = Option.map (Option.get % Partial_date.from_string) date;
     authors;
-    permission = {entry_is_public; actor_role; actor_is_omniscient_administrator};
+    permission = {entity_is_public; actor_role; actor_is_omniscient_administrator};
   }
 
 let user_sql_to_row

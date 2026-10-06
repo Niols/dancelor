@@ -108,7 +108,7 @@ module Version_form = struct
     structure: Version_content.Structure.t;
     details: NEString.t option;
   }
-  [@@deriving eq, yojson]
+  [@@deriving eq, yojson, show {with_path = false}]
 
   let source_to_name {source = {id; name; _}; _} : Source_name.t =
     {id; name}
@@ -127,7 +127,7 @@ module Version_form = struct
     disambiguation: NEString.t option;
     content: Version_content.t;
   }
-  [@@deriving eq, fields, yojson]
+  [@@deriving eq, fields, yojson, show {with_path = false}]
 
   let to_name id {tune; _} : Version_name.t =
     {id; name = tune.name}
@@ -163,7 +163,7 @@ module Set_form = struct
   let to_row id {name; kind; conceptors; contents; _} : Set_row.t =
     let tunes = List.map (Version_row.to_name % fst) contents in
     (* FIXME: grab proper permissions from somewhere, maybe pass to [to_row] *)
-    let permission = {Permission.entry_is_public = false; actor_role = None; actor_is_omniscient_administrator = false} in
+    let permission = {Permission.entity_is_public = false; actor_role = None; actor_is_omniscient_administrator = false} in
       {id; name = NEString.to_string name; kind; conceptors; tunes; permission}
 end
 
@@ -198,16 +198,22 @@ end
 
 module Permissions_form = struct
   type t = {
-    entry_is_public: bool;
+    entity_is_public: bool;
     actor_roles: (User_row.t * Permission.actor_role) list;
   }
   [@@deriving eq, yojson]
 end
 
-module User_create_form = struct
+module User_form = struct
   type t = {
     username: Username.t;
     email: Email.t;
   }
-  [@@deriving eq, yojson]
+  [@@deriving eq, yojson, fields]
+
+  let to_name id {username; _} : User_name.t =
+    {id; username = Username.to_string username}
+
+  let to_row id {username; _} : User_row.t =
+    {id; username}
 end

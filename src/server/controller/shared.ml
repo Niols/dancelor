@@ -59,10 +59,9 @@ let assert_can_delete db env id k =
 let is_connected env = lwt (Environment.actor env <> Anonymous)
 
 let can_administrate env =
-  lwt @@
-    match Environment.actor env with
-    | Anonymous -> false
-    | Signed_in actor -> actor.role = Administrator
+  match Environment.actor env with
+  | Anonymous -> false
+  | Signed_in actor -> actor.role = Administrator
 
 let assert_can_administrate env f =
   match Environment.actor env with
@@ -77,6 +76,21 @@ let assert_can_administrate env f =
         Log.info (fun m -> m "Refusing admin access to %a." Environment.pp env);
         Madge_server.shortcut_forbidden "You do not have permission to administrate this instance."
       )
+
+let assert_can_edit_user env user_id k =
+  assert_permission
+    ~access_type: "edit"
+    ~pp_reason: (fun fmt _reason -> fpf fmt "FIXME")
+    env
+    (
+      match Option.equal User_id.equal (Environment.actor_id env) (Some user_id) with
+      | true -> Some `Themselves
+      | false ->
+        match can_administrate env with
+        | true -> Some `Admin
+        | false -> None
+    )
+    (fun _reason -> k ())
 
 module type Db_private = sig
   type tag

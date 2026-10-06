@@ -202,3 +202,12 @@ module Book_view = struct
   }
   [@@deriving yojson, fields]
 end
+
+module User_view = struct
+  type t = {
+    id: User_id.t;
+    username: Username.t;
+    joined: Datetime.t;
+  }
+  [@@deriving eq, yojson, fields]
+end

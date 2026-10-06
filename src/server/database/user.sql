@@ -1,28 +1,3 @@
--- @get
-SELECT
-    "username",
-    "role",
-    "omniscience",
-    "github_handle",
-    "created_at",
-    "modified_at"
-FROM "user"
-JOIN "entry" ON "user"."id" = "entry"."id"
-WHERE "user"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
--- @get_all
-SELECT
-    "entry"."id",
-    "username",
-    "role",
-    "omniscience",
-    "github_handle",
-    "created_at",
-    "modified_at"
-FROM "user"
-JOIN "entry" ON "user"."id" = "entry"."id";
-
 -- @get_from_username
 SELECT
     "user"."id",
@@ -32,7 +7,7 @@ SELECT
     "created_at",
     "modified_at"
 FROM "user"
-JOIN "entry" ON "user"."id" = "entry"."id"
+JOIN "entities" ON "user"."id" = "entities"."id"
 WHERE "username" = @username
 LIMIT 1; -- NOTE: to help sqlgg
 
@@ -53,23 +28,30 @@ WHERE "username" = @username;
 INSERT INTO "user" (
     "id",
     "username",
+    "email",
     "password_reset_token_hash",
     "password_reset_token_max_date",
     "role",
     "github_handle",
-    "omniscience",
-    "email"
+    "omniscience"
 )
 VALUES (
     @id,
     @username,
+    @email,
     @password_reset_token_hash,
     @password_reset_token_max_date,
-    @role,
-    @github_handle,
-    @omniscience,
-    @email
+    'Normal_user', -- FIXME: make this a default in the schema
+    NULL, -- FIXME: make this a default in the schema
+    FALSE -- FIXME: make this a default in the schema
 );
+
+-- @update
+UPDATE "user"
+SET
+    "username" = @username,
+    "email" = @email
+WHERE "id" = @id;
 
 -- @set_password_reset_token
 UPDATE "user"
@@ -123,10 +105,26 @@ SET
 WHERE "id" = @id;
 
 -- @get_rows
-WITH "users" AS &get_user_rows
+WITH "users" AS &user_rows
 SELECT *
 FROM "users"
 WHERE "id" IN @ids;
+
+-- @get_view
+SELECT
+    "username",
+    "created_at" AS "joined"
+FROM "user"
+JOIN "entities" USING ("id")
+WHERE "id" = @id
+LIMIT 1;
+
+-- @get_form
+SELECT
+    "username",
+    "email"
+FROM "user"
+WHERE "id" = @id;
 
 -- @actors | include: reuse
 SELECT
@@ -151,7 +149,7 @@ SELECT * FROM "actors"
 WHERE "username" = @username;
 
 -- @search
-WITH "user_rows" AS &get_user_rows
+WITH "user_rows" AS &user_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0

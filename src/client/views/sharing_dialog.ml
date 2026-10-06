@@ -24,8 +24,8 @@ let copy_link_button ?(object_is_public = false) (id : Any_id.t) =
 
 let component =
   Bundle.pair
-    ~wrap: (fun (entry_is_public, actor_roles) -> {Permissions_form.entry_is_public; actor_roles})
-    ~unwrap: (fun {Permissions_form.entry_is_public; actor_roles} -> (entry_is_public, actor_roles))
+    ~wrap: (fun (entity_is_public, actor_roles) -> {Permissions_form.entity_is_public; actor_roles})
+    ~unwrap: (fun {Permissions_form.entity_is_public; actor_roles} -> (entity_is_public, actor_roles))
     (
       Choices.prepare_radios
         ~label: "Is public"
@@ -90,7 +90,7 @@ let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
   let component_state =
     (* FIXME: OMG it is so hackish to have to make a state by hand?! *)
     let is_public_state =
-      match permissions.entry_is_public with
+      match permissions.entity_is_public with
       | true -> [true; false]
       | false -> [false; true]
     in
@@ -116,7 +116,7 @@ let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
   let disabled = S.map Result.is_error @@ Component.signal component in
   let update () =
     let permissions = Result.get_ok @@ S.value @@ Component.signal component in
-    Api.call_exn (Any Set_permissions) (Any_id.to_entry_id id) permissions
+    Api.call_exn (Any Set_permissions) (Any_id.to_untagged id) permissions
   in
   ignore
   <$> Page.open_dialog @@ fun return ->
@@ -164,10 +164,10 @@ let open_dialog_button id =
         ();
       ]
       (
-        let%lwt permissions = Api.call_exn (Any Get_permissions) (Any_id.to_entry_id id) in
+        let%lwt permissions = Api.call_exn (Any Get_permissions) (Any_id.to_untagged id) in
         let%lwt actor_id = Environment.actor_id in
         let badge =
-          if permissions.entry_is_public then
+          if permissions.entity_is_public then
             "∞"
           else
             let other_actors =

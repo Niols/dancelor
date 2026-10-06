@@ -19,6 +19,21 @@ let get_rows env ids =
   let%lwt row_for = get_row_for env ids in
   lwt @@ List.filter_map row_for ids
 
+let get_view _env id =
+  match%lwt Database.User.get_view id with
+  | None -> Shared.reject_can_get ()
+  | Some view -> lwt view
+
+let get_form env id =
+  let%lwt _ = get_view env id in
+  Shared.assert_can_edit_user env id @@ fun () ->
+  Option.get <$> Database.User.get_form id
+
+let update env id (user : User_form.t) =
+  let%lwt _ = get_view env id in
+  Shared.assert_can_edit_user env id @@ fun () ->
+  Database.User.update id user
+
 let cache : (Environment.cache_key * User_query.t, (User_row.t * float) Search_result.t Lwt.t) Cache.t =
   Cache.create ~lifetime: 60 ()
 
@@ -71,7 +86,7 @@ let sign_out env =
   | Anonymous -> lwt_unit
   | Signed_in actor -> Environment.sign_out env actor
 
-let create env (user : User_create_form.t) =
+let create env (user : User_form.t) =
   Shared.assert_can_administrate env @@ fun _admin ->
   let token = Password_reset_token_clear.make () in
   (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
@@ -80,8 +95,7 @@ let create env (user : User_create_form.t) =
   let password_reset_token_max_date = Datetime.make_in_the_future (float_of_int @@ 3 * 24 * 3600) in
   let%lwt id =
     Database.User.create
-      ~username: user.username
-      ~email: user.email
+      user
       ~password_reset_token_hash
       ~password_reset_token_max_date
   in
@@ -147,10 +161,13 @@ let set_omniscience env value =
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.User.t -> a = fun env endpoint ->
   match endpoint with
   | Get_row -> get_row env
+  | Get_view -> get_view env
+  | Get_form -> get_form env
   | Status -> status env
   | Sign_in -> sign_in env
   | Sign_out -> sign_out env
   | Create -> create env
+  | Update -> update env
   | Prepare_reset_password -> prepare_reset_password env
   | Reset_password -> reset_password
   | Search -> search env

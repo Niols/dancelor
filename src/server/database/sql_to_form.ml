@@ -150,3 +150,15 @@ let book_sql_to_form
     sources;
     scddb_id = Option.map Int64.to_int scddb_id;
   }
+
+let user_sql_to_form
+    ~id: _
+    ~username
+    ~email
+    ~(k : User_form.t -> 'w)
+    : 'w
+  =
+  k {
+    username = Username.of_string_exn username;
+    email;
+  }

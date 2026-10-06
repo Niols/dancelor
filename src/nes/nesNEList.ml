@@ -1,4 +1,4 @@
-type 'a t = (::) of 'a * 'a list [@@deriving eq, ord, show]
+type 'a t = (::) of 'a * 'a list [@@deriving eq, ord]
 
 let to_list : 'a t -> 'a list = fun (x :: xs) -> x :: xs
 
@@ -12,7 +12,7 @@ let of_list_exn : 'a list -> 'a t = function
 
 let cons x xs = x :: xs
 
-type 'a mylist = 'a list [@@deriving yojson]
+type 'a mylist = 'a list [@@deriving yojson, show {with_path = false}]
 
 let of_yojson a_of_yojson json =
   Result.bind (mylist_of_yojson a_of_yojson json) @@ fun xs ->
@@ -34,5 +34,8 @@ let singleton x = x :: []
 
 let is_singleton (_ :: xs) = List.is_empty xs
 
-let mem n (x :: xs) = n == x || List.mem n xs
+let mem n (x :: xs) = n = x || List.mem n xs
 let exists f (x :: xs) = f x || List.exists f xs
+
+let show pp_x (x :: xs) = show_mylist pp_x (x :: xs)
+let pp pp_x fmt (x :: xs) = pp_mylist pp_x fmt (x :: xs)

@@ -61,6 +61,8 @@ type (_, _, _) book =
 
 type (_, _, _) user =
   | Create : ('w, 'w, Void.t) user
+  | Edit : (User_id.t -> 'w, 'w, Void.t) user
+  | View : (In_search.t option -> User_id.t -> 'w, 'w, Void.t) user
   | Prepare_reset_password : ('w, 'w, Void.t) user
   | Password_reset : (Username.t -> Password_reset_token_clear.t -> 'w, 'w, Void.t) user
 [@@deriving madge_wrapped_endpoints]
@@ -137,11 +139,12 @@ let route_book : type a w r. (a, w, r) book -> (a, w, r) route =
 let route_user : type a w r. (a, w, r) user -> (a, w, r) route =
   let open Route in
   function
+    | View -> literal "view" @@ query_str_opt "in-search" (module In_search) @@ variable (module User_id) @@ void ()
+    | Edit -> literal "edit" @@ variable (module User_id) @@ void ()
     | Create -> literal "create" @@ void ()
     | Prepare_reset_password -> literal "prepare-reset-password" @@ void ()
     | Password_reset -> literal "reset-password" @@ query_json "username" (module Username) @@ query_json "token" (module Password_reset_token_clear) @@ void ()
 
-(* FIXME: Factorise adding the model prefixes. *)
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in
   function
@@ -169,6 +172,7 @@ let href_source ?in_search source = href (Source View) in_search source
 let href_set ?in_search set = href (Set View) in_search set
 let href_tune ?in_search tune = href (Tune View) in_search tune
 let href_version ?in_search ?in_set version = href (Version View) in_search in_set version
+let href_user ?in_search user = href (User View) in_search user
 
 let href_any_full ?in_search (any : Any_id.t) =
   match any with
@@ -179,7 +183,7 @@ let href_any_full ?in_search (any : Any_id.t) =
   | Dance dance -> href_dance ?in_search dance
   | Book book -> href_book ?in_search book
   | Tune tune -> href_tune ?in_search tune
-  | User _user -> Uri.of_string "/" (* FIXME: user visualisation page *)
+  | User user -> href_user ?in_search user
 
 (** Function that consumes all endpoints and returns nothing. It is meant to be
     used in the catch-all case of a pattern matching. *)
@@ -206,10 +210,12 @@ let consume : type a w r. return: w -> (a, w, r) t -> a = fun ~return: value end
   | Tune View -> const2 value
   | Tune Add -> value
   | Tune Edit -> const value
-  | Version View -> (fun _ _ _ -> value)
+  | Version View -> const3 value
   | Version Add -> const value
   | Version Edit -> const value
   | Explore -> const2 value
+  | User View -> const2 value
+  | User Edit -> const value
   | User Create -> value
   | User Prepare_reset_password -> value
   | User Password_reset -> const2 value

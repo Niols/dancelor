@@ -50,14 +50,12 @@ let make_person_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []
     )
 
 let make_user_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (user : User_row.t) =
-  ignore in_search;
-  (* FIXME *)
   row
     ?classes
     ?onclick
     (
       prefix @
-      [td ~a: [a_colspan 3] [txt @@ Username.to_string user.username];
+      [td ~a: [a_colspan 3] [Formatters.User.username ~link: (onclick = None) ?in_search (User_row.to_name user)];
       ] @
       suffix
     )

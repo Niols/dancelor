@@ -1,17 +1,3 @@
--- @get
-SELECT
-    "name",
-    "date",
-    "remark",
-    "scddb_id",
-    "created_at",
-    "modified_at",
-    "is_public"
-FROM "book"
-JOIN "entry" ON "book"."id" = "entry"."id"
-WHERE "book"."id" = @id
-LIMIT 1; -- NOTE: to help sqlgg
-
 -- @create
 INSERT INTO "book" (
     "id",
@@ -232,28 +218,49 @@ INSERT INTO "book_content_versions" (
     @version_parameter_display_composer
 );
 
--- NEW MODELS
+-- @book_rows | include: reuse
+WITH "entities" AS &viewable_entities
+SELECT
+    "entities".*,
+    "name",
+    "date"
+FROM "book"
+JOIN "entities" USING ("id");
 
 -- @get_rows
-WITH "books" AS &get_book_rows
+WITH "books" AS &book_rows
 SELECT *
 FROM "books"
-WHERE "books"."id" IN @ids;
+WHERE "id" IN @ids;
 
 -- @get_view
-WITH "books" AS &get_book_views
-SELECT *
-FROM "books"
-WHERE "books"."id" = @id;
+WITH "entities" AS &viewable_entities
+SELECT
+    "entities".*,
+    "name",
+    "date",
+    "remark",
+    "scddb_id"
+FROM "book"
+JOIN "entities" USING ("id")
+WHERE "id" = @id
+LIMIT 1;
 
 -- @get_form
-WITH "books" AS &get_book_forms
-SELECT *
-FROM "books"
-WHERE "books"."id" = @id;
+WITH "entities" AS &viewable_entities
+SELECT
+    "id",
+    "name",
+    "date",
+    "remark",
+    "scddb_id"
+FROM "book"
+JOIN "entities" USING ("id")
+WHERE "id" = @id
+LIMIT 1;
 
 -- @search
-WITH "book_rows" AS &get_book_rows
+WITH "book_rows" AS &book_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
@@ -283,7 +290,7 @@ ORDER BY
     "id" ASC;
 
 -- @get_authors_for
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT
     "book_id",
     "persons".*
@@ -292,7 +299,7 @@ JOIN "persons" ON "book_authors"."author_id" = "persons"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @get_editors_for_sources_of
-WITH "persons" AS &get_person_rows
+WITH "persons" AS &person_rows
 SELECT "source_id", "persons".*
 FROM "book_sources"
 JOIN "source_editors" USING ("source_id")
@@ -300,7 +307,7 @@ JOIN "persons" ON "source_editors"."person_id" = "persons"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @get_sources_for
-WITH "sources" AS &get_source_names
+WITH "sources" AS &source_names
 SELECT
     "book_id",
     "sources".*
@@ -309,7 +316,7 @@ JOIN "sources" ON "book_sources"."source_id" = "sources"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @get_source_rows_for
-WITH "sources" AS &get_source_rows
+WITH "sources" AS &source_rows
 SELECT
     "book_id",
     "sources".*
@@ -318,7 +325,7 @@ JOIN "sources" ON "book_sources"."source_id" = "sources"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @get_content_for
-WITH "set_permissions" AS &get_entry_permissions
+WITH "set_permissions" AS &viewable_entities
 SELECT
     "book_id",
     "page_type",
@@ -334,7 +341,7 @@ SELECT
     "set_id",
     "set"."name" AS "set_name",
     "set"."kind" AS "set_kind",
-    "set_permissions"."entry_is_public" AS "set_entry_is_public",
+    "set_permissions"."entity_is_public" AS "set_entity_is_public",
     "set_permissions"."actor_role" AS "set_actor_role",
     "set_permissions"."actor_is_omniscient_administrator" AS "set_actor_is_omniscient_administrator",
     -- set parameters
@@ -381,30 +388,30 @@ JOIN "tune" ON "version"."tune_id" = "tune"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } }
 ORDER BY "index";
 
--- @get_version_ids_in_book | include: reuse
+-- @version_ids_in_book | include: reuse
 SELECT DISTINCT "version_id"
 FROM "book_content_versions"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
--- @get_tune_ids_in_book | include: reuse
+-- @tune_ids_in_book | include: reuse
 SELECT DISTINCT "tune_id"
 FROM "book_content_versions"
 JOIN "version" ON "book_content_versions"."version_id" = "version"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
--- @get_set_ids_in_book | include: reuse
+-- @set_ids_in_book | include: reuse
 SELECT DISTINCT "set_id"
 FROM "book_content"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
--- @get_dance_ids_in_book | include: reuse
+-- @dance_ids_in_book | include: reuse
 SELECT DISTINCT "dance_id"
 FROM "book_content"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @get_tune_composers_for
-WITH "tunes" AS &get_tune_ids_in_book,
-     "persons" AS &get_person_rows
+WITH "tunes" AS &tune_ids_in_book,
+     "persons" AS &person_rows
 SELECT "tune_id", "persons".*
 FROM "tunes"
 JOIN "tune_composers" USING ("tune_id")
@@ -412,32 +419,32 @@ JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
 ORDER BY "tune_composers"."index";
 
 -- @get_version_sources_for
-WITH "versions" AS &get_version_ids_in_book,
-     "sources" AS &get_source_short_names
+WITH "versions" AS &version_ids_in_book,
+     "sources" AS &source_short_names
 SELECT "version_id", "sources".*
 FROM "versions"
 JOIN "version_sources" USING ("version_id")
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id";
 
 -- @get_version_arrangers_for
-WITH "versions" AS &get_version_ids_in_book,
-     "persons" AS &get_person_rows
+WITH "versions" AS &version_ids_in_book,
+     "persons" AS &person_rows
 SELECT "version_id", "persons".*
 FROM "versions"
 JOIN "version_arrangers" USING ("version_id")
 JOIN "persons" ON "version_arrangers"."arranger_id" = "persons"."id";
 
 -- @get_set_conceptors_for
-WITH "sets" AS &get_set_ids_in_book,
-     "persons" AS &get_person_rows
+WITH "sets" AS &set_ids_in_book,
+     "persons" AS &person_rows
 SELECT "set_id", "persons".*
 FROM "set_conceptors"
 JOIN "persons" ON "set_conceptors"."conceptor_id" = "persons"."id"
 JOIN "sets" USING ("set_id");
 
 -- @get_set_tunes_for
-WITH "sets" AS &get_set_ids_in_book,
-     "versions" AS &get_version_names
+WITH "sets" AS &set_ids_in_book,
+     "versions" AS &version_names
 SELECT "set_id", "versions".*
 FROM "set_content"
 JOIN "sets" USING ("set_id")
@@ -445,8 +452,8 @@ JOIN "versions" ON "set_content"."version_id" = "versions"."id"
 ORDER BY "set_content"."index";
 
 -- @get_dance_devisers_for
-WITH "dances" AS &get_dance_ids_in_book,
-     "persons" AS &get_person_rows
+WITH "dances" AS &dance_ids_in_book,
+     "persons" AS &person_rows
 SELECT "dance_id", "persons".*
 FROM "dance_devisers"
 JOIN "persons" ON "dance_devisers"."deviser_id" = "persons"."id"

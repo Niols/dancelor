@@ -1,97 +1,50 @@
---------------------------------- [ Entries ] ----------------------------------
-
--- FIXME: rename in something like [get_viewable_entries], introduce also
--- [get_editable_entries] and the likes.
-
--- @get_entry_permissions | include: reuse
+-- @viewable_entities | include: reuse
 SELECT *
 FROM (
     SELECT
-        "entry"."id",
-        "entry"."is_public" AS "entry_is_public",
-        "entry_actors"."role" AS "actor_role",
+        "entities"."id",
+        "entities"."is_public" AS "entity_is_public",
+        "entity_actors"."role" AS "actor_role",
         COALESCE(
             ("user"."role" = 'Administrator' AND "user"."omniscience"),
             FALSE
         ) AS "actor_is_omniscient_administrator"
-    FROM "entry"
-    LEFT JOIN "entry_actors" ON "entry_actors"."entry_id" = "entry"."id" AND "entry_actors"."user_id" = (@actor_id :: TEXT NULL)
+    FROM "entities"
+    LEFT JOIN "entity_actors" ON "entity_actors"."entity_id" = "entities"."id" AND "entity_actors"."user_id" = (@actor_id :: TEXT NULL)
     LEFT JOIN "user" ON "user"."id" = (@actor_id :: TEXT NULL)
 ) AS "sub"
 WHERE
-    "sub"."entry_is_public"
+    "sub"."entity_is_public"
     OR "sub"."actor_role" IS NOT NULL
     OR "sub"."actor_is_omniscient_administrator";
 
---------------------------------- [ Persons ] ----------------------------------
-
--- @get_person_rows | include: reuse
+-- @person_rows | include: reuse
 SELECT
     "id",
     "name"
 FROM "person";
 
--- @get_person_views | include: reuse
-SELECT
-    "id",
-    "name",
-    "scddb_id",
-    "composed_tunes_are_public",
-    "published_tunes_are_public"
-FROM "person";
-
--- @get_person_forms | include: reuse
-SELECT
-    "id",
-    "name",
-    "scddb_id"
-FROM "person";
-
---------------------------------- [ Sources ] ----------------------------------
-
--- @get_source_rows | include: reuse
+-- @source_rows | include: reuse
 SELECT
     "id",
     "name",
     "date"
 FROM "source";
 
--- @get_source_views | include: reuse
-SELECT
-    "id",
-    "name",
-    "short_name",
-    "scddb_id",
-    "description",
-    "date"
-FROM "source";
-
--- @get_source_forms | include: reuse
-SELECT
-    "id",
-    "name",
-    "short_name",
-    "scddb_id",
-    "description",
-    "date"
-FROM "source";
-
--- @get_source_names | include: reuse
+-- @source_names | include: reuse
 SELECT
     "id",
     "name"
 FROM "source";
 
--- @get_source_short_names | include: reuse
+-- @source_short_names | include: reuse
 SELECT
     "id",
     "name",
     "short_name"
 FROM "source";
 
---------------------------------- [ Dances ] -----------------------------------
-
--- @get_dance_rows | include: reuse
+-- @dance_rows | include: reuse
 SELECT
     "id",
     "name",
@@ -99,74 +52,18 @@ SELECT
     "disambiguation"
 FROM "dance";
 
--- @get_dance_views | include: reuse
-SELECT
-    "id",
-    "name",
-    "kind",
-    "scddb_id",
-    "disambiguation",
-    "date",
-    "two_chords"
-FROM "dance";
-
--- @get_dance_forms | include: reuse
-SELECT
-    "id",
-    "name",
-    "kind",
-    "scddb_id",
-    "disambiguation",
-    "date",
-    "two_chords"
-FROM "dance";
-
----------------------------------- [ Users ] -----------------------------------
-
--- @get_user_rows | include: reuse
+-- @user_rows | include: reuse
 SELECT
     "id",
     "username"
 FROM "user";
 
----------------------------------- [ Tunes ] -----------------------------------
-
--- @get_tune_rows | include: reuse
-SELECT
-    "id",
-    "name",
-    "kind"
-FROM "tune";
-
--- @get_tune_views | include: reuse
-SELECT
-    "id",
-    "name",
-    "kind",
-    "remark",
-    "scddb_id",
-    "date"
-FROM "tune";
-
-
--- @get_tune_forms | include: reuse
-SELECT
-    "id",
-    "name",
-    "kind",
-    "remark",
-    "scddb_id",
-    "date"
-FROM "tune";
-
----------------------------------- [ Tunes ] -----------------------------------
-
--- @get_tune_ids_for_dances | include: reuse
+-- @tune_ids_for_dances | include: reuse
 SELECT DISTINCT "tune_id"
 FROM "recommended_tunes"
 WHERE @dance_ids { One_of { "dance_id" IN @dance_ids } | All { TRUE } };
 
--- @get_version_rows | include: reuse
+-- @version_rows | include: reuse
 SELECT
     "id",
     "tune_id",
@@ -175,144 +72,9 @@ SELECT
     "monolithic_or_default_structure"
 FROM "version";
 
--- @get_version_and_tune_rows | include: reuse
-WITH "versions" AS &get_version_rows
-SELECT
-    "versions".*,
-    "tune"."name" AS "tune_name",
-    "tune"."kind" AS "tune_kind"
-FROM "versions"
-JOIN "tune" ON "versions"."tune_id" = "tune"."id";
-
--- @get_version_views | include: reuse
-SELECT
-    -- ids
-    "version"."id",
-    "tune"."id" AS "tune_id",
-    -- version
-    "version"."disambiguation",
-    "version"."key",
-    "version"."remark",
-    "version"."monolithic_bars",
-    "version"."monolithic_or_default_structure",
-    -- tune
-    "tune"."name" AS "tune_name",
-    "tune"."kind" AS "tune_kind",
-    "tune"."remark" AS "tune_remark",
-    "tune"."scddb_id" AS "tune_scddb_id",
-    "tune"."date" AS "tune_date"
-FROM "version"
-JOIN "tune" ON "version"."tune_id" = "tune"."id";
-
--- @get_version_forms | include: reuse
-SELECT
-    -- ids
-    "version"."id",
-    "tune"."id" AS "tune_id",
-    -- version
-    "version"."disambiguation",
-    "version"."key",
-    "version"."remark",
-    "version"."monolithic_bars",
-    "version"."monolithic_or_default_structure",
-    "version"."monolithic_lilypond",
-    "version"."destructured_as_2_4",
-    -- tune
-    "tune"."name" AS "tune_name",
-    "tune"."kind" AS "tune_kind"
-FROM "version"
-JOIN "tune" ON "version"."tune_id" = "tune"."id";
-
--- @get_version_names | include: reuse
+-- @version_names | include: reuse
 SELECT
     "version"."id",
     "tune"."name"
 FROM "version"
 JOIN "tune" ON "tune"."id" = "version"."tune_id";
-
----------------------------------- [ Sets ] ------------------------------------
-
--- @get_set_rows | include: reuse
-WITH entries AS &get_entry_permissions
-SELECT "entries".*, "name", "kind"
-FROM "set" JOIN "entries" USING ("id");
-
--- @get_set_views | include: reuse
-WITH entries AS &get_entry_permissions
-SELECT
-    "entries".*,
-    "name",
-    "kind",
-    "order",
-    "remark"
-FROM "set"
-JOIN "entries" USING ("id");
-
--- @get_set_forms | include: reuse
-WITH entries AS &get_entry_permissions
-SELECT
-    "id",
-    "name",
-    "kind",
-    "order"
-FROM "set"
-JOIN "entries" USING ("id");
-
--- @get_set_contents | include: reuse
-SELECT
-    -- ids
-    "set_id",
-    "version_id",
-    "tune_id",
-    -- version
-    "version"."disambiguation" AS "version_disambiguation",
-    "version"."monolithic_bars" AS "version_monolithic_bars",
-    "version"."monolithic_or_default_structure" AS "version_monolithic_or_default_structure",
-    -- tune
-    "name" AS "tune_name",
-    "kind" AS "tune_kind",
-    -- version parameters
-    "version_parameter_transposition_semitones",
-    "version_parameter_first_bar",
-    "version_parameter_clef",
-    "version_parameter_structure",
-    "version_parameter_trivia",
-    "version_parameter_display_name",
-    "version_parameter_display_composer"
-FROM "set_content"
-JOIN "version" ON "set_content"."version_id" = "version"."id"
-JOIN "tune" ON "version"."tune_id" = "tune"."id"
-ORDER BY "index";
-
----------------------------------- [ Books ] -----------------------------------
-
--- @get_book_rows | include: reuse
-WITH "entries" AS &get_entry_permissions
-SELECT
-    "entries".*,
-    "name",
-    "date"
-FROM "book"
-JOIN "entries" USING ("id");
-
--- @get_book_views | include: reuse
-WITH "entries" AS &get_entry_permissions
-SELECT
-    "entries".*,
-    "name",
-    "date",
-    "remark",
-    "scddb_id"
-FROM "book"
-JOIN "entries" USING ("id");
-
--- @get_book_forms | include: reuse
-WITH "entries" AS &get_entry_permissions
-SELECT
-    "id",
-    "name",
-    "date",
-    "remark",
-    "scddb_id"
-FROM "book"
-JOIN "entries" USING ("id");

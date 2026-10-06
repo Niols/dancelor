@@ -1,6 +1,8 @@
 open Nes_unix
 open Dancelor_common
 open Sql_to_row
+open Sql_to_view
+open Sql_to_form
 
 module User_sql = User_sql.Sqlgg(Sqlgg_postgresql)
 
@@ -10,6 +12,14 @@ let get_row_for ids : (User_id.t -> User_row.t option) Lwt.t =
 
 let get_row id =
   (fun f -> f id) <$> get_row_for [id]
+
+let get_view id : User_view.t option Lwt.t =
+  Connection.with_ @@ fun db ->
+  User_sql.Single.get_view db ~id (user_sql_to_view ~id ~k: Fun.id)
+
+let get_form id : User_form.t option Lwt.t =
+  Connection.with_ @@ fun db ->
+  User_sql.Single.get_form db ~id (user_sql_to_form ~id ~k: Fun.id)
 
 let search query : (User_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = ()} = query in
@@ -61,22 +71,27 @@ let get_password_reset_token_from_username username =
       Some (password_reset_token_hash, password_reset_token_max_date)
     )
 
-let create ~username ~email ~password_reset_token_hash ~password_reset_token_max_date =
+let create {User_form.username; email} ~password_reset_token_hash ~password_reset_token_max_date =
   Connection.with_ @@ fun db ->
   let%lwt id = Entry.make_public db User in
-  let%lwt _ =
-    User_sql.create
+  ignore
+  <$> User_sql.create
       db
       ~id
       ~username: (Username.to_string username)
       ~email
-      ~role: Normal_user
-      ~omniscience: false
-      ~github_handle: None
       ~password_reset_token_hash: (Some password_reset_token_hash)
-      ~password_reset_token_max_date: (Some password_reset_token_max_date)
-  in
+      ~password_reset_token_max_date: (Some password_reset_token_max_date);%lwt
   lwt id
+
+let update id {User_form.username; email} =
+  Connection.with_ @@ fun db ->
+  ignore
+  <$> User_sql.update
+      db
+      ~id
+      ~username: (Username.to_string username)
+      ~email
 
 let remove_all_remember_me_tokens user_id =
   Connection.with_ @@ fun db ->

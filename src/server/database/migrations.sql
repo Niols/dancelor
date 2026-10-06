@@ -1643,3 +1643,24 @@ ALTER TABLE "user" ALTER COLUMN "email" SET NOT NULL;
 
 -- @m078_2026_10_user_add_email__set_unique
 ALTER TABLE "user" ADD CONSTRAINT "uq_user_email" UNIQUE ("email");
+
+-- @m079_2026_10_entities__rename_entry_table
+ALTER TABLE "entry" RENAME TO "entities";
+
+-- @m079_2026_10_entities__rename_entities_pk_entry_constraint
+ALTER TABLE "entities" RENAME CONSTRAINT "pk_entry" TO "pk_entities";
+
+-- @m079_2026_10_entities__rename_entry_actors_table
+ALTER TABLE "entry_actors" RENAME TO "entity_actors";
+
+-- @m079_2026_10_entities__rename_entity_actors_entry_id_column
+ALTER TABLE "entity_actors" RENAME COLUMN "entry_id" TO "entity_id";
+
+-- @m079_2026_10_entities__rename_entity_actors_uq_entry_actors_entry_id_user_id_constraint
+ALTER TABLE "entity_actors" RENAME CONSTRAINT "uq_entry_actors_entry_id_user_id" TO "uq_entity_actors_entity_id_user_id";
+
+-- @m079_2026_10_entities__rename_entity_actors_fk_entry_actors_entry_id_constraint
+ALTER TABLE "entity_actors" RENAME CONSTRAINT "fk_entry_actors_entry_id" TO "fk_entity_actors_entity_id";
+
+-- @m079_2026_10_entities__rename_entity_actors_fk_entry_actors_user_id_constraint
+ALTER TABLE "entity_actors" RENAME CONSTRAINT "fk_entry_actors_user_id" TO "fk_entity_actors_user_id";

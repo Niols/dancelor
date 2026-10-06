@@ -7,7 +7,7 @@ module Person_row = struct
     id: Person_id.t;
     name: string;
   }
-  [@@deriving eq, yojson, fields]
+  [@@deriving eq, yojson, fields, show {with_path = false}]
 
   let to_name = Fun.id
 end
@@ -17,7 +17,10 @@ module User_row = struct
     id: User_id.t;
     username: Username.t;
   }
-  [@@deriving eq, yojson, fields]
+  [@@deriving eq, yojson, fields, show {with_path = false}]
+
+  let to_name : t -> User_name.t = fun {id; username} ->
+    {id; username = Username.to_string username}
 end
 
 module Dance_row = struct
@@ -28,7 +31,7 @@ module Dance_row = struct
     devisers: Person_name.t list; [@default []]
     disambiguation: string option; [@default None]
   }
-  [@@deriving eq, yojson, fields]
+  [@@deriving eq, yojson, fields, show {with_path = false}]
 
   let to_name : t -> Dance_name.t = fun {id; name; _} -> {id; name}
 end
@@ -40,7 +43,7 @@ module Source_row = struct
     date: Partial_date.t option; [@default None]
     editors: Person_name.t list; [@default []]
   }
-  [@@deriving eq, yojson, fields]
+  [@@deriving eq, yojson, fields, show {with_path = false}]
 
   let to_name : t -> Source_name.t = fun {id; name; _} -> {id; name}
 end
@@ -52,7 +55,7 @@ module Tune_row = struct
     kind: Kind_base.t;
     composers: Person_name.t list; [@default []]
   }
-  [@@deriving eq, yojson, fields]
+  [@@deriving eq, yojson, fields, show {with_path = false}]
 
   let to_name : t -> Tune_name.t = fun {id; name; _} -> {id; name}
 end
@@ -62,7 +65,7 @@ module Version_row = struct
     | No_content
     | Destructured
     | Monolithic of {bars: int; structure: Version_content.Structure.t}
-  [@@deriving eq, yojson]
+  [@@deriving eq, yojson, show {with_path = false}]
 
   type t = {
     id: Version_id.t;
@@ -72,7 +75,7 @@ module Version_row = struct
     arrangers: Person_name.t list; [@default []]
     content: content;
   }
-  [@@deriving eq, yojson, fields]
+  [@@deriving eq, yojson, fields, show {with_path = false}]
 
   let to_name : t -> Version_name.t = fun {id; tune; _} -> {id; name = tune.name}
 end
@@ -86,7 +89,7 @@ module Set_row = struct
     tunes: Version_name.t list; [@default []]
     permission: Permission.t;
   }
-  [@@deriving eq, yojson, fields]
+  [@@deriving eq, yojson, fields, show {with_path = false}]
 
   let to_name : t -> Set_name.t = fun {id; name; _} -> {id; name}
 end
@@ -99,7 +102,7 @@ module Book_row = struct
     authors: Person_name.t list; [@default []]
     permission: Permission.t;
   }
-  [@@deriving eq, yojson, fields]
+  [@@deriving eq, yojson, fields, show {with_path = false}]
 
   let to_name : t -> Book_name.t = fun {id; name; _} ->
     {id; name}
@@ -115,7 +118,7 @@ module Any_row = struct
     | Set of Set_row.t
     | Book of Book_row.t
     | User of User_row.t
-  [@@deriving eq, yojson, variants]
+  [@@deriving eq, yojson, variants, show {with_path = false}]
 
   let to_id : t -> Any_id.t = function
     | Person p -> Person p.id

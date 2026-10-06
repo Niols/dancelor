@@ -11,7 +11,7 @@ let get_uri () = Uri.of_string (Js.to_string Dom_html.window##.location##.href)
 
 let redirect_any id =
   Main_page.madge_call_or_404 (Any Get_type) id @@ fun type_ ->
-  Redirection_viewer.create @@ Endpoints.Page.href_any_full @@ Any_id.of_type id type_
+  Redirection_viewer.create @@ Endpoints.Page.href_any_full @@ Any_id.of_untagged type_ id
 
 let () = Madge_client.initialise_batch_route Endpoints.Api.(route_full Batch)
 
@@ -42,6 +42,8 @@ let dispatch uri =
     | Source View -> Source_viewer.view
     | Source Add -> Source_editor.add ()
     | Source Edit -> Source_editor.edit
+    | User View -> User_viewer.view
+    | User Edit -> User_editor.edit
     | User Create -> User_creator.create ()
     | User Prepare_reset_password -> User_password_reset_preparer.create ()
     | User Password_reset -> User_password_resetter.create

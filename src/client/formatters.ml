@@ -23,6 +23,16 @@ let several' f versions =
   |> List.flatten
   |> span
 
+module User = struct
+  let username ?(link = true) ?in_search (user : User_name.t) =
+    if link then
+      a
+        ~a: [R.a_href @@ S.map (fun in_search -> Endpoints.Page.href_user ?in_search user.id) (switch_signal_option in_search)]
+        [txt user.username]
+    else
+      txt user.username
+end
+
 module Person = struct
   let name ?(link = true) ?in_search (person : Person_name.t) =
     if link then

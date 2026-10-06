@@ -16,7 +16,6 @@ let format_persons =
 
 let version_to_lilypond_content ~version_params version =
   let {Version_form.tune = {kind; _}; key; content; _} = version in
-  (* FIXME: keep in sync with old version above *)
   (* get a LilyPond from the potentially-destructured content *)
   let structure =
     match Version_parameters.structure version_params with
@@ -65,7 +64,6 @@ let version_to_lilypond_content ~version_params version =
     Some (lilypond, instructions)
 
 let version_to_renderer_tune ?(version_params = Version_parameters.none) version =
-  (* FIXME: keep in sync with old version above *)
   let {Version_form.tune = {name; kind; composers; _}; content; _} = version in
   let name = Option.fold ~none: name ~some: NEString.to_string (Version_parameters.display_name version_params) in
   let slug = NesSlug.to_string @@ NesSlug.of_string name in

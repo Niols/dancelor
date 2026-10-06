@@ -72,6 +72,9 @@ let uid () =
 let flip = Fun.flip
 let const = Fun.const
 let const2 = NesFun.const2
+let const3 = NesFun.const3
+let const4 = NesFun.const4
+let const5 = NesFun.const5
 
 let ok = Result.ok
 let error = Result.error
