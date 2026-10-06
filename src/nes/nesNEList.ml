@@ -34,7 +34,7 @@ let singleton x = x :: []
 
 let is_singleton (_ :: xs) = List.is_empty xs
 
-let mem n (x :: xs) = n == x || List.mem n xs
+let mem n (x :: xs) = n = x || List.mem n xs
 let exists f (x :: xs) = f x || List.exists f xs
 
 let show pp_x (x :: xs) = show_mylist pp_x (x :: xs)
