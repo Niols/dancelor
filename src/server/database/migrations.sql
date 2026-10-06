@@ -1664,3 +1664,29 @@ ALTER TABLE "entity_actors" RENAME CONSTRAINT "fk_entry_actors_entry_id" TO "fk_
 
 -- @m079_2026_10_entities__rename_entity_actors_fk_entry_actors_user_id_constraint
 ALTER TABLE "entity_actors" RENAME CONSTRAINT "fk_entry_actors_user_id" TO "fk_entity_actors_user_id";
+
+-- @m080_2026_10_groups__add_group_to_type_enum
+ALTER TYPE "type" ADD VALUE IF NOT EXISTS 'Group';
+
+-- @m080_2026_10_groups__create_table_groups
+CREATE TABLE "groups" (
+    "id" VARCHAR(14) NOT NULL PRIMARY KEY,
+    "name" VARCHAR(256) NOT NULL,
+    "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
+    CONSTRAINT "fk_group_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
+);
+
+-- @m080_2026_10_groups__create_type_group_member_role
+CREATE TYPE "group_member_role" AS ENUM ('Group_admin', 'Regular_member');
+
+-- @m080_2026_10_groups__create_table_group_members
+CREATE TABLE "group_members" (
+    -- [sqlgg] module=Sql_types.Group_id_conv
+    "group_id" VARCHAR(14) NOT NULL,
+    -- [sqlgg] module=Sql_types.User_id_conv
+    "member_id" VARCHAR(14) NOT NULL,
+    "member_role" "group_member_role" NOT NULL DEFAULT 'Regular_member',
+    CONSTRAINT "fk_group_members_group_id" FOREIGN KEY ("group_id") REFERENCES "groups" ("id"),
+    CONSTRAINT "fk_group_members_member_id" FOREIGN KEY ("member_id") REFERENCES "user" ("id"),
+    CONSTRAINT "uq_group_members_group_id_member_id" UNIQUE ("group_id", "member_id")
+);

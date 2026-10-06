@@ -66,6 +66,16 @@ CREATE TYPE "dancelor"."globally_unique_id_type" AS ENUM (
 
 
 --
+-- Name: group_member_role; Type: TYPE; Schema: dancelor; Owner: -
+--
+
+CREATE TYPE "dancelor"."group_member_role" AS ENUM (
+    'Group_admin',
+    'Regular_member'
+);
+
+
+--
 -- Name: kind; Type: TYPE; Schema: dancelor; Owner: -
 --
 
@@ -135,7 +145,8 @@ CREATE TYPE "dancelor"."type" AS ENUM (
     'Tune',
     'Version',
     'Set',
-    'Book'
+    'Book',
+    'Group'
 );
 
 
@@ -284,6 +295,28 @@ CREATE TABLE "dancelor"."entity_actors" (
     "entity_id" character varying(14) NOT NULL,
     "user_id" character varying(14) NOT NULL,
     "role" "dancelor"."actor_role" NOT NULL
+);
+
+
+--
+-- Name: group_members; Type: TABLE; Schema: dancelor; Owner: -
+--
+
+CREATE TABLE "dancelor"."group_members" (
+    "group_id" character varying(14) NOT NULL,
+    "member_id" character varying(14) NOT NULL,
+    "member_role" "dancelor"."group_member_role" DEFAULT 'Regular_member'::"dancelor"."group_member_role" NOT NULL
+);
+
+
+--
+-- Name: groups; Type: TABLE; Schema: dancelor; Owner: -
+--
+
+CREATE TABLE "dancelor"."groups" (
+    "id" character varying(14) NOT NULL,
+    "name" character varying(256) NOT NULL,
+    "name_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("name")::"text")) STORED
 );
 
 
@@ -636,6 +669,18 @@ INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role") VALUES (
 
 
 --
+-- Data for Name: group_members; Type: TABLE DATA; Schema: dancelor; Owner: -
+--
+
+
+
+--
+-- Data for Name: groups; Type: TABLE DATA; Schema: dancelor; Owner: -
+--
+
+
+
+--
 -- Data for Name: migrations; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
@@ -718,6 +763,7 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m076_2026_09
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m077_2026_09_add_new_kinds', '2026-09-15 17:35:34.126356+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m078_2026_10_user_add_email', '2026-10-05 16:10:28.154262+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m079_2026_10_rename_entry_table', '2026-10-06 14:39:24.927487+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m080_2026_10_groups__create_table_groups', '2026-10-06 20:57:50.482607+00');
 
 
 --
@@ -962,6 +1008,14 @@ INSERT INTO "dancelor"."version_sources" ("version_id", "source_id", "structure"
 
 
 --
+-- Name: groups groups_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."groups"
+    ADD CONSTRAINT "groups_pkey" PRIMARY KEY ("id");
+
+
+--
 -- Name: book idx_16409_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
@@ -1095,6 +1149,14 @@ ALTER TABLE ONLY "dancelor"."dance_devisers"
 
 ALTER TABLE ONLY "dancelor"."entity_actors"
     ADD CONSTRAINT "uq_entity_actors_entity_id_user_id" UNIQUE ("entity_id", "user_id");
+
+
+--
+-- Name: group_members uq_group_members_group_id_member_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."group_members"
+    ADD CONSTRAINT "uq_group_members_group_id_member_id" UNIQUE ("group_id", "member_id");
 
 
 --
@@ -1453,6 +1515,30 @@ ALTER TABLE ONLY "dancelor"."entity_actors"
 
 ALTER TABLE ONLY "dancelor"."entity_actors"
     ADD CONSTRAINT "fk_entity_actors_user_id" FOREIGN KEY ("user_id") REFERENCES "dancelor"."user"("id");
+
+
+--
+-- Name: groups fk_group_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."groups"
+    ADD CONSTRAINT "fk_group_id" FOREIGN KEY ("id") REFERENCES "dancelor"."entities"("id");
+
+
+--
+-- Name: group_members fk_group_members_group_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."group_members"
+    ADD CONSTRAINT "fk_group_members_group_id" FOREIGN KEY ("group_id") REFERENCES "dancelor"."groups"("id");
+
+
+--
+-- Name: group_members fk_group_members_member_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."group_members"
+    ADD CONSTRAINT "fk_group_members_member_id" FOREIGN KEY ("member_id") REFERENCES "dancelor"."user"("id");
 
 
 --
