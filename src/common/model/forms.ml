@@ -108,7 +108,7 @@ module Version_form = struct
     structure: Version_content.Structure.t;
     details: NEString.t option;
   }
-  [@@deriving eq, yojson]
+  [@@deriving eq, yojson, show {with_path = false}]
 
   let source_to_name {source = {id; name; _}; _} : Source_name.t =
     {id; name}
@@ -127,7 +127,7 @@ module Version_form = struct
     disambiguation: NEString.t option;
     content: Version_content.t;
   }
-  [@@deriving eq, fields, yojson]
+  [@@deriving eq, fields, yojson, show {with_path = false}]
 
   let to_name id {tune; _} : Version_name.t =
     {id; name = tune.name}

@@ -1,25 +1,25 @@
 type role =
   Normal_user | Maintainer | Administrator
-[@@deriving eq, yojson]
+[@@deriving eq, yojson, show {with_path = false}]
 
 type actor_role =
   | Owner
   | Viewer
-[@@deriving eq, yojson]
+[@@deriving eq, yojson, show {with_path = false}]
 
 type t = {
   entity_is_public: bool;
   actor_role: actor_role option;
   actor_is_omniscient_administrator: bool;
 }
-[@@deriving eq, yojson]
+[@@deriving eq, yojson, show {with_path = false}]
 
 type view_reason =
   | Public
   | Viewer
   | Owner
   | Omniscient_administrator
-[@@deriving show]
+[@@deriving show {with_path = false}]
 
 let view_reason {entity_is_public; actor_role; actor_is_omniscient_administrator} =
   match entity_is_public, actor_role, actor_is_omniscient_administrator with
@@ -33,7 +33,7 @@ let view_reason {entity_is_public; actor_role; actor_is_omniscient_administrator
 type edit_reason =
   | Owner
   | Omniscient_administrator
-[@@deriving show]
+[@@deriving show {with_path = false}]
 
 let edit_reason {actor_role; actor_is_omniscient_administrator; _} =
   match actor_role, actor_is_omniscient_administrator with
@@ -42,13 +42,14 @@ let edit_reason {actor_role; actor_is_omniscient_administrator; _} =
   | _ -> None
 
 type delete_reason = edit_reason
-[@@deriving show]
+[@@deriving show {with_path = false}]
 
 let delete_reason = edit_reason
 
 type share_reason =
   | Owner
   | Omniscient_administrator
+[@@deriving show {with_path = false}]
 
 let share_reason {actor_role; actor_is_omniscient_administrator; _} =
   match actor_role, actor_is_omniscient_administrator with
