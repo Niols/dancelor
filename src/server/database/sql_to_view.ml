@@ -196,3 +196,16 @@ let book_sql_to_view
     warnings = [];
     permission = {entity_is_public; actor_role; actor_is_omniscient_administrator};
   }
+
+let user_sql_to_view
+    ~id
+    ~username
+    ~joined
+    ~(k : User_view.t -> 'w)
+    : 'w
+  =
+  k {
+    id;
+    username = Username.of_string_exn username;
+    joined
+  }

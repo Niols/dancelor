@@ -16,8 +16,8 @@ INSERT INTO "entities" (
 ) VALUES (
     @id,
     @type_,
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP, -- FIXME: make this a default in the schema
+    CURRENT_TIMESTAMP, -- FIXME: make this a default in the schema
     @is_public
 );
 

@@ -59,10 +59,9 @@ let assert_can_delete db env id k =
 let is_connected env = lwt (Environment.actor env <> Anonymous)
 
 let can_administrate env =
-  lwt @@
-    match Environment.actor env with
-    | Anonymous -> false
-    | Signed_in actor -> actor.role = Administrator
+  match Environment.actor env with
+  | Anonymous -> false
+  | Signed_in actor -> actor.role = Administrator
 
 let assert_can_administrate env f =
   match Environment.actor env with

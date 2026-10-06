@@ -204,10 +204,10 @@ module Permissions_form = struct
   [@@deriving eq, yojson]
 end
 
-module User_create_form = struct
+module User_form = struct
   type t = {
     username: Username.t;
     email: Email.t;
   }
-  [@@deriving eq, yojson]
+  [@@deriving eq, yojson, fields]
 end

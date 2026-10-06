@@ -19,6 +19,19 @@ let get_rows env ids =
   let%lwt row_for = get_row_for env ids in
   lwt @@ List.filter_map row_for ids
 
+let get_view _env id =
+  match%lwt Database.User.get_view id with
+  | None -> Shared.reject_can_get ()
+  | Some view -> lwt view
+
+let get_form env id =
+  match Option.equal User_id.equal (Environment.actor_id env) (Some id) with
+  | false -> Shared.reject_can_get () (* FIXME: something more appropriate *)
+  | true ->
+    match%lwt Database.User.get_form id with
+    | None -> Shared.reject_can_get ()
+    | Some form -> lwt form
+
 let cache : (Environment.cache_key * User_query.t, (User_row.t * float) Search_result.t Lwt.t) Cache.t =
   Cache.create ~lifetime: 60 ()
 
@@ -71,7 +84,7 @@ let sign_out env =
   | Anonymous -> lwt_unit
   | Signed_in actor -> Environment.sign_out env actor
 
-let create env (user : User_create_form.t) =
+let create env (user : User_form.t) =
   Shared.assert_can_administrate env @@ fun _admin ->
   let token = Password_reset_token_clear.make () in
   (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
@@ -80,13 +93,17 @@ let create env (user : User_create_form.t) =
   let password_reset_token_max_date = Datetime.make_in_the_future (float_of_int @@ 3 * 24 * 3600) in
   let%lwt id =
     Database.User.create
-      ~username: user.username
-      ~email: user.email
+      user
       ~password_reset_token_hash
       ~password_reset_token_max_date
   in
   let%lwt user = Option.get <$> Database.User.get_row id in
   lwt (user, token)
+
+let update env id (user : User_form.t) =
+  match Option.equal User_id.equal (Environment.actor_id env) (Some id) || Shared.can_administrate env with
+  | false -> Shared.reject_can_get () (* FIXME: something more appropriate *)
+  | true -> Database.User.update id user
 
 let prepare_reset_password env username =
   Shared.assert_can_administrate env @@ fun _admin ->
@@ -147,10 +164,13 @@ let set_omniscience env value =
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.User.t -> a = fun env endpoint ->
   match endpoint with
   | Get_row -> get_row env
+  | Get_view -> get_view env
+  | Get_form -> get_form env
   | Status -> status env
   | Sign_in -> sign_in env
   | Sign_out -> sign_out env
   | Create -> create env
+  | Update -> update env
   | Prepare_reset_password -> prepare_reset_password env
   | Reset_password -> reset_password
   | Search -> search env

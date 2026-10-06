@@ -49,7 +49,7 @@ let create () =
   let signal =
     RS.bind (Component.signal username_input) @@ fun username ->
     RS.bind (Component.signal email_input) @@ fun email ->
-    S.const @@ Ok {User_create_form.username; email}
+    S.const @@ Ok {User_form.username; email}
   in
   Page.make'
     ~title: (lwt "Create user")
