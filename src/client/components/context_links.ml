@@ -217,7 +217,7 @@ let for_search query (any_id : Any_id.t) =
       let versions_in_page : Any_id.t -> (Version_id.t * Version_parameters.t) list Lwt.t = function
         (** NOTE: This is about the versions that are **visible** in the any.
             In particular, we don't return the versions in a book. *)
-        | Person _ | Dance _ | Source _ | User _ | Tune _ | Book _ -> lwt_nil
+        | Person _ | Dance _ | Source _ | User _ | Tune _ | Book _ | Group _ -> lwt_nil
         | Version version ->
           lwt [(version, Version_parameters.none)]
         | Set set ->

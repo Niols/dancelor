@@ -27,6 +27,14 @@
   (with-stdout-to %{target}
    (run sqlgg -gen caml_io -dialect postgresql %{deps}))))
 
+;; group.sql
+(rule
+ (target group_sql.ml)
+ (deps schema.sql ctes.sql group.sql)
+ (action
+  (with-stdout-to %{target}
+   (run sqlgg -gen caml_io -dialect postgresql %{deps}))))
+
 ;; migrations.sql
 (rule
  (target migrations_sql.ml)
@@ -42,6 +50,12 @@
  (action
   (with-stdout-to %{target}
    (run sqlgg -gen caml_io -dialect postgresql %{deps}))))
+
+;; schema-extra-after.sql
+;; supporting file: no Dune rule
+
+;; schema-extra-before.sql
+;; supporting file: no Dune rule
 
 ;; schema.sql
 ;; supporting file: no Dune rule

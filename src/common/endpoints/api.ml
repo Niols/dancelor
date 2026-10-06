@@ -12,6 +12,7 @@ module Endpoints = struct
     | Tune : ('a, 'w, 'r) Tune.t -> ('a, 'w, 'r) t
     | Any : ('a, 'w, 'r) Any.t -> ('a, 'w, 'r) t
     | User : ('a, 'w, 'r) User.t -> ('a, 'w, 'r) t
+    | Group : ('a, 'w, 'r) Group.t -> ('a, 'w, 'r) t
     | Job : ('a, 'w, 'r) Job.t -> ('a, 'w, 'r) t
     | Report_issue : (Issue_report.request -> 'w, 'w, Issue_report.response) t
   [@@deriving madge_wrapped_endpoints]
@@ -33,6 +34,7 @@ include Madge.Make_endpoints(struct
       | Tune endpoint -> literal "tune" @@ Tune.route endpoint
       | Any endpoint -> literal "any" @@ Any.route endpoint
       | User endpoint -> literal "user" @@ User.route endpoint
+      | Group endpoint -> literal "group" @@ Group.route endpoint
       | Job endpoint -> literal "job" @@ Job.route endpoint
       | Report_issue -> literal "issue" @@ literal "report" @@ query_json "request" (module Issue_report.Request) @@ post (module Issue_report.Response)
 end)

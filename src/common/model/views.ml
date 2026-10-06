@@ -211,3 +211,12 @@ module User_view = struct
   }
   [@@deriving eq, yojson, fields]
 end
+
+module Group_view = struct
+  type t = {
+    id: Group_id.t;
+    name: string;
+    members: User_row.t list;
+  }
+  [@@deriving eq, yojson, fields]
+end

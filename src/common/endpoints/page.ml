@@ -67,6 +67,12 @@ type (_, _, _) user =
   | Password_reset : (Username.t -> Password_reset_token_clear.t -> 'w, 'w, Void.t) user
 [@@deriving madge_wrapped_endpoints]
 
+type (_, _, _) group =
+  | View : (In_search.t option -> Group_id.t -> 'w, 'w, Void.t) group
+  | Create : ('w, 'w, Void.t) group
+  | Edit : (Group_id.t -> 'w, 'w, Void.t) group
+[@@deriving madge_wrapped_endpoints]
+
 type (_, _, _) t =
   | Index : ('w, 'w, Void.t) t
   | Explore : (string -> int -> 'w, 'w, Void.t) t
@@ -80,6 +86,7 @@ type (_, _, _) t =
   | Set : ('a, 'w, 'r) set -> ('a, 'w, 'r) t
   | Book : ('a, 'w, 'r) book -> ('a, 'w, 'r) t
   | User : ('a, 'w, 'r) user -> ('a, 'w, 'r) t
+  | Group : ('a, 'w, 'r) group -> ('a, 'w, 'r) t
 [@@deriving madge_wrapped_endpoints]
 
 (** {2 Routes} *)
@@ -145,6 +152,13 @@ let route_user : type a w r. (a, w, r) user -> (a, w, r) route =
     | Prepare_reset_password -> literal "prepare-reset-password" @@ void ()
     | Password_reset -> literal "reset-password" @@ query_json "username" (module Username) @@ query_json "token" (module Password_reset_token_clear) @@ void ()
 
+let route_group : type a w r. (a, w, r) group -> (a, w, r) route =
+  let open Route in
+  function
+    | View -> literal "view" @@ query_str_opt "in-search" (module In_search) @@ variable (module Group_id) @@ void ()
+    | Edit -> literal "edit" @@ variable (module Group_id) @@ void ()
+    | Create -> literal "create" @@ void ()
+
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in
   function
@@ -159,6 +173,7 @@ let route : type a w r. (a, w, r) t -> (a, w, r) route =
     | Set page -> literal "set" @@ route_set page
     | Book page -> literal "book" @@ route_book page
     | User page -> literal "user" @@ route_user page
+    | Group page -> literal "group" @@ route_group page
 
 let href : type a r. (a, Uri.t, r) t -> a = fun page ->
   with_request (route page) @@ fun (module _) request ->
@@ -173,6 +188,7 @@ let href_set ?in_search set = href (Set View) in_search set
 let href_tune ?in_search tune = href (Tune View) in_search tune
 let href_version ?in_search ?in_set version = href (Version View) in_search in_set version
 let href_user ?in_search user = href (User View) in_search user
+let href_group ?in_search group = href (Group View) in_search group
 
 let href_any_full ?in_search (any : Any_id.t) =
   match any with
@@ -184,6 +200,7 @@ let href_any_full ?in_search (any : Any_id.t) =
   | Book book -> href_book ?in_search book
   | Tune tune -> href_tune ?in_search tune
   | User user -> href_user ?in_search user
+  | Group group -> href_group ?in_search group
 
 (** Function that consumes all endpoints and returns nothing. It is meant to be
     used in the catch-all case of a pattern matching. *)
@@ -219,6 +236,9 @@ let consume : type a w r. return: w -> (a, w, r) t -> a = fun ~return: value end
   | User Create -> value
   | User Prepare_reset_password -> value
   | User Password_reset -> const2 value
+  | Group View -> const2 value
+  | Group Create -> value
+  | Group Edit -> const value
 
 module type Any_id_to_name = sig
   type env

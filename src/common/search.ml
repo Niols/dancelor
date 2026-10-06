@@ -194,6 +194,26 @@ module User_query = struct
   let print = Query.make_printer print_operators
 end
 
+module Group_query = struct
+  type specific = unit
+  [@@deriving yojson]
+
+  let make_specific () = ()
+
+  type t = specific Query.t
+  [@@deriving yojson]
+
+  let parse_operators = fun {Query_parser.parse_operator} ->
+    ignore parse_operator
+
+  let parse = Query.make_parser parse_operators
+
+  let print_operators = fun {Query_printer.print_operator} () ->
+    ignore print_operator
+
+  let print = Query.make_printer print_operators
+end
+
 module Dance_query = struct
   type specific = {
     deviser: Person_id.t list option; [@default None]
@@ -360,6 +380,7 @@ module Any_query = struct
     | Version of Version_query.specific
     | Set of Set_query.specific
     | Book of Book_query.specific
+    | Group of Group_query.specific
   [@@deriving yojson, variants]
 
   type specific = model_specific option
@@ -386,6 +407,7 @@ module Any_query = struct
         | ["version"] -> Version (Version_query.parse_operators {parse_operator})
         | ["set"] -> Set (Set_query.parse_operators {parse_operator})
         | ["book"] -> Book (Book_query.parse_operators {parse_operator})
+        | ["group"] -> Group (Group_query.parse_operators {parse_operator})
         | _ -> Query_parser.parse_errorf "unexpected type %S" (String.concat "," type_)
 
   let print : t -> string =
@@ -400,4 +422,5 @@ module Any_query = struct
     | Some Version query -> print_operator "type" Fun.id (Some ["version"]); Version_query.print_operators {print_operator} query
     | Some Set query -> print_operator "type" Fun.id (Some ["set"]); Set_query.print_operators {print_operator} query
     | Some Book query -> print_operator "type" Fun.id (Some ["book"]); Book_query.print_operators {print_operator} query
+    | Some Group query -> print_operator "type" Fun.id (Some ["group"]); Group_query.print_operators {print_operator} query
 end

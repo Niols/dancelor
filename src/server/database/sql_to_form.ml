@@ -162,3 +162,15 @@ let user_sql_to_form
     username = Username.of_string_exn username;
     email;
   }
+
+let group_sql_to_form
+    ~id: _
+    ~name
+    ~members
+    ~(k : Group_form.t -> 'w)
+    : 'w
+  =
+  k {
+    name = NEString.of_string_exn name;
+    members;
+  }

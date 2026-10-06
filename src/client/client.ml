@@ -47,6 +47,9 @@ let dispatch uri =
     | User Create -> User_creator.create ()
     | User Prepare_reset_password -> User_password_reset_preparer.create ()
     | User Password_reset -> User_password_resetter.create
+    | Group View -> Group_viewer.view
+    | Group Create -> Group_editor.add ()
+    | Group Edit -> Group_editor.edit
   in
   let madge_match_apply_all : Page.t Lwt.t Endpoints.Page.wrapped' list -> (unit -> Page.t Lwt.t) option =
     List.find_map @@ fun (Endpoints.Page.W' endpoint) ->

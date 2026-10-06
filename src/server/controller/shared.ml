@@ -92,6 +92,18 @@ let assert_can_edit_user env user_id k =
     )
     (fun _reason -> k ())
 
+let assert_can_edit_group env _group_id k =
+  assert_permission
+    ~access_type: "edit"
+    ~pp_reason: (fun fmt _reason -> fpf fmt "FIXME")
+    env
+    (
+      match can_administrate env with
+      | true -> Some `Admin
+      | false -> None
+    )
+    (fun _reason -> k ())
+
 module type Db_private = sig
   type tag
   type id = tag Id.t

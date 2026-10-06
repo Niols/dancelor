@@ -96,6 +96,7 @@ type model =
   | Set
   | Book
   | User
+  | Group
 
 let model_to_string = function
   | Source -> "archive"
@@ -106,6 +107,7 @@ let model_to_string = function
   | Set -> "list-stars"
   | Book -> "book"
   | User -> "person-circle"
+  | Group -> "people"
 
 (** Type for other icons. *)
 type other =

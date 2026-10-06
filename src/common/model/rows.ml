@@ -23,6 +23,16 @@ module User_row = struct
     {id; username = Username.to_string username}
 end
 
+module Group_row = struct
+  type t = {
+    id: Group_id.t;
+    name: string;
+  }
+  [@@deriving eq, yojson, fields, show {with_path = false}]
+
+  let to_name : t -> Group_name.t = fun {id; name} -> {id; name}
+end
+
 module Dance_row = struct
   type t = {
     id: Dance_id.t;
@@ -118,6 +128,7 @@ module Any_row = struct
     | Set of Set_row.t
     | Book of Book_row.t
     | User of User_row.t
+    | Group of Group_row.t
   [@@deriving eq, yojson, variants, show {with_path = false}]
 
   let to_id : t -> Any_id.t = function
@@ -129,6 +140,7 @@ module Any_row = struct
     | Set s -> Set s.id
     | Book b -> Book b.id
     | User u -> User u.id
+    | Group u -> Group u.id
 
   let equal a1 a2 = Any_id.equal (to_id a1) (to_id a2)
 end

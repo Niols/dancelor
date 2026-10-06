@@ -21,6 +21,9 @@ let dances dances =
 let tunes tunes =
   map_table ~header: [""; ""; ""] Any_result.make_tune_result tunes
 
+let users users =
+  map_table ~header: [""; ""; ""] Any_result.make_user_result users
+
 let versions ?onclick versions =
   map_table
     ~header: [""; ""; ""]

@@ -18,6 +18,7 @@ let type_choices (type_ : Any_id.Type.t option) =
         choice' [txt "Set"] ~value: Any_id.Type.Set ~checked: (type_ = Some Any_id.Type.Set);
         choice' [txt "Book"] ~value: Any_id.Type.Book ~checked: (type_ = Some Any_id.Type.Book);
         choice' [txt "User"] ~value: Any_id.Type.User ~checked: (type_ = Some Any_id.Type.User);
+        choice' [txt "Group"] ~value: Any_id.Type.Group ~checked: (type_ = Some Any_id.Type.Group);
       ]
   )
 
@@ -163,22 +164,25 @@ let make_version_specific_choices ~tune_query ~tune_html (query : Version_query.
 
 let make_user_specific_choices (_query : User_query.specific option) = (S.const (), [])
 
+let make_group_specific_choices (_query : Group_query.specific option) = (S.const (), [])
+
 let make_common_choices (query : Query.common) = (S.const {Query.terms = query.terms}, [])
 
 (* the dialog itself *)
 
 let open_ (query : Any_query.t) =
-  let (type_, person_query, dance_query, source_query, tune_query, version_query, set_query, book_query, user_query) =
+  let (type_, person_query, dance_query, source_query, tune_query, version_query, set_query, book_query, user_query, group_query) =
     match query.specific with
-    | None -> (None, None, None, None, None, None, None, None, None)
-    | Some Person person_query -> (Some Any_id.Type.Person, Some person_query, None, None, None, None, None, None, None)
-    | Some Dance dance_query -> (Some Any_id.Type.Dance, None, Some dance_query, None, None, None, None, None, None)
-    | Some Source source_query -> (Some Any_id.Type.Source, None, None, Some source_query, None, None, None, None, None)
-    | Some Tune tune_query -> (Some Any_id.Type.Tune, None, None, None, Some tune_query, None, None, None, None)
-    | Some Version version_query -> (Some Any_id.Type.Version, None, None, None, Some version_query.tune, Some version_query, None, None, None)
-    | Some Set set_query -> (Some Any_id.Type.Set, None, None, None, None, None, Some set_query, None, None)
-    | Some Book book_query -> (Some Any_id.Type.Book, None, None, None, None, None, None, Some book_query, None)
-    | Some User user_query -> (Some Any_id.Type.User, None, None, None, None, None, None, None, Some user_query)
+    | None -> (None, None, None, None, None, None, None, None, None, None)
+    | Some Person person_query -> (Some Any_id.Type.Person, Some person_query, None, None, None, None, None, None, None, None)
+    | Some Dance dance_query -> (Some Any_id.Type.Dance, None, Some dance_query, None, None, None, None, None, None, None)
+    | Some Source source_query -> (Some Any_id.Type.Source, None, None, Some source_query, None, None, None, None, None, None)
+    | Some Tune tune_query -> (Some Any_id.Type.Tune, None, None, None, Some tune_query, None, None, None, None, None)
+    | Some Version version_query -> (Some Any_id.Type.Version, None, None, None, Some version_query.tune, Some version_query, None, None, None, None)
+    | Some Set set_query -> (Some Any_id.Type.Set, None, None, None, None, None, Some set_query, None, None, None)
+    | Some Book book_query -> (Some Any_id.Type.Book, None, None, None, None, None, None, Some book_query, None, None)
+    | Some User user_query -> (Some Any_id.Type.User, None, None, None, None, None, None, None, Some user_query, None)
+    | Some Group group_query -> (Some Any_id.Type.Group, None, None, None, None, None, None, None, None, Some group_query)
   in
   let%lwt type_choices = type_choices type_ in
   let (person_query, person_html) = make_person_specific_choices person_query in
@@ -189,6 +193,7 @@ let open_ (query : Any_query.t) =
   let%lwt (tune_query, tune_html) = make_tune_specific_choices tune_query in
   let%lwt (version_query, version_html) = make_version_specific_choices version_query ~tune_query ~tune_html in
   let (user_query, user_html) = make_user_specific_choices user_query in
+  let (group_query, group_html) = make_group_specific_choices group_query in
   let (common_query, common_html) = make_common_choices query.common in
   let specific =
     S.bind (S.map Result.get_ok @@ Component.signal type_choices) @@ function
@@ -201,6 +206,7 @@ let open_ (query : Any_query.t) =
       | Some Version -> S.map (some % Any_query.version) version_query
       | Some Set -> S.map (some % Any_query.set) set_query
       | Some Book -> S.map (some % Any_query.book) book_query
+      | Some Group -> S.map (some % Any_query.group) group_query
   in
   let new_query =
     S.bind common_query @@ fun common ->
@@ -229,6 +235,7 @@ let open_ (query : Any_query.t) =
           | Some Tune -> tune_html
           | Some Version -> version_html
           | Some User -> user_html
+          | Some Group -> group_html
       );
     hr ();
     div ~a: [a_class ["d-flex"; "justify-content-center"]] common_html;

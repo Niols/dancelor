@@ -8,23 +8,24 @@ let get_type env id =
   | Some type_ -> lwt type_
 
 let get_rows env ids =
-  let (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids) =
+  let (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids, group_ids) =
     List.fold_left
       (fun
-          (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids)
+          (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids, group_ids)
           id
         ->
         match id with
-        | Any_id.Person id -> (id :: person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids)
-        | Dance id -> (person_ids, id :: dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids)
-        | Source id -> (person_ids, dance_ids, id :: source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids)
-        | Tune id -> (person_ids, dance_ids, source_ids, id :: tune_ids, version_ids, set_ids, book_ids, user_ids)
-        | Version id -> (person_ids, dance_ids, source_ids, tune_ids, id :: version_ids, set_ids, book_ids, user_ids)
-        | Set id -> (person_ids, dance_ids, source_ids, tune_ids, version_ids, id :: set_ids, book_ids, user_ids)
-        | Book id -> (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, id :: book_ids, user_ids)
-        | User id -> (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, id :: user_ids)
+        | Any_id.Person id -> (id :: person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids, group_ids)
+        | Dance id -> (person_ids, id :: dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids, group_ids)
+        | Source id -> (person_ids, dance_ids, id :: source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids, group_ids)
+        | Tune id -> (person_ids, dance_ids, source_ids, id :: tune_ids, version_ids, set_ids, book_ids, user_ids, group_ids)
+        | Version id -> (person_ids, dance_ids, source_ids, tune_ids, id :: version_ids, set_ids, book_ids, user_ids, group_ids)
+        | Set id -> (person_ids, dance_ids, source_ids, tune_ids, version_ids, id :: set_ids, book_ids, user_ids, group_ids)
+        | Book id -> (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, id :: book_ids, user_ids, group_ids)
+        | User id -> (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, id :: user_ids, group_ids)
+        | Group id -> (person_ids, dance_ids, source_ids, tune_ids, version_ids, set_ids, book_ids, user_ids, id :: group_ids)
       )
-      ([], [], [], [], [], [], [], [])
+      ([], [], [], [], [], [], [], [], [])
       ids
   in
   let%lwt row_for_person = Person.get_row_for env person_ids
@@ -35,6 +36,7 @@ let get_rows env ids =
   and row_for_set = Set.get_row_for env set_ids
   and row_for_book = Book.get_row_for env book_ids
   and row_for_user = User.get_row_for env user_ids
+  and row_for_group = Group.get_row_for env group_ids
   in
   lwt @@
     List.filter_map
@@ -47,6 +49,7 @@ let get_rows env ids =
         | Set id -> Option.map Any_row.set @@ row_for_set id
         | Book id -> Option.map Any_row.book @@ row_for_book id
         | User id -> Option.map Any_row.user @@ row_for_user id
+        | Group id -> Option.map Any_row.group @@ row_for_group id
       )
       ids
 
@@ -115,6 +118,9 @@ let search'_person env query =
 let search'_user env query =
   Search_result.map (Pair.map_fst Any_row.user) <$> User.search' env query
 
+let search'_group env query =
+  Search_result.map (Pair.map_fst Any_row.group) <$> Group.search' env query
+
 let search'_dance env query =
   Search_result.map (Pair.map_fst Any_row.dance) <$> Dance.search' env query
 
@@ -142,6 +148,7 @@ let search'_any env query =
   and sets_result = search'_set env {common = query; specific = Set_query.make_specific ()}
   and books_result = search'_book env {common = query; specific = Book_query.make_specific ()}
   and users_result = search'_user env {common = query; specific = User_query.make_specific ()}
+  and groups_result = search'_group env {common = query; specific = Group_query.make_specific ()}
   in
   let total =
     persons_result.total +
@@ -151,7 +158,8 @@ let search'_any env query =
       versions_result.total +
       sets_result.total +
       books_result.total +
-      users_result.total
+      users_result.total +
+      groups_result.total
   in
   let items =
     (* NOTE: Mind the order of [s1] and [s2]: we sort scores descending *)
@@ -164,6 +172,7 @@ let search'_any env query =
       sets_result.items;
       books_result.items;
       users_result.items;
+      groups_result.items;
     ]
   in
   lwt {Search_result.total; items}
@@ -183,6 +192,7 @@ let search' env ({common; specific}: Any_query.t) =
   | Some Version specific -> search'_version env {common; specific}
   | Some Set specific -> search'_set env {common; specific}
   | Some Book specific -> search'_book env {common; specific}
+  | Some Group specific -> search'_group env {common; specific}
 
 let search env slice query =
   let%lwt {total; items} = search' env query in

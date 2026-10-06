@@ -60,6 +60,17 @@ let make_user_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) 
       suffix
     )
 
+let make_group_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (group : Group_row.t) =
+  row
+    ?classes
+    ?onclick
+    (
+      prefix @
+      [td ~a: [a_colspan 3] [Formatters.Group.name ~link: (onclick = None) ?in_search (Group_row.to_name group)];
+      ] @
+      suffix
+    )
+
 let make_dance_result ?classes ?onclick ?in_search ?(prefix = []) ?(suffix = []) (dance : Dance_row.t) =
   row
     ?classes
@@ -231,6 +242,7 @@ let any_to_icon_and_string any =
   | Set _ -> (Icon.Set, "Set")
   | Book _ -> (Icon.Book, "Book")
   | User _ -> (Icon.User, "User")
+  | Group _ -> (Icon.Group, "Group")
 
 let make_result ?classes ?in_search (any : Any_row.t) =
   let prefix =
@@ -258,6 +270,7 @@ let make_result ?classes ?in_search (any : Any_row.t) =
           | Set set -> Some set.permission
           | Book book -> Some book.permission
           | User _ -> None
+          | Group _ -> None
         in
         match permission with
         | None -> Icon.html Icon.(Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"]
@@ -282,3 +295,4 @@ let make_result ?classes ?in_search (any : Any_row.t) =
   | Tune tune -> make_tune_result ?classes ?in_search ~prefix ~suffix tune
   | Version version -> make_version_result ?classes ?in_search ~prefix ~suffix version
   | User user -> make_user_result ?classes ?in_search ~prefix ~suffix user
+  | Group group -> make_group_result ?classes ?in_search ~prefix ~suffix group

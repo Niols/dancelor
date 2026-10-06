@@ -83,3 +83,11 @@ module User_name = struct
   }
   [@@deriving eq, yojson, fields, show {with_path = false}]
 end
+
+module Group_name = struct
+  type t = {
+    id: Group_id.t;
+    name: string;
+  }
+  [@@deriving eq, yojson, fields, show {with_path = false}]
+end

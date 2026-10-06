@@ -16,6 +16,7 @@ module Version_id_conv = Make_id_conv(Version_tag)
 module Set_id_conv = Make_id_conv(Set_tag)
 module Book_id_conv = Make_id_conv(Book_tag)
 module User_id_conv = Make_id_conv(User_tag)
+module Group_id_conv = Make_id_conv(Group_tag)
 
 module Kind_conv = struct
   let get_column : string -> Kind.Base.t = function
@@ -99,6 +100,7 @@ module Type_conv = struct
     | "Version" -> Version
     | "Set" -> Set
     | "Book" -> Book
+    | "Group" -> Group
     | _ -> failwith "Sql_types.Type_conv.get_column"
   let get_column_nullable = Option.map get_column
   let set_param : Any_id.Type.t -> string = function
@@ -110,6 +112,7 @@ module Type_conv = struct
     | Version -> "Version"
     | Set -> "Set"
     | Book -> "Book"
+    | Group -> "Group"
 end
 
 module Username_conv = struct

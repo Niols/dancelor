@@ -33,6 +33,16 @@ module User = struct
       txt user.username
 end
 
+module Group = struct
+  let name ?(link = true) ?in_search (group : Group_name.t) =
+    if link then
+      a
+        ~a: [R.a_href @@ S.map (fun in_search -> Endpoints.Page.href_group ?in_search group.id) (switch_signal_option in_search)]
+        [txt group.name]
+    else
+      txt group.name
+end
+
 module Person = struct
   let name ?(link = true) ?in_search (person : Person_name.t) =
     if link then

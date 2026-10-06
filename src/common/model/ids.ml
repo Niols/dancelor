@@ -22,6 +22,7 @@ module Version_id = Make(Version_tag)
 module Set_id = Make(Set_tag)
 module Book_id = Make(Book_tag)
 module User_id = Make(User_tag)
+module Group_id = Make(Group_tag)
 
 module Any_id = struct
   module Type = struct
@@ -34,6 +35,7 @@ module Any_id = struct
       | Set
       | Book
       | User
+      | Group
     [@@deriving eq, yojson, show {with_path = false}]
   end
 
@@ -46,6 +48,7 @@ module Any_id = struct
     | Set of Set_id.t
     | Book of Book_id.t
     | User of User_id.t
+    | Group of Group_id.t
   [@@deriving eq, yojson, variants, show {with_path = false}]
 
   let of_untagged : Type.t -> Untagged.t Id.t -> t = fun type_ id ->
@@ -58,6 +61,7 @@ module Any_id = struct
     | Set -> Set (Id.unsafe_coerce id)
     | Book -> Book (Id.unsafe_coerce id)
     | User -> User (Id.unsafe_coerce id)
+    | Group -> Group (Id.unsafe_coerce id)
 
   let to_untagged : t -> Untagged.t Id.t = function
     | Person x -> Id.unsafe_coerce x
@@ -68,4 +72,5 @@ module Any_id = struct
     | Set x -> Id.unsafe_coerce x
     | Book x -> Id.unsafe_coerce x
     | User x -> Id.unsafe_coerce x
+    | Group x -> Id.unsafe_coerce x
 end

@@ -113,3 +113,15 @@ let book_form_to_sql
     ~date: (Option.map Partial_date.to_string date)
     ~remark: (Option.map NEString.to_string remark)
     ~scddb_id: (Option.map Int64.of_int scddb_id)
+
+let group_form_to_sql
+    query
+    id
+    {
+      Group_form.name;
+      members = _;
+    }
+  =
+  query
+    ~id
+    ~name: (NEString.to_string name)

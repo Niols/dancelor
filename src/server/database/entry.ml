@@ -13,7 +13,7 @@ type visibility = [
 type visibility_or_public = [visibility | `Public]
 
 let classify_type : Any_id.Type.t -> [`Public | `Private] = function
-  | Dance | Person | Source | Tune | User | Version -> `Public
+  | Dance | Person | Source | Tune | User | Version | Group -> `Public
   | Set | Book -> `Private
 
 (** Handles only the insertion into the ["entities"] table. In particular, this
@@ -91,6 +91,7 @@ let get_newest ~actor_id ~limit =
         | Source -> Any_id.source @@ Id.unsafe_coerce id
         | Tune -> Any_id.tune @@ Id.unsafe_coerce id
         | User -> Any_id.user @@ Id.unsafe_coerce id
+        | Group -> Any_id.group @@ Id.unsafe_coerce id
         | Version -> Any_id.version @@ Id.unsafe_coerce id
     )
   in

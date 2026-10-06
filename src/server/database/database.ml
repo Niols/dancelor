@@ -7,6 +7,7 @@ module Set = Set
 module Source = Source
 module Tune = Tune
 module User = User
+module Group = Group
 module Version = Version
 module Utils = Utils
 
