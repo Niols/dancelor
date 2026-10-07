@@ -34,3 +34,45 @@ module Set_tag = Make(struct let module_name = "Set_tag" end)
 module Book_tag = Make(struct let module_name = "Book_tag" end)
 module User_tag = Make(struct let module_name = "User_tag" end)
 module Group_tag = Make(struct let module_name = "Group_tag" end)
+
+type ('r, 'p) resource_or_principal =
+  | Resource of 'r
+  | Principal of 'p
+
+module Resource_type = struct
+  type t = [
+    | `Person
+    | `Dance
+    | `Source
+    | `Tune
+    | `Version
+    | `Set
+    | `Book
+  ]
+  [@@deriving eq, yojson, show {with_path = false}]
+end
+
+module Principal_type = struct
+  type t = [
+    | `User
+    | `Group
+  ]
+  [@@deriving eq, yojson, show {with_path = false}]
+end
+
+module Entity_type = struct
+  type t =
+    [Resource_type.t | Principal_type.t]
+  [@@deriving eq, yojson, show {with_path = false}]
+
+  let classify : t -> (Resource_type.t, Principal_type.t) resource_or_principal = function
+    | `Person -> Resource `Person
+    | `Dance -> Resource `Dance
+    | `Source -> Resource `Source
+    | `Tune -> Resource `Tune
+    | `Version -> Resource `Version
+    | `Set -> Resource `Set
+    | `Book -> Resource `Book
+    | `User -> Principal `User
+    | `Group -> Principal `Group
+end

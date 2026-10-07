@@ -19,10 +19,10 @@
   (with-stdout-to %{target}
    (run sqlgg -gen caml_io -dialect postgresql %{deps}))))
 
-;; entry.sql
+;; entity.sql
 (rule
- (target entry_sql.ml)
- (deps schema.sql ctes.sql entry.sql)
+ (target entity_sql.ml)
+ (deps schema.sql ctes.sql entity.sql)
  (action
   (with-stdout-to %{target}
    (run sqlgg -gen caml_io -dialect postgresql %{deps}))))

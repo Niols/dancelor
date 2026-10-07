@@ -90,31 +90,6 @@ module Actor_role_conv = struct
     | Viewer -> "Viewer"
 end
 
-module Type_conv = struct
-  let get_column : string -> Any_id.Type.t = function
-    | "Person" -> Person
-    | "User" -> User
-    | "Dance" -> Dance
-    | "Source" -> Source
-    | "Tune" -> Tune
-    | "Version" -> Version
-    | "Set" -> Set
-    | "Book" -> Book
-    | "Group" -> Group
-    | _ -> failwith "Sql_types.Type_conv.get_column"
-  let get_column_nullable = Option.map get_column
-  let set_param : Any_id.Type.t -> string = function
-    | Person -> "Person"
-    | User -> "User"
-    | Dance -> "Dance"
-    | Source -> "Source"
-    | Tune -> "Tune"
-    | Version -> "Version"
-    | Set -> "Set"
-    | Book -> "Book"
-    | Group -> "Group"
-end
-
 module Username_conv = struct
   let get_column : string -> Username.t = Username.of_string_exn
   let get_column_nullable = Option.map get_column

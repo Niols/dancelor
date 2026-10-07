@@ -39,7 +39,7 @@ let editor =
         (
           Selector.prepare
             ~make_descr: (lwt % Person_row.name)
-            ~make_result: (Any_result.make_person_result ?in_search: None)
+            ~make_result: (Tables.person_row ?in_search: None)
             ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~label: "Conceptor"
             ~model_name: "person"
@@ -58,7 +58,7 @@ let editor =
             (
               Selector.prepare
                 ~make_descr: (lwt % Tune_row.name % Version_row.tune)
-                ~make_result: (Any_result.make_version_result ?in_search: None)
+                ~make_result: (Tables.version_row ?in_search: None)
                 ~make_more_results: (fun version ->
                   S.flip_map show_preview @@ function
                     | true -> [tr [td ~a: [a_colspan 9999] [Version_snippets.make ~show_audio: false (Version_row.to_name version)]]]
@@ -119,7 +119,7 @@ let create mode =
   Main_page.assert_can_create_public @@ fun () ->
   Editor.make_page
     ~key: "set"
-    ~icon: (Model Set)
+    ~icon: (Entity Set)
     ~mode
     editor
     ~submit

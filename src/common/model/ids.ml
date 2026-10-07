@@ -24,53 +24,59 @@ module Book_id = Make(Book_tag)
 module User_id = Make(User_tag)
 module Group_id = Make(Group_tag)
 
-module Any_id = struct
-  module Type = struct
-    type t =
-      | Person
-      | Dance
-      | Source
-      | Tune
-      | Version
-      | Set
-      | Book
-      | User
-      | Group
-    [@@deriving eq, yojson, show {with_path = false}]
-  end
-
-  type t =
-    | Person of Person_id.t
-    | Dance of Dance_id.t
-    | Source of Source_id.t
-    | Tune of Tune_id.t
-    | Version of Version_id.t
-    | Set of Set_id.t
-    | Book of Book_id.t
-    | User of User_id.t
-    | Group of Group_id.t
+module Resource_id = struct
+  type t = [
+    | `Person of Person_id.t
+    | `Dance of Dance_id.t
+    | `Source of Source_id.t
+    | `Tune of Tune_id.t
+    | `Version of Version_id.t
+    | `Set of Set_id.t
+    | `Book of Book_id.t
+  ]
   [@@deriving eq, yojson, variants, show {with_path = false}]
 
-  let of_untagged : Type.t -> Untagged.t Id.t -> t = fun type_ id ->
+  let of_untagged : Resource_type.t -> Untagged.t Id.t -> t = fun type_ id ->
     match type_ with
-    | Person -> Person (Id.unsafe_coerce id)
-    | Dance -> Dance (Id.unsafe_coerce id)
-    | Source -> Source (Id.unsafe_coerce id)
-    | Tune -> Tune (Id.unsafe_coerce id)
-    | Version -> Version (Id.unsafe_coerce id)
-    | Set -> Set (Id.unsafe_coerce id)
-    | Book -> Book (Id.unsafe_coerce id)
-    | User -> User (Id.unsafe_coerce id)
-    | Group -> Group (Id.unsafe_coerce id)
+    | `Person -> `Person (Id.unsafe_coerce id)
+    | `Dance -> `Dance (Id.unsafe_coerce id)
+    | `Source -> `Source (Id.unsafe_coerce id)
+    | `Tune -> `Tune (Id.unsafe_coerce id)
+    | `Version -> `Version (Id.unsafe_coerce id)
+    | `Set -> `Set (Id.unsafe_coerce id)
+    | `Book -> `Book (Id.unsafe_coerce id)
+end
+
+module Principal_id = struct
+  type t = [
+    | `User of User_id.t
+    | `Group of Group_id.t
+  ]
+  [@@deriving eq, yojson, variants, show {with_path = false}]
+
+  let of_untagged : Principal_type.t -> Untagged.t Id.t -> t = fun type_ id ->
+    match type_ with
+    | `User -> `User (Id.unsafe_coerce id)
+    | `Group -> `Group (Id.unsafe_coerce id)
+end
+
+module Entity_id = struct
+  type t =
+    [Principal_id.t | Resource_id.t]
+  [@@deriving eq, yojson, show {with_path = false}]
 
   let to_untagged : t -> Untagged.t Id.t = function
-    | Person x -> Id.unsafe_coerce x
-    | Dance x -> Id.unsafe_coerce x
-    | Source x -> Id.unsafe_coerce x
-    | Tune x -> Id.unsafe_coerce x
-    | Version x -> Id.unsafe_coerce x
-    | Set x -> Id.unsafe_coerce x
-    | Book x -> Id.unsafe_coerce x
-    | User x -> Id.unsafe_coerce x
-    | Group x -> Id.unsafe_coerce x
+    | `Person x -> Id.unsafe_coerce x
+    | `Dance x -> Id.unsafe_coerce x
+    | `Source x -> Id.unsafe_coerce x
+    | `Tune x -> Id.unsafe_coerce x
+    | `Version x -> Id.unsafe_coerce x
+    | `Set x -> Id.unsafe_coerce x
+    | `Book x -> Id.unsafe_coerce x
+    | `User x -> Id.unsafe_coerce x
+    | `Group x -> Id.unsafe_coerce x
+
+  let classify : t -> (Resource_id.t, Principal_id.t) resource_or_principal = function
+    | #Resource_id.t as r -> Resource r
+    | #Principal_id.t as p -> Principal p
 end

@@ -23,26 +23,6 @@ let several' f versions =
   |> List.flatten
   |> span
 
-module User = struct
-  let username ?(link = true) ?in_search (user : User_name.t) =
-    if link then
-      a
-        ~a: [R.a_href @@ S.map (fun in_search -> Endpoints.Page.href_user ?in_search user.id) (switch_signal_option in_search)]
-        [txt user.username]
-    else
-      txt user.username
-end
-
-module Group = struct
-  let name ?(link = true) ?in_search (group : Group_name.t) =
-    if link then
-      a
-        ~a: [R.a_href @@ S.map (fun in_search -> Endpoints.Page.href_group ?in_search group.id) (switch_signal_option in_search)]
-        [txt group.name]
-    else
-      txt group.name
-end
-
 module Person = struct
   let name ?(link = true) ?in_search (person : Person_name.t) =
     if link then
@@ -304,4 +284,24 @@ module Book = struct
       | editors -> txt "by " :: Person.names ~links: true editors
     in
     date @ [txt " "] @ editors
+end
+
+module User = struct
+  let username ?(link = true) (user : User_name.t) =
+    if link then
+      a
+        ~a: [a_href @@ Endpoints.Page.href_user user.id]
+        [txt user.username]
+    else
+      txt user.username
+end
+
+module Group = struct
+  let name ?(link = true) (group : Group_name.t) =
+    if link then
+      a
+        ~a: [a_href @@ Endpoints.Page.href_group group.id]
+        [txt group.name]
+    else
+      txt group.name
 end

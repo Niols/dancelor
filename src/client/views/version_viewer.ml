@@ -39,10 +39,10 @@ let add_to_set_dialog =
     ~source_type: "version"
     ~source_format: (txt % Version_name.name)
     ~target_type: "set"
-    ~target_icon: Icon.(Model Set)
+    ~target_icon: Icon.(Entity Set)
     ~target_format: (Formatters.Set.name % Set_row.to_name)
     ~target_href: (Endpoints.Page.href_set % Set_row.id)
-    ~target_result: (Any_result.make_set_result ?classes: None ?params: None ?prefix: None ?suffix: None)
+    ~target_result: (Tables.set_row ?classes: None ?params: None ?prefix: None ?suffix: None)
     ~target_search: (fun slice query -> Api.set_search slice query)
     ~target_history: History.get_sets
     ~target_add_source_to_content: (fun (set : Set_row.t) (version : Version_name.t) ->
@@ -299,10 +299,10 @@ let body tune_or_version_id (tune : Tune_view.t) (version : Version_view.t optio
   );
   quick_explorer_links @@
     List.filter_map Fun.id [
-      Option.flip_map version (fun version -> ("sets containing this version", Any_query.specific_only (Any_query.Set (Set_query.make_specific ~contains_version: (Some [version.id]) ()))));
-      Some ("sets containing this tune", Any_query.specific_only (Any_query.Set (Set_query.make_specific ~contains_tune: (Some [tune.id]) ())));
-      Option.flip_map version (fun version -> ("books containing this version", Any_query.specific_only (Any_query.Book (Book_query.make_specific ~contains_version: (Some [version.id]) ()))));
-      Some ("books containing this tune", Any_query.specific_only (Any_query.Book (Book_query.make_specific ~contains_tune: (Some [tune.id]) ())));
+      Option.flip_map version (fun version -> ("sets containing this version", Entity_query.specific_only (`Set (Set_query.make_specific ~contains_version: (Some [version.id]) ()))));
+      Some ("sets containing this tune", Entity_query.specific_only (`Set (Set_query.make_specific ~contains_tune: (Some [tune.id]) ())));
+      Option.flip_map version (fun version -> ("books containing this version", Entity_query.specific_only (`Book (Book_query.make_specific ~contains_version: (Some [version.id]) ()))));
+      Some ("books containing this tune", Entity_query.specific_only (`Book (Book_query.make_specific ~contains_tune: (Some [tune.id]) ())));
     ];
   div (
     let (title, versions) =
@@ -350,8 +350,8 @@ let view in_search in_set tune_or_version_id =
   madge_call_tune_or_version tune_or_version_id @@ fun tune version ->
   let (any_id, this_page) =
     match tune_or_version_id with
-    | `Tune _ -> (Any_id.Tune tune.id, Endpoints.Page.href_tune tune.id)
-    | `Version id -> (Any_id.Version id, Endpoints.Page.href_version id)
+    | `Tune _ -> (`Tune tune.id, Endpoints.Page.href_tune tune.id)
+    | `Version id -> (`Version id, Endpoints.Page.href_version id)
   in
   Page.make'
     ~parent_title: "Tune"
@@ -363,7 +363,7 @@ let view in_search in_set tune_or_version_id =
     ~subtitles: (subtitles tune)
     ~share: (
       Sharing_dialog.copy_link_button @@
-        Option.fold version ~none: (Any_id.tune tune.id) ~some: (fun version -> Any_id.Version version.Version_view.id)
+        Option.fold version ~none: (`Tune tune.id) ~some: (fun version -> `Version version.Version_view.id)
     )
     ~actions: (actions tune version)
     (body tune_or_version_id tune version)

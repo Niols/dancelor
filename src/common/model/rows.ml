@@ -1,4 +1,5 @@
 open Nes
+open Tags
 open Ids
 open Names
 
@@ -118,29 +119,53 @@ module Book_row = struct
     {id; name}
 end
 
-module Any_row = struct
-  type t =
-    | Person of Person_row.t
-    | Dance of Dance_row.t
-    | Source of Source_row.t
-    | Tune of Tune_row.t
-    | Version of Version_row.t
-    | Set of Set_row.t
-    | Book of Book_row.t
-    | User of User_row.t
-    | Group of Group_row.t
+module Resource_row = struct
+  type t = [
+    | `Person of Person_row.t
+    | `Dance of Dance_row.t
+    | `Source of Source_row.t
+    | `Tune of Tune_row.t
+    | `Version of Version_row.t
+    | `Set of Set_row.t
+    | `Book of Book_row.t
+  ]
   [@@deriving eq, yojson, variants, show {with_path = false}]
 
-  let to_id : t -> Any_id.t = function
-    | Person p -> Person p.id
-    | Dance d -> Dance d.id
-    | Source s -> Source s.id
-    | Tune t -> Tune t.id
-    | Version v -> Version v.id
-    | Set s -> Set s.id
-    | Book b -> Book b.id
-    | User u -> User u.id
-    | Group u -> Group u.id
+  let to_id : t -> Resource_id.t = function
+    | `Person p -> `Person p.id
+    | `Dance d -> `Dance d.id
+    | `Source s -> `Source s.id
+    | `Tune t -> `Tune t.id
+    | `Version v -> `Version v.id
+    | `Set s -> `Set s.id
+    | `Book b -> `Book b.id
+end
 
-  let equal a1 a2 = Any_id.equal (to_id a1) (to_id a2)
+module Principal_row = struct
+  type t = [
+    | `User of User_row.t
+    | `Group of Group_row.t
+  ]
+  [@@deriving eq, yojson, variants, show {with_path = false}]
+
+  let to_id : t -> Principal_id.t = function
+    | `User u -> `User u.id
+    | `Group g -> `Group g.id
+end
+
+module Entity_row = struct
+  type t =
+    [Principal_row.t | Resource_row.t]
+  [@@deriving eq, yojson, show {with_path = false}]
+
+  let classify : t -> (Resource_row.t, Principal_row.t) resource_or_principal = function
+    | `Person x -> Resource (`Person x)
+    | `Dance x -> Resource (`Dance x)
+    | `Source x -> Resource (`Source x)
+    | `Tune x -> Resource (`Tune x)
+    | `Version x -> Resource (`Version x)
+    | `Set x -> Resource (`Set x)
+    | `Book x -> Resource (`Book x)
+    | `User x -> Principal (`User x)
+    | `Group x -> Principal (`Group x)
 end

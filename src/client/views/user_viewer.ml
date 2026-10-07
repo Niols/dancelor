@@ -3,13 +3,11 @@ open Dancelor_common
 open Html
 open Utils
 
-let view in_search id =
+let view id =
   Main_page.madge_call_or_404 (User Get_view) id @@ fun user ->
   Page.make'
     ~parent_title: "User"
-    ~before_title: [Components.Context_links.for_search in_search (Any_id.User id)]
     ~title: (lwt @@ Username.to_string user.username)
-    ~share: (Sharing_dialog.copy_link_button @@ User id)
     ~actions: [
       (
         match%lwt Environment.actor with

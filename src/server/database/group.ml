@@ -44,12 +44,12 @@ let update_other_tables db ~group_id ~members =
     members
 
 let create db group =
-  let%lwt id = Entry.make_public db Group in
+  let%lwt id = Entity.make_public db `Group in
   ignore <$> group_form_to_sql (Group_sql.create db) id group;%lwt
   update_other_tables db ~group_id: id ~members: group.members;%lwt
   lwt id
 
 let update db id group =
-  Entry.touch db id;%lwt
+  Entity.touch db id;%lwt
   ignore <$> group_form_to_sql (fun ~id -> Group_sql.update db ~id) id group;%lwt
   update_other_tables db ~group_id: id ~members: group.members

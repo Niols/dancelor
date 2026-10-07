@@ -26,7 +26,7 @@ let editor =
             ~serialise: User_row.id
             ~unserialise: (Api.call_or_option @@ User Get_row)
             ~make_descr: (lwt % Username.to_string % User_row.username)
-            ~make_result: (Any_result.make_user_result ?in_search: None)
+            ~make_result: Tables.user_row
             ~model_name: "user"
             ~create_dialog_content: User_editor.create_row
             ()
@@ -49,7 +49,7 @@ let create mode =
   Main_page.assert_can_create_public @@ fun () ->
   Editor.make_page
     ~key: "group"
-    ~icon: (Model Group)
+    ~icon: (Entity Group)
     ~mode
     editor
     ~format: (Formatters.Group.name ~link: true % With_id.map Group_form.to_name)

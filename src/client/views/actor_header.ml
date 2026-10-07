@@ -148,7 +148,7 @@ let header_item =
         [
           Button.make
             ~label: (Username.to_string actor.username)
-            ~icon: (Model User)
+            ~icon: (Entity User)
             ~classes: ["text-white"; "dropdown-toggle"]
             ~more_a: [a_user_data "bs-toggle" "dropdown"; a_aria "expanded" ["false"]]
             ();
@@ -199,9 +199,9 @@ let header_item =
                   [li [
                     Button.make_a
                       ~label: "My profile"
-                      ~icon: (Model User)
+                      ~icon: (Entity User)
                       ~dropdown: true
-                      ~href: (S.const (Endpoints.Page.(href (User View) None) actor.id))
+                      ~href: (S.const (Endpoints.Page.(href (User View)) actor.id))
                       ()
                   ];
                   R.li (
@@ -212,7 +212,7 @@ let header_item =
                         lwt [
                           Button.make_a
                             ~label: "My person"
-                            ~icon: (Model Person)
+                            ~icon: (Entity Person)
                             ~dropdown: true
                             ~href: (S.const (Endpoints.Page.(href (Person View) None) person_id))
                             ()

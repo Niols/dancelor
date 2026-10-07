@@ -3,13 +3,11 @@ open Dancelor_common
 open Html
 open Utils
 
-let view in_search id =
+let view id =
   Main_page.madge_call_or_404 (Group Get_view) id @@ fun group ->
   Page.make'
     ~parent_title: "Group"
-    ~before_title: [Components.Context_links.for_search in_search (Any_id.Group id)]
     ~title: (lwt group.name)
-    ~share: (Sharing_dialog.copy_link_button @@ Group id)
     ~actions: [
       (
         match%lwt Main_page.can_update_public () with

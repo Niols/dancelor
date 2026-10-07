@@ -38,7 +38,7 @@ let editor =
             ~serialise: Person_row.id
             ~unserialise: (Api.call_or_option @@ Person Get_row)
             ~make_descr: (lwt % Person_row.name)
-            ~make_result: (Any_result.make_person_result ?in_search: None)
+            ~make_result: (Tables.person_row ?in_search: None)
             ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
@@ -95,7 +95,7 @@ let create mode =
   Main_page.assert_can_create_public @@ fun () ->
   Editor.make_page
     ~key: "source"
-    ~icon: (Model Source)
+    ~icon: (Entity Source)
     editor
     ~mode
     ~submit

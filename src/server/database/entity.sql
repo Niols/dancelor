@@ -63,10 +63,11 @@ INSERT INTO "entity_actors" (
     @role
 );
 
--- @get_newest
+-- @get_newest_resources
 WITH "viewable_entities" AS &viewable_entities
 SELECT "id", "type"
 FROM "entities" JOIN "viewable_entities" USING ("id")
+WHERE "type" IN ('Person', 'Dance', 'Source', 'Tune', 'Version', 'Set', 'Book')
 ORDER BY "created_at" DESC
 LIMIT @limit;
 

@@ -1,5 +1,4 @@
-module Entry = Entry
-module Any = Any
+module Entity = Entity
 module Book = Book
 module Dance = Dance
 module Person = Person

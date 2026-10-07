@@ -2,7 +2,6 @@ open Js_of_ocaml
 open Nes
 open Dancelor_common
 
-module Any_result = Any_result
 module Icon = Icon
 module Alert = Alert
 module Button = Button
@@ -46,10 +45,10 @@ let quick_explorer_links links =
     ul ~a: [a_class ["bullet-list"]] (
       List.map
         (fun (text, query) ->
-          let count_lwt = Search_result.total <$> Api.call_exn (Any Search) Slice.nothing query in
+          let count_lwt = Search_result.total <$> Api.call_exn (Entity Search_resources) Slice.nothing query in
           li [
             a
-              ~a: [a_href @@ Endpoints.Page.(href Explore) (Any_query.print query) 1]
+              ~a: [a_href @@ Endpoints.Page.(href Explore) (Entity_query.print query) 1]
               [txt text];
             R.txt (S.from_lwt "" (spf " (%d)" <$> count_lwt));
           ]
@@ -58,7 +57,7 @@ let quick_explorer_links links =
     );
   ]
 
-let href_any_for_sharing any =
+let href_entity_for_sharing entity =
   let current = Uri.of_string (Js.to_string Dom_html.window##.location##.href) in
-  let path = Endpoints.Page.(href Any) @@ Any_id.to_untagged any in
+  let path = Endpoints.Page.(href Entity) @@ Entity_id.to_untagged entity in
   Uri.to_string @@ Uri.with_query (Uri.with_path current (Uri.path path)) []

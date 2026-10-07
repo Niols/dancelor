@@ -86,8 +86,8 @@ let job_to_string = function
   | Pending -> "hourglass-bottom"
   | Running -> "cpu"
 
-(** Type for model-specific icons. *)
-type model =
+(** Type for entity-specific icons. *)
+type entity =
   | Source
   | Person
   | Dance
@@ -98,7 +98,7 @@ type model =
   | User
   | Group
 
-let model_to_string = function
+let entity_to_string = function
   | Source -> "archive"
   | Person -> "person"
   | Dance -> "person-arms-up"
@@ -145,7 +145,7 @@ type t =
   | Action of action
   | Alert of alert
   | Job of job
-  | Model of model
+  | Entity of entity
   | Other of other
 
 let to_string = function
@@ -153,7 +153,7 @@ let to_string = function
   | Action icon -> action_to_string icon
   | Alert icon -> alert_to_string icon
   | Job icon -> job_to_string icon
-  | Model icon -> model_to_string icon
+  | Entity icon -> entity_to_string icon
   | Other icon -> other_to_string icon
 
 (** Generate HTML for the given icon. One can optionally pass extra HTML

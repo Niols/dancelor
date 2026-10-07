@@ -370,57 +370,88 @@ module Book_query = struct
   let print = Query.make_printer print_operators
 end
 
-module Any_query = struct
-  type model_specific =
-    | Person of Person_query.specific
-    | User of User_query.specific
-    | Dance of Dance_query.specific
-    | Source of Source_query.specific
-    | Tune of Tune_query.specific
-    | Version of Version_query.specific
-    | Set of Set_query.specific
-    | Book of Book_query.specific
-    | Group of Group_query.specific
+let parse_query_generic ~restrict_specific_type =
+  Query.make_parser @@ fun {parse_operator} ->
+  match parse_operator "type" (List.map String.lowercase_ascii) with
+  | None -> None
+  | Some type_ ->
+    let query =
+      match type_ with
+      (* resources *)
+      | ["person"] -> `Person (Person_query.parse_operators {parse_operator})
+      | ["dance"] -> `Dance (Dance_query.parse_operators {parse_operator})
+      | ["source"] -> `Source (Source_query.parse_operators {parse_operator})
+      | ["tune"] -> `Tune (Tune_query.parse_operators {parse_operator})
+      | ["version"] -> `Version (Version_query.parse_operators {parse_operator})
+      | ["set"] -> `Set (Set_query.parse_operators {parse_operator})
+      | ["book"] -> `Book (Book_query.parse_operators {parse_operator})
+      (* principals *)
+      | ["user"] -> `User (User_query.parse_operators {parse_operator})
+      | ["group"] -> `Group (Group_query.parse_operators {parse_operator})
+      (* otherwise *)
+      | _ -> `Neither
+    in
+    match restrict_specific_type query with
+    | Some query -> Some query
+    | None -> Query_parser.parse_errorf "unexpected type %S" (String.concat "," type_)
+
+module Resource_query = struct
+  type specific = [
+    | `Person of Person_query.specific
+    | `Dance of Dance_query.specific
+    | `Source of Source_query.specific
+    | `Tune of Tune_query.specific
+    | `Version of Version_query.specific
+    | `Set of Set_query.specific
+    | `Book of Book_query.specific
+  ]
   [@@deriving yojson, variants]
 
-  type specific = model_specific option
+  type t = specific option Query.t
   [@@deriving yojson]
 
-  type t = specific Query.t
-  [@@deriving yojson]
+  let parse (query : string) : (t, string) result =
+    parse_query_generic
+      ~restrict_specific_type: (function #specific as q -> Some q | _ -> None)
+      query
+end
 
-  let empty : t = {common = {terms = ""}; specific = None}
+module Principal_query = struct
+  type specific = [
+    | `User of User_query.specific
+    | `Group of Group_query.specific
+  ]
+  [@@deriving yojson, variants]
+
+  type t = specific option Query.t
+  [@@deriving yojson]
+end
+
+module Entity_query = struct
+  let empty = {Query.common = {terms = ""}; specific = None}
   let specific_only specific = {empty with specific = Some specific}
 
-  let parse : string -> (t, string) result =
-    Query.make_parser @@ fun {parse_operator} ->
-    match parse_operator "type" (List.map String.lowercase_ascii) with
-    | None -> None
-    | Some type_ ->
-      some @@
-        match type_ with
-        | ["person"] -> Person (Person_query.parse_operators {parse_operator})
-        | ["user"] -> User (User_query.parse_operators {parse_operator})
-        | ["dance"] -> Dance (Dance_query.parse_operators {parse_operator})
-        | ["source"] -> Source (Source_query.parse_operators {parse_operator})
-        | ["tune"] -> Tune (Tune_query.parse_operators {parse_operator})
-        | ["version"] -> Version (Version_query.parse_operators {parse_operator})
-        | ["set"] -> Set (Set_query.parse_operators {parse_operator})
-        | ["book"] -> Book (Book_query.parse_operators {parse_operator})
-        | ["group"] -> Group (Group_query.parse_operators {parse_operator})
-        | _ -> Query_parser.parse_errorf "unexpected type %S" (String.concat "," type_)
+  let parse query =
+    parse_query_generic
+      ~restrict_specific_type: (function `Neither -> None | query -> Some query)
+      query
 
-  let print : t -> string =
-    Query.make_printer @@ fun {print_operator} query ->
-    match query with
-    | None -> ()
-    | Some Person query -> print_operator "type" Fun.id (Some ["person"]); Person_query.print_operators {print_operator} query
-    | Some User query -> print_operator "type" Fun.id (Some ["user"]); User_query.print_operators {print_operator} query
-    | Some Dance query -> print_operator "type" Fun.id (Some ["dance"]); Dance_query.print_operators {print_operator} query
-    | Some Source query -> print_operator "type" Fun.id (Some ["source"]); Source_query.print_operators {print_operator} query
-    | Some Tune query -> print_operator "type" Fun.id (Some ["tune"]); Tune_query.print_operators {print_operator} query
-    | Some Version query -> print_operator "type" Fun.id (Some ["version"]); Version_query.print_operators {print_operator} query
-    | Some Set query -> print_operator "type" Fun.id (Some ["set"]); Set_query.print_operators {print_operator} query
-    | Some Book query -> print_operator "type" Fun.id (Some ["book"]); Book_query.print_operators {print_operator} query
-    | Some Group query -> print_operator "type" Fun.id (Some ["group"]); Group_query.print_operators {print_operator} query
+  let print query =
+    Query.make_printer
+      (fun {print_operator} query ->
+        match query with
+        | None -> ()
+        (* resources *)
+        | Some`Person query -> print_operator "type" Fun.id (Some ["person"]); Person_query.print_operators {print_operator} query
+        | Some`Dance query -> print_operator "type" Fun.id (Some ["dance"]); Dance_query.print_operators {print_operator} query
+        | Some`Source query -> print_operator "type" Fun.id (Some ["source"]); Source_query.print_operators {print_operator} query
+        | Some`Tune query -> print_operator "type" Fun.id (Some ["tune"]); Tune_query.print_operators {print_operator} query
+        | Some`Version query -> print_operator "type" Fun.id (Some ["version"]); Version_query.print_operators {print_operator} query
+        | Some`Set query -> print_operator "type" Fun.id (Some ["set"]); Set_query.print_operators {print_operator} query
+        | Some`Book query -> print_operator "type" Fun.id (Some ["book"]); Book_query.print_operators {print_operator} query
+        (* principals *)
+        | Some`User query -> print_operator "type" Fun.id (Some ["user"]); User_query.print_operators {print_operator} query
+        | Some`Group query -> print_operator "type" Fun.id (Some ["group"]); Group_query.print_operators {print_operator} query
+      )
+      query
 end

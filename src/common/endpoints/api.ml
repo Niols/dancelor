@@ -3,18 +3,21 @@ open Madge
 
 module Endpoints = struct
   type (_, _, _) t =
-    | Source : ('a, 'w, 'r) Source.t -> ('a, 'w, 'r) t
-    | Person : ('a, 'w, 'r) Person.t -> ('a, 'w, 'r) t
-    | Book : ('a, 'w, 'r) Book.t -> ('a, 'w, 'r) t
-    | Version : ('a, 'w, 'r) Version.t -> ('a, 'w, 'r) t
-    | Dance : ('a, 'w, 'r) Dance.t -> ('a, 'w, 'r) t
-    | Set : ('a, 'w, 'r) Set.t -> ('a, 'w, 'r) t
-    | Tune : ('a, 'w, 'r) Tune.t -> ('a, 'w, 'r) t
-    | Any : ('a, 'w, 'r) Any.t -> ('a, 'w, 'r) t
-    | User : ('a, 'w, 'r) User.t -> ('a, 'w, 'r) t
-    | Group : ('a, 'w, 'r) Group.t -> ('a, 'w, 'r) t
-    | Job : ('a, 'w, 'r) Job.t -> ('a, 'w, 'r) t
-    | Report_issue : (Issue_report.request -> 'w, 'w, Issue_report.response) t
+  (* resources *)
+  | Source : ('a, 'w, 'r) Source.t -> ('a, 'w, 'r) t
+  | Person : ('a, 'w, 'r) Person.t -> ('a, 'w, 'r) t
+  | Book : ('a, 'w, 'r) Book.t -> ('a, 'w, 'r) t
+  | Version : ('a, 'w, 'r) Version.t -> ('a, 'w, 'r) t
+  | Dance : ('a, 'w, 'r) Dance.t -> ('a, 'w, 'r) t
+  | Set : ('a, 'w, 'r) Set.t -> ('a, 'w, 'r) t
+  | Tune : ('a, 'w, 'r) Tune.t -> ('a, 'w, 'r) t
+  (* principals *)
+  | User : ('a, 'w, 'r) User.t -> ('a, 'w, 'r) t
+  | Group : ('a, 'w, 'r) Group.t -> ('a, 'w, 'r) t
+  (* others *)
+  | Entity : ('a, 'w, 'r) Entity.t -> ('a, 'w, 'r) t
+  | Job : ('a, 'w, 'r) Job.t -> ('a, 'w, 'r) t
+  | Report_issue : (Issue_report.request -> 'w, 'w, Issue_report.response) t
   [@@deriving madge_wrapped_endpoints]
 end
 include Endpoints
@@ -32,7 +35,7 @@ include Madge.Make_endpoints(struct
       | Dance endpoint -> literal "dance" @@ Dance.route endpoint
       | Set endpoint -> literal "set" @@ Set.route endpoint
       | Tune endpoint -> literal "tune" @@ Tune.route endpoint
-      | Any endpoint -> literal "any" @@ Any.route endpoint
+      | Entity endpoint -> literal "entity" @@ Entity.route endpoint
       | User endpoint -> literal "user" @@ User.route endpoint
       | Group endpoint -> literal "group" @@ Group.route endpoint
       | Job endpoint -> literal "job" @@ Job.route endpoint

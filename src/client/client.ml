@@ -9,16 +9,16 @@ module Log = (val Logs.src_log @@ Logs.Src.create "client": Logs.LOG)
 
 let get_uri () = Uri.of_string (Js.to_string Dom_html.window##.location##.href)
 
-let redirect_any id =
-  Main_page.madge_call_or_404 (Any Get_type) id @@ fun type_ ->
-  Redirection_viewer.create @@ Endpoints.Page.href_any_full @@ Any_id.of_untagged type_ id
+let redirect_entity id =
+  Main_page.madge_call_or_404 (Entity Resource_type) id @@ fun type_ ->
+  Redirection_viewer.create @@ Endpoints.Page.href_entity_full @@ Resource_id.of_untagged type_ id
 
 let () = Madge_client.initialise_batch_route Endpoints.Api.(route_full Batch)
 
 let dispatch uri =
   let dispatch : type a r. (a, Page.t Lwt.t, r) Endpoints.Page.t -> a = function
     | Index -> Index.create ()
-    | Any -> redirect_any
+    | Entity -> redirect_entity
     | Explore -> Explorer.view
     | Book Add -> Book_editor.add ()
     | Book Edit -> Book_editor.edit

@@ -20,7 +20,7 @@ let quick_search_to_explorer value =
 
 let quick_search =
   Components.Search.Quick.make
-    ~search: Api.any_search
+    ~search: Api.entity_search
     ~on_enter: (fun value -> Lwt.async (fun () -> quick_search_to_explorer value))
     ()
 
@@ -39,7 +39,7 @@ let open_quick_search () =
         ~onclick: (fun () -> quick_search_to_explorer (S.value @@ Components.Search.Quick.text quick_search))
         ();
     ]
-    ~make_result: (fun ?in_search result -> Any_result.make_result ?in_search result)
+    ~make_result: (fun ?in_search result -> Tables.entity_row ?in_search result)
     quick_search
 
 let nav_item_explore =
@@ -60,7 +60,7 @@ let nav_item_explore =
             List.map
               (fun (icon, key, label) ->
                 let href = S.const @@ Endpoints.Page.(href Explore) (spf "type:%s" key) 1 in
-                li [Button.make_a ~label ~icon: (Model icon) ~href ~dropdown: true ()]
+                li [Button.make_a ~label ~icon: (Entity icon) ~href ~dropdown: true ()]
               )
               [
                 (Icon.Person, "person", "Persons");
@@ -91,7 +91,7 @@ let nav_item_create =
               let open Endpoints.Page in
               List.map
                 (fun (icon, href, label) ->
-                  li [Button.make_a ~label ~icon: (Model icon) ~href: (S.const href) ~dropdown: true ()]
+                  li [Button.make_a ~label ~icon: (Entity icon) ~href: (S.const href) ~dropdown: true ()]
                 )
                 [
                   (Icon.Person, href (Person Add), "Person");

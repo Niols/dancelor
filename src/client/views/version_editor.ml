@@ -233,7 +233,7 @@ let editor =
     (
       Selector.prepare
         ~make_descr: (lwt % Tune_row.name)
-        ~make_result: (Any_result.make_tune_result ?in_search: None)
+        ~make_result: (Tables.tune_row ?in_search: None)
         ~label: "Tune"
         ~model_name: "tune"
         ~create_dialog_content: Tune_editor.create_row
@@ -259,7 +259,7 @@ let editor =
         (
           Selector.prepare
             ~make_descr: (lwt % Person_row.name)
-            ~make_result: (Any_result.make_person_result ?in_search: None)
+            ~make_result: (Tables.person_row ?in_search: None)
             ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~label: "Arranger"
             ~model_name: "person"
@@ -291,7 +291,7 @@ let editor =
                 (
                   Selector.prepare
                     ~make_descr: (lwt % Source_row.name)
-                    ~make_result: (Any_result.make_source_result ?in_search: None)
+                    ~make_result: (Tables.source_row ?in_search: None)
                     ~label: "Source"
                     ~model_name: "source"
                     ~create_dialog_content: Source_editor.create_row
@@ -363,7 +363,7 @@ let unsubmit = lwt % With_id.form
 let prepare () =
   Editor.prepare
     ~key: "version"
-    ~icon: (Model Version)
+    ~icon: (Entity Version)
     editor
     ~href: (Endpoints.Page.href_version % With_id.id)
     ~format: (Formatters.Version.name ~link: true % With_id.map Version_form.to_name)

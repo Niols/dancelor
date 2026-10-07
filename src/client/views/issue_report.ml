@@ -13,6 +13,8 @@ include Endpoints.Page.Make_describe(struct
   let get_version_name () = Tune_row.name % Version_row.tune <%> Api.call_exn (Version Get_row)
   let get_set_name () = Set_row.name <%> Api.call_exn (Set Get_row)
   let get_book_name () = Book_row.name <%> Api.call_exn (Book Get_row)
+  let get_user_name () = Username.to_string % User_row.username <%> Api.call_exn (User Get_row)
+  let get_group_name () = Group_row.name <%> Api.call_exn (Group Get_row)
 end)
 let describe page = describe () page
 

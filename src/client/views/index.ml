@@ -47,17 +47,17 @@ let create () =
         in
         let length = 15 in
         S.from_lwt (title_and_table (Utils.Tables.placeholder ~rows: length ())) @@
-          match%lwt History.get_models () with
+          match%lwt History.get_resources () with
           | [] -> lwt_nil
-          | history -> lwt (title_and_table [Utils.Tables.any @@ List.take length history])
+          | history -> lwt (title_and_table [Utils.Tables.entities @@ List.take length history])
       );
       section [
         h4 [txt "Most recently added"];
         R.div ~a: [a_class ["mb-3"]] (
           let length = 15 in
           S.from_lwt (Utils.Tables.placeholder ~rows: length ()) @@
-            let%lwt newest = Api.call_exn (Any Newest) length in
-            lwt [Utils.Tables.any newest]
+            let%lwt newest = Api.call_exn (Entity Newest_resources) length in
+            lwt [Utils.Tables.entities newest]
         );
       ];
       section [

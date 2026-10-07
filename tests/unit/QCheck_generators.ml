@@ -104,12 +104,4 @@ module Model = struct
     type t = Dancelor_common.Book_tag.t
     let gen : t QCheck2.Gen.t = Gen.pure (Obj.magic 0)
   end
-
-  module Any = struct
-    module Type = struct
-      type t = [%import: Dancelor_common.Any_id.Type.t [@with Dancelor_common.Formula.t := Formula.t;]
-      ]
-      [@@deriving qcheck2]
-    end
-  end
 end

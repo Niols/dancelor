@@ -95,7 +95,7 @@ let body_gen (content : (Version_row.t * Version_parameters.t) list) (id : Set_i
     | Some id ->
       [
         quick_explorer_links [
-          ("books containing this set", Any_query.specific_only (Any_query.Book (Book_query.make_specific ~contains_set: (Some [id]) ())));
+          ("books containing this set", Entity_query.specific_only (`Book (Book_query.make_specific ~contains_set: (Some [id]) ())));
         ];
       ]
   );
@@ -108,13 +108,13 @@ let view in_search id =
   Main_page.madge_call_or_404 (Set Get_view) id @@ fun set ->
   Page.make'
     ~parent_title: "Set"
-    ~before_title: [Components.Context_links.for_search in_search (Any_id.Set id)]
+    ~before_title: [Components.Context_links.for_search in_search @@ `Set id]
     ~title: (lwt set.name)
     ~subtitles: (subtitles set)
     ~share: (
       match Permission.share_reason set.permission with
-      | Some _ -> Sharing_dialog.open_dialog_button @@ Set id
-      | None -> Sharing_dialog.copy_link_button @@ Set id
+      | Some _ -> Sharing_dialog.open_dialog_button @@ `Set id
+      | None -> Sharing_dialog.copy_link_button @@ `Set id
     )
     ~actions: (actions set)
     (body set)

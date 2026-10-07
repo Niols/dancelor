@@ -62,13 +62,13 @@ type (_, _, _) book =
 type (_, _, _) user =
   | Create : ('w, 'w, Void.t) user
   | Edit : (User_id.t -> 'w, 'w, Void.t) user
-  | View : (In_search.t option -> User_id.t -> 'w, 'w, Void.t) user
+  | View : (User_id.t -> 'w, 'w, Void.t) user
   | Prepare_reset_password : ('w, 'w, Void.t) user
   | Password_reset : (Username.t -> Password_reset_token_clear.t -> 'w, 'w, Void.t) user
 [@@deriving madge_wrapped_endpoints]
 
 type (_, _, _) group =
-  | View : (In_search.t option -> Group_id.t -> 'w, 'w, Void.t) group
+  | View : (Group_id.t -> 'w, 'w, Void.t) group
   | Create : ('w, 'w, Void.t) group
   | Edit : (Group_id.t -> 'w, 'w, Void.t) group
 [@@deriving madge_wrapped_endpoints]
@@ -76,7 +76,7 @@ type (_, _, _) group =
 type (_, _, _) t =
   | Index : ('w, 'w, Void.t) t
   | Explore : (string -> int -> 'w, 'w, Void.t) t
-  | Any : (Untagged.t Id.t -> 'w, 'w, Void.t) t
+  | Entity : (Untagged.t Id.t -> 'w, 'w, Void.t) t
   (* lifted endpoints *)
   | Person : ('a, 'w, 'r) person -> ('a, 'w, 'r) t
   | Dance : ('a, 'w, 'r) dance -> ('a, 'w, 'r) t
@@ -146,7 +146,7 @@ let route_book : type a w r. (a, w, r) book -> (a, w, r) route =
 let route_user : type a w r. (a, w, r) user -> (a, w, r) route =
   let open Route in
   function
-    | View -> literal "view" @@ query_str_opt "in-search" (module In_search) @@ variable (module User_id) @@ void ()
+    | View -> literal "view" @@ variable (module User_id) @@ void ()
     | Edit -> literal "edit" @@ variable (module User_id) @@ void ()
     | Create -> literal "create" @@ void ()
     | Prepare_reset_password -> literal "prepare-reset-password" @@ void ()
@@ -155,7 +155,7 @@ let route_user : type a w r. (a, w, r) user -> (a, w, r) route =
 let route_group : type a w r. (a, w, r) group -> (a, w, r) route =
   let open Route in
   function
-    | View -> literal "view" @@ query_str_opt "in-search" (module In_search) @@ variable (module Group_id) @@ void ()
+    | View -> literal "view" @@ variable (module Group_id) @@ void ()
     | Edit -> literal "edit" @@ variable (module Group_id) @@ void ()
     | Create -> literal "create" @@ void ()
 
@@ -164,7 +164,7 @@ let route : type a w r. (a, w, r) t -> (a, w, r) route =
   function
     | Index -> void ()
     | Explore -> literal "explore" @@ query_str_def "q" (module SString) ~def: "" @@ query_json_def "page" (module JInt) ~def: 1 @@ void ()
-    | Any -> variable (module Id.S(Untagged)) @@ void ()
+    | Entity -> variable (module Id.S(Untagged)) @@ void ()
     | Person page -> literal "person" @@ route_person page
     | Dance page -> literal "dance" @@ route_dance page
     | Source page -> literal "source" @@ route_source page
@@ -187,27 +187,29 @@ let href_source ?in_search source = href (Source View) in_search source
 let href_set ?in_search set = href (Set View) in_search set
 let href_tune ?in_search tune = href (Tune View) in_search tune
 let href_version ?in_search ?in_set version = href (Version View) in_search in_set version
-let href_user ?in_search user = href (User View) in_search user
-let href_group ?in_search group = href (Group View) in_search group
+let href_user user = href (User View) user
+let href_group group = href (Group View) group
 
-let href_any_full ?in_search (any : Any_id.t) =
-  match any with
-  | Version version -> href_version ?in_search version
-  | Set set -> href_set ?in_search set
-  | Person person -> href_person ?in_search person
-  | Source source -> href_source ?in_search source
-  | Dance dance -> href_dance ?in_search dance
-  | Book book -> href_book ?in_search book
-  | Tune tune -> href_tune ?in_search tune
-  | User user -> href_user ?in_search user
-  | Group group -> href_group ?in_search group
+let href_entity_full ?in_search entity =
+  match entity with
+  (* resources *)
+  | `Version version -> href_version ?in_search version
+  | `Set set -> href_set ?in_search set
+  | `Person person -> href_person ?in_search person
+  | `Source source -> href_source ?in_search source
+  | `Dance dance -> href_dance ?in_search dance
+  | `Book book -> href_book ?in_search book
+  | `Tune tune -> href_tune ?in_search tune
+  (* principals *)
+  | `User user -> href_user user
+  | `Group group -> href_group group
 
 (** Function that consumes all endpoints and returns nothing. It is meant to be
     used in the catch-all case of a pattern matching. *)
 let consume : type a w r. return: w -> (a, w, r) t -> a = fun ~return: value endpoint ->
   match endpoint with
   | Index -> value
-  | Any -> const value
+  | Entity -> const value
   | Book Add -> value
   | Book Edit -> const value
   | Book View -> const2 value
@@ -231,16 +233,16 @@ let consume : type a w r. return: w -> (a, w, r) t -> a = fun ~return: value end
   | Version Add -> const value
   | Version Edit -> const value
   | Explore -> const2 value
-  | User View -> const2 value
+  | User View -> const value
   | User Edit -> const value
   | User Create -> value
   | User Prepare_reset_password -> value
   | User Password_reset -> const2 value
-  | Group View -> const2 value
+  | Group View -> const value
   | Group Create -> value
   | Group Edit -> const value
 
-module type Any_id_to_name = sig
+module type Entity_id_to_name = sig
   type env
   val get_person_name : env -> Person_id.t -> string Lwt.t
   val get_dance_name : env -> Dance_id.t -> string Lwt.t
@@ -249,19 +251,23 @@ module type Any_id_to_name = sig
   val get_version_name : env -> Version_id.t -> string Lwt.t
   val get_set_name : env -> Set_id.t -> string Lwt.t
   val get_book_name : env -> Book_id.t -> string Lwt.t
+  val get_user_name : env -> User_id.t -> string Lwt.t
+  val get_group_name : env -> Group_id.t -> string Lwt.t
 end
 
-module Make_describe (Any_id_to_name : Any_id_to_name) = struct
+module Make_describe (Entity_id_to_name : Entity_id_to_name) = struct
   let describe env = fun uri ->
     let describe : type a r. (a, (string * string) option Lwt.t, r) t -> a = function
-      | Any -> (fun id -> lwt_some ("any", Id.to_string id))
-      | Person View -> (fun _ id -> some % Pair.cons "person" <$> Any_id_to_name.get_person_name env id)
-      | Dance View -> (fun _ id -> some % Pair.cons "dance" <$> Any_id_to_name.get_dance_name env id)
-      | Source View -> (fun _ id -> some % Pair.cons "source" <$> Any_id_to_name.get_source_name env id)
-      | Tune View -> (fun _ id -> some % Pair.cons "tune" <$> Any_id_to_name.get_tune_name env id)
-      | Version View -> (fun _ _ id -> some % Pair.cons "version" <$> Any_id_to_name.get_version_name env id)
-      | Set View -> (fun _ id -> some % Pair.cons "set" <$> Any_id_to_name.get_set_name env id)
-      | Book View -> (fun _ id -> some % Pair.cons "book" <$> Any_id_to_name.get_book_name env id)
+      | Entity -> (fun id -> lwt_some ("entity", Id.to_string id))
+      | Person View -> (fun _ id -> some % Pair.cons "person" <$> Entity_id_to_name.get_person_name env id)
+      | Dance View -> (fun _ id -> some % Pair.cons "dance" <$> Entity_id_to_name.get_dance_name env id)
+      | Source View -> (fun _ id -> some % Pair.cons "source" <$> Entity_id_to_name.get_source_name env id)
+      | Tune View -> (fun _ id -> some % Pair.cons "tune" <$> Entity_id_to_name.get_tune_name env id)
+      | Version View -> (fun _ _ id -> some % Pair.cons "version" <$> Entity_id_to_name.get_version_name env id)
+      | Set View -> (fun _ id -> some % Pair.cons "set" <$> Entity_id_to_name.get_set_name env id)
+      | Book View -> (fun _ id -> some % Pair.cons "book" <$> Entity_id_to_name.get_book_name env id)
+      | User View -> (fun id -> some % Pair.cons "user" <$> Entity_id_to_name.get_user_name env id)
+      | Group View -> (fun id -> some % Pair.cons "group" <$> Entity_id_to_name.get_group_name env id)
       | endpoint -> consume endpoint ~return: lwt_none
     in
     let madge_match_apply_all : (string * string) option Lwt.t wrapped' list -> (unit -> (string * string) option Lwt.t) option =

@@ -3,7 +3,6 @@ CREATE TYPE "type" AS ENUM ('Person', 'User', 'Dance', 'Source', 'Tune', 'Versio
 CREATE TABLE "entities" (
     -- [sqlgg] module=Sql_types.Untagged_id_conv
     "id" VARCHAR(14) NOT NULL,
-    -- [sqlgg] module=Sql_types.Type_conv
     "type" "type" NOT NULL,
     "created_at" TIMESTAMP NOT NULL,
     "modified_at" TIMESTAMP NOT NULL,
