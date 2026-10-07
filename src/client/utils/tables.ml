@@ -279,8 +279,10 @@ let entity_row ?classes ?onclick ?(prefix = []) ?(suffix = []) ?in_search (entit
           let (icon, tooltip, classes) =
             match Permission.view_reason permission with
             | Public -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
-            | Viewer -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
-            | Owner -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
+            | Viewer Direct -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
+            | Viewer Via_group group -> (Icon.(Access Viewer), spf "You can see this entry because its owner marked your group “%s” as one of its viewers." group.name, ["opacity-75"])
+            | Owner Direct -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
+            | Owner Via_group group -> (Icon.(Access Owner), spf "You can see this entry because your group “%s” is (one of) its owners." group.name, [])
             | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])
           in
           Icon.html icon ~tooltip ~classes

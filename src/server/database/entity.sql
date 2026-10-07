@@ -75,7 +75,12 @@ LIMIT @limit;
 
 -- @get_permission
 WITH "entities" AS &viewable_entities
-SELECT "entity_is_public", "actor_role", "actor_is_omniscient_administrator"
+SELECT
+    "entity_is_public",
+    "actor_role",
+    "actor_group_id",
+    "actor_group_name",
+    "actor_is_omniscient_administrator"
 FROM "entities"
 WHERE "id" = @id;
 

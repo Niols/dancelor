@@ -120,6 +120,8 @@ let get_contents_for ~actor_id db book_ids =
         ~set_kind
         ~set_entity_is_public
         ~set_actor_role
+        ~set_actor_group_id
+        ~set_actor_group_name
         ~set_actor_is_omniscient_administrator
         ~set_parameter_display_name
         ~set_parameter_display_conceptor
@@ -174,6 +176,8 @@ let get_contents_for ~actor_id db book_ids =
                   ~id: set_id
                   ~entity_is_public: set_entity_is_public
                   ~actor_role: set_actor_role
+                  ~actor_group_id: set_actor_group_id
+                  ~actor_group_name: set_actor_group_name
                   ~actor_is_omniscient_administrator: set_actor_is_omniscient_administrator
                   ~name: (Option.get set_name)
                   ~kind: (Option.get set_kind)
@@ -219,6 +223,8 @@ let get_form_contents_for ~actor_id db book_ids =
         ~set_kind
         ~set_entity_is_public
         ~set_actor_role
+        ~set_actor_group_id
+        ~set_actor_group_name
         ~set_actor_is_omniscient_administrator
         ~set_parameter_display_name
         ~set_parameter_display_conceptor
@@ -273,6 +279,8 @@ let get_form_contents_for ~actor_id db book_ids =
                   ~id: set_id
                   ~entity_is_public: set_entity_is_public
                   ~actor_role: set_actor_role
+                  ~actor_group_id: set_actor_group_id
+                  ~actor_group_name: set_actor_group_name
                   ~actor_is_omniscient_administrator: set_actor_is_omniscient_administrator
                   ~name: (Option.get set_name)
                   ~kind: (Option.get set_kind)

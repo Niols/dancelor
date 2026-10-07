@@ -343,6 +343,8 @@ SELECT
     "set"."kind" AS "set_kind",
     "set_permissions"."entity_is_public" AS "set_entity_is_public",
     "set_permissions"."actor_role" AS "set_actor_role",
+    "set_permissions"."actor_group_id" AS "set_actor_group_id",
+    "set_permissions"."actor_group_name" AS "set_actor_group_name",
     "set_permissions"."actor_is_omniscient_administrator" AS "set_actor_is_omniscient_administrator",
     -- set parameters
     "set_parameter_display_name",

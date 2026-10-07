@@ -68,6 +68,8 @@ CREATE TABLE "group_members" (
     CONSTRAINT "uq_group_members_group_id_member_id" UNIQUE ("group_id", "member_id")
 );
 
+-- NOTE: The order matters, and stronger roles should appear before weaker ones
+-- such that `<` can be used to compare them.
 CREATE TYPE "actor_role" AS ENUM ('Owner', 'Viewer');
 
 CREATE TABLE "entity_actors" (

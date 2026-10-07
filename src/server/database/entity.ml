@@ -69,11 +69,7 @@ let get_newest_resources ~actor_id ~limit =
 
 let get_permission db ~actor_id id =
   let id = Id.unsafe_coerce id in
-  Option.map
-    (fun (entity_is_public, actor_role, actor_is_omniscient_administrator) ->
-      {Permission.entity_is_public; actor_role; actor_is_omniscient_administrator}
-    )
-  <$> Entity_sql.get_permission db ~actor_id ~id
+  Entity_sql.Single.get_permission db ~actor_id ~id sql_to_permission
 
 let get_actor_roles db id =
   let id = Id.unsafe_coerce id in

@@ -176,9 +176,8 @@ let open_dialog_button id =
             let other_actors =
               List.filter
                 (function
-                  | (`User {User_row.id = actor_id'; _}, _) ->
-                    not @@ Option.equal Id.equal' (Some actor_id') actor_id
-                  | _ -> false
+                  | (`User {User_row.id = actor_id'; _}, _) when Option.equal Id.equal' (Some actor_id') actor_id -> false
+                  | _ -> true
                 )
                 permissions.actor_roles
             in

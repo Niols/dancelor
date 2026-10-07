@@ -15,3 +15,6 @@ let source_sql_to_short_name ~id ~name ~short_name ~(k : Source_short_name.t -> 
 
 let version_sql_to_name ~id ~name ~(k : Version_name.t -> 'w) : 'w =
   k {id; name}
+
+let group_sql_to_name ~id ~name ~(k : Group_name.t -> 'w) : 'w =
+  k {id; name}
