@@ -210,11 +210,11 @@
     "sqlgg": {
       "flake": false,
       "locked": {
-        "lastModified": 1789495825,
-        "narHash": "sha256-Gfy0Uj8mVktfhEgvPSuDLv+3qYIQDefNIfajAbru8WA=",
+        "lastModified": 1791366891,
+        "narHash": "sha256-V2xXfAItjLiRWYpCMPr4MD2GEO6sffEx33PzVDUAVpc=",
         "owner": "niols",
         "repo": "sqlgg",
-        "rev": "178676f4f2ace8b7b2fc283c190c44dbd2d9137a",
+        "rev": "69d9022ebbbf3b46fc1729387a217fff3c9e0e77",
         "type": "github"
       },
       "original": {

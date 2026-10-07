@@ -283,8 +283,7 @@ WHERE
     AND @contains_set { Some { EXISTS (SELECT 1 FROM "book_content" WHERE "book_id" = "book"."id" AND "set_id" IN @contains_set ) } | None { TRUE } }
 ORDER BY
     "score" DESC,
-    ("book_rows"."date" IS NULL), -- FIXME: just use "date" DESC NULLS LAST, but sqlgg doesn't support that
-    "book_rows"."date" DESC,
+    "book_rows"."date" DESC NULLS LAST,
     "name_search" ASC,
     "name" ASC,
     "id" ASC;

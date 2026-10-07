@@ -871,9 +871,7 @@ let migrations : migration list = [
     Migrations_sql.m059_2026_05_string_to_nestring_option__make_book_remarks_nullable;
     Migrations_sql.m059_2026_05_string_to_nestring_option__convert_book_remarks;
   ];
-  make_ddl "m060_2026_06_create_extension_pg_trgm" (
-    bypass "CREATE EXTENSION IF NOT EXISTS pg_trgm"
-  );
+  make_ddl "m060_2026_06_create_extension_pg_trgm" Migrations_sql.m060_2026_06_create_extension_pg_trgm;
   make_ddls "m061_2026_06_use_enum_for_user_role" [
     Migrations_sql.m061_2026_06_use_enum_for_user_role__create_type_role;
     Migrations_sql.m061_2026_06_use_enum_for_user_role__add_column_role_new;
@@ -935,18 +933,18 @@ let migrations : migration list = [
   ];
   make_ddls "m066_2026_06_rename_table_globally_unique_id" [
     Migrations_sql.m066_2026_06_rename_table_globally_unique_id__table;
-    bypass "ALTER TABLE \"entry\" RENAME CONSTRAINT \"globally_unique_id_pkey\" TO \"pk_entry\"";
+    Migrations_sql.m066_2026_06_rename_table_globally_unique_id__constraint;
   ];
   make_ddls "m067_2026_06_move_created_update_at_to_entry_table" [
     Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__add_columns_to_entry;
-    bypass "UPDATE \"entry\" SET \"created_at\" = \"person\".\"created_at\", \"modified_at\" = \"person\".\"modified_at\" FROM \"person\" WHERE \"entry\".\"id\" = \"person\".\"id\"";
-    bypass "UPDATE \"entry\" SET \"created_at\" = \"user\".\"created_at\", \"modified_at\" = \"user\".\"modified_at\" FROM \"user\" WHERE \"entry\".\"id\" = \"user\".\"id\"";
-    bypass "UPDATE \"entry\" SET \"created_at\" = \"source\".\"created_at\", \"modified_at\" = \"source\".\"modified_at\" FROM \"source\" WHERE \"entry\".\"id\" = \"source\".\"id\"";
-    bypass "UPDATE \"entry\" SET \"created_at\" = \"dance\".\"created_at\", \"modified_at\" = \"dance\".\"modified_at\" FROM \"dance\" WHERE \"entry\".\"id\" = \"dance\".\"id\"";
-    bypass "UPDATE \"entry\" SET \"created_at\" = \"tune\".\"created_at\", \"modified_at\" = \"tune\".\"modified_at\" FROM \"tune\" WHERE \"entry\".\"id\" = \"tune\".\"id\"";
-    bypass "UPDATE \"entry\" SET \"created_at\" = \"version\".\"created_at\", \"modified_at\" = \"version\".\"modified_at\" FROM \"version\" WHERE \"entry\".\"id\" = \"version\".\"id\"";
-    bypass "UPDATE \"entry\" SET \"created_at\" = \"set\".\"created_at\", \"modified_at\" = \"set\".\"modified_at\" FROM \"set\" WHERE \"entry\".\"id\" = \"set\".\"id\"";
-    bypass "UPDATE \"entry\" SET \"created_at\" = \"book\".\"created_at\", \"modified_at\" = \"book\".\"modified_at\" FROM \"book\" WHERE \"entry\".\"id\" = \"book\".\"id\"";
+    Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__copy_person;
+    Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__copy_user;
+    Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__copy_source;
+    Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__copy_dance;
+    Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__copy_tune;
+    Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__copy_version;
+    Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__copy_set;
+    Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__copy_book;
     Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__drop_person_columns;
     Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__drop_user_columns;
     Migrations_sql.m067_2026_06_move_created_update_at_to_entry_table__drop_source_columns;
@@ -962,8 +960,8 @@ let migrations : migration list = [
     Migrations_sql.m068_2026_06_move_access_to_entry_table__add_visibility_to_entry;
     Migrations_sql.m068_2026_06_move_access_to_entry_table__create_table_entry_viewers;
     Migrations_sql.m068_2026_06_move_access_to_entry_table__create_table_entry_owners;
-    bypass "UPDATE \"entry\" SET \"visibility\" = \"set\".\"visibility\" FROM \"set\" WHERE \"entry\".\"id\" = \"set\".\"id\"";
-    bypass "UPDATE \"entry\" SET \"visibility\" = \"book\".\"visibility\" FROM \"book\" WHERE \"entry\".\"id\" = \"book\".\"id\"";
+    Migrations_sql.m068_2026_06_move_access_to_entry_table__copy_set_visibility;
+    Migrations_sql.m068_2026_06_move_access_to_entry_table__copy_book_visibility;
     Migrations_sql.m068_2026_06_move_access_to_entry_table__copy_set_viewers;
     Migrations_sql.m068_2026_06_move_access_to_entry_table__copy_set_owners;
     Migrations_sql.m068_2026_06_move_access_to_entry_table__copy_book_viewers;
@@ -999,7 +997,7 @@ let migrations : migration list = [
     ignore <$> Migrations_sql.m069_2026_06_use_enum_for_tune_kind__rename_column db
   );
   make_ddls "m070_2026_07_name_search" [
-    bypass "CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public";
+    Migrations_sql.m070_2026_07_name_search__create_extension_unaccent;
     bypass
       {| CREATE FUNCTION make_name_search(TEXT) RETURNS TEXT
            LANGUAGE "sql" IMMUTABLE PARALLEL SAFE
@@ -1015,28 +1013,28 @@ let migrations : migration list = [
     Migrations_sql.m070_2026_07_name_search__add_column_tune_extra_name_search;
   ];
   make_ddls "m071_2026_07_move_pg_trgm_to_public" [
-    bypass "DROP EXTENSION pg_trgm";
-    bypass "CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public";
+    Migrations_sql.m071_2026_07_move_pg_trgm_to_public__drop_extension;
+    Migrations_sql.m071_2026_07_move_pg_trgm_to_public__create_extension;
   ];
   make_ddls "m072_2026_07_gin_indices" [
-    bypass {| CREATE INDEX "idx_person_name" ON "person" USING GIN ("name" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_person_name_search" ON "person" USING GIN ("name_search" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_dance_name" ON "dance" USING GIN ("name" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_dance_name_search" ON "dance" USING GIN ("name_search" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_source_name" ON "source" USING GIN ("name" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_source_name_search" ON "source" USING GIN ("name_search" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_tune_name" ON "tune" USING GIN ("name" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_tune_name_search" ON "tune" USING GIN ("name_search" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_set_name" ON "set" USING GIN ("name" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_set_name_search" ON "set" USING GIN ("name_search" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_book_name" ON "book" USING GIN ("name" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_book_name_search" ON "book" USING GIN ("name_search" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_user_username" ON "user" USING GIN ("username" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_user_username_search" ON "user" USING GIN ("username_search" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_dance_extra_names_extra_name" ON "dance_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_dance_extra_names_extra_name_search" ON "dance_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_tune_extra_names_extra_name" ON "tune_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops") |};
-    bypass {| CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "tune_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops") |};
+    Migrations_sql.m072_2026_07_gin_indices__idx_person_name;
+    Migrations_sql.m072_2026_07_gin_indices__idx_person_name_search;
+    Migrations_sql.m072_2026_07_gin_indices__idx_dance_name;
+    Migrations_sql.m072_2026_07_gin_indices__idx_dance_name_search;
+    Migrations_sql.m072_2026_07_gin_indices__idx_source_name;
+    Migrations_sql.m072_2026_07_gin_indices__idx_source_name_search;
+    Migrations_sql.m072_2026_07_gin_indices__idx_tune_name;
+    Migrations_sql.m072_2026_07_gin_indices__idx_tune_name_search;
+    Migrations_sql.m072_2026_07_gin_indices__idx_set_name;
+    Migrations_sql.m072_2026_07_gin_indices__idx_set_name_search;
+    Migrations_sql.m072_2026_07_gin_indices__idx_book_name;
+    Migrations_sql.m072_2026_07_gin_indices__idx_book_name_search;
+    Migrations_sql.m072_2026_07_gin_indices__idx_user_username;
+    Migrations_sql.m072_2026_07_gin_indices__idx_user_username_search;
+    Migrations_sql.m072_2026_07_gin_indices__idx_dance_extra_names_extra_name;
+    Migrations_sql.m072_2026_07_gin_indices__idx_dance_extra_names_extra_name_search;
+    Migrations_sql.m072_2026_07_gin_indices__idx_tune_extra_names_extra_name;
+    Migrations_sql.m072_2026_07_gin_indices__idx_tune_extra_names_extra_name_search;
   ];
   make_ddl "m073_2026_08_user_github_handle" Migrations_sql.m073_2026_08_user_github_handle;
   make_ddls "m074_2026_09_entry_replace_visibility_by_is_public" [
@@ -1061,13 +1059,13 @@ let migrations : migration list = [
     Migrations_sql.m076_2026_09_version_add_destructured_as_2_4__drop_default;
   ];
   make_ddls "m077_2026_09_add_new_kinds" [
-    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Air'|};
-    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Hornpipe'|};
-    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_2_4'|};
-    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_4_4'|};
-    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_6_8'|};
-    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Schottische'|};
-    bypass {|ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Two_step'|};
+    Migrations_sql.m077_2026_09_kind_type_add_missing_values__air;
+    Migrations_sql.m077_2026_09_kind_type_add_missing_values__hornpipe;
+    Migrations_sql.m077_2026_09_kind_type_add_missing_values__march_2_4;
+    Migrations_sql.m077_2026_09_kind_type_add_missing_values__march_4_4;
+    Migrations_sql.m077_2026_09_kind_type_add_missing_values__march_6_8;
+    Migrations_sql.m077_2026_09_kind_type_add_missing_values__schottische;
+    Migrations_sql.m077_2026_09_kind_type_add_missing_values__two_step;
   ];
   make_ddls "m078_2026_10_user_add_email" [
     Migrations_sql.m078_2026_10_user_add_email__add_column_email;
