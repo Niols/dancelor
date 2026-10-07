@@ -1095,6 +1095,28 @@ let migrations : migration list = [
     bypass {|ALTER TABLE "entity_actors" DROP CONSTRAINT "uq_entity_actors_entity_id_user_id"|};
     Migrations_sql.m081_2026_10_group_actors__entity_actors_add_new_unique_constraint;
   ];
+  make_ddls "m082_2026_10_lookup_indices" [
+    Migrations_sql.m082_2026_10_lookup_indices__idx_entity_actors_user_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_entity_actors_group_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_group_members_member_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_version_tune_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_set_content_version_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_book_content_versions_version_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_tune_composers_composer_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_version_sources_source_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_version_arrangers_arranger_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_dance_devisers_deviser_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_source_editors_person_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_recommended_tunes_tune_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_set_conceptors_conceptor_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_book_sources_source_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_book_authors_author_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_book_content_dance_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_book_content_set_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_dance_extra_names_dance_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_tune_extra_names_tune_id;
+    Migrations_sql.m082_2026_10_lookup_indices__idx_user_person_id;
+  ];
 ]
 
 exception Migration_failed of string * exn

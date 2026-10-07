@@ -413,3 +413,27 @@ CREATE INDEX "idx_dance_extra_names_extra_name" ON "dance_extra_names" USING GIN
 CREATE INDEX "idx_dance_extra_names_extra_name_search" ON "dance_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops");
 CREATE INDEX "idx_tune_extra_names_extra_name" ON "tune_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops");
 CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "tune_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops");
+
+-- NOTE: Foreign keys are not indexed automatically and a composite UNIQUE only
+-- serves lookups on its leading column, so these cover other columns that we
+-- use to look things up.
+CREATE INDEX "idx_entity_actors_user_id" ON "entity_actors" ("user_id");
+CREATE INDEX "idx_entity_actors_group_id" ON "entity_actors" ("group_id");
+CREATE INDEX "idx_group_members_member_id" ON "group_members" ("member_id");
+CREATE INDEX "idx_version_tune_id" ON "version" ("tune_id");
+CREATE INDEX "idx_set_content_version_id" ON "set_content" ("version_id");
+CREATE INDEX "idx_book_content_versions_version_id" ON "book_content_versions" ("version_id");
+CREATE INDEX "idx_tune_composers_composer_id" ON "tune_composers" ("composer_id");
+CREATE INDEX "idx_version_sources_source_id" ON "version_sources" ("source_id");
+CREATE INDEX "idx_version_arrangers_arranger_id" ON "version_arrangers" ("arranger_id");
+CREATE INDEX "idx_dance_devisers_deviser_id" ON "dance_devisers" ("deviser_id");
+CREATE INDEX "idx_source_editors_person_id" ON "source_editors" ("person_id");
+CREATE INDEX "idx_recommended_tunes_tune_id" ON "recommended_tunes" ("tune_id");
+CREATE INDEX "idx_set_conceptors_conceptor_id" ON "set_conceptors" ("conceptor_id");
+CREATE INDEX "idx_book_sources_source_id" ON "book_sources" ("source_id");
+CREATE INDEX "idx_book_authors_author_id" ON "book_authors" ("author_id");
+CREATE INDEX "idx_book_content_dance_id" ON "book_content" ("dance_id");
+CREATE INDEX "idx_book_content_set_id" ON "book_content" ("set_id");
+CREATE INDEX "idx_dance_extra_names_dance_id" ON "dance_extra_names" ("dance_id");
+CREATE INDEX "idx_tune_extra_names_tune_id" ON "tune_extra_names" ("tune_id");
+CREATE INDEX "idx_user_person_id" ON "user" ("person_id");

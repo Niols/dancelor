@@ -1807,3 +1807,63 @@ ALTER TABLE "entity_actors" ALTER COLUMN "user_id" DROP NOT NULL;
 
 -- @m081_2026_10_group_actors__entity_actors_add_new_unique_constraint
 ALTER TABLE "entity_actors" ADD CONSTRAINT "uq_entity_actors_entity_id_user_id_group_id" UNIQUE ("entity_id", "user_id", "group_id");
+
+-- @m082_2026_10_lookup_indices__idx_entity_actors_user_id
+CREATE INDEX "idx_entity_actors_user_id" ON "entity_actors" ("user_id");
+
+-- @m082_2026_10_lookup_indices__idx_entity_actors_group_id
+CREATE INDEX "idx_entity_actors_group_id" ON "entity_actors" ("group_id");
+
+-- @m082_2026_10_lookup_indices__idx_group_members_member_id
+CREATE INDEX "idx_group_members_member_id" ON "group_members" ("member_id");
+
+-- @m082_2026_10_lookup_indices__idx_version_tune_id
+CREATE INDEX "idx_version_tune_id" ON "version" ("tune_id");
+
+-- @m082_2026_10_lookup_indices__idx_set_content_version_id
+CREATE INDEX "idx_set_content_version_id" ON "set_content" ("version_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_content_versions_version_id
+CREATE INDEX "idx_book_content_versions_version_id" ON "book_content_versions" ("version_id");
+
+-- @m082_2026_10_lookup_indices__idx_tune_composers_composer_id
+CREATE INDEX "idx_tune_composers_composer_id" ON "tune_composers" ("composer_id");
+
+-- @m082_2026_10_lookup_indices__idx_version_sources_source_id
+CREATE INDEX "idx_version_sources_source_id" ON "version_sources" ("source_id");
+
+-- @m082_2026_10_lookup_indices__idx_version_arrangers_arranger_id
+CREATE INDEX "idx_version_arrangers_arranger_id" ON "version_arrangers" ("arranger_id");
+
+-- @m082_2026_10_lookup_indices__idx_dance_devisers_deviser_id
+CREATE INDEX "idx_dance_devisers_deviser_id" ON "dance_devisers" ("deviser_id");
+
+-- @m082_2026_10_lookup_indices__idx_source_editors_person_id
+CREATE INDEX "idx_source_editors_person_id" ON "source_editors" ("person_id");
+
+-- @m082_2026_10_lookup_indices__idx_recommended_tunes_tune_id
+CREATE INDEX "idx_recommended_tunes_tune_id" ON "recommended_tunes" ("tune_id");
+
+-- @m082_2026_10_lookup_indices__idx_set_conceptors_conceptor_id
+CREATE INDEX "idx_set_conceptors_conceptor_id" ON "set_conceptors" ("conceptor_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_sources_source_id
+CREATE INDEX "idx_book_sources_source_id" ON "book_sources" ("source_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_authors_author_id
+CREATE INDEX "idx_book_authors_author_id" ON "book_authors" ("author_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_content_dance_id
+CREATE INDEX "idx_book_content_dance_id" ON "book_content" ("dance_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_content_set_id
+CREATE INDEX "idx_book_content_set_id" ON "book_content" ("set_id");
+
+-- @m082_2026_10_lookup_indices__idx_dance_extra_names_dance_id
+CREATE INDEX "idx_dance_extra_names_dance_id" ON "dance_extra_names" ("dance_id");
+
+-- @m082_2026_10_lookup_indices__idx_tune_extra_names_tune_id
+CREATE INDEX "idx_tune_extra_names_tune_id" ON "tune_extra_names" ("tune_id");
+
+-- @m082_2026_10_lookup_indices__idx_user_person_id
+CREATE INDEX "idx_user_person_id" ON "user" ("person_id");

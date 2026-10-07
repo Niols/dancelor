@@ -293,8 +293,9 @@ CREATE TABLE "dancelor"."entities" (
 
 CREATE TABLE "dancelor"."entity_actors" (
     "entity_id" character varying(14) NOT NULL,
-    "user_id" character varying(14) NOT NULL,
-    "role" "dancelor"."actor_role" NOT NULL
+    "user_id" character varying(14),
+    "role" "dancelor"."actor_role" NOT NULL,
+    "group_id" character varying(14)
 );
 
 
@@ -663,9 +664,9 @@ INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "i
 -- Data for Name: entity_actors; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role") VALUES ('ului-yd9x-o35w', 'lt3h-edgt-ac97', 'Owner');
-INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role") VALUES ('wrwk-cz9g-g3wi', 'lt3h-edgt-ac97', 'Owner');
-INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role") VALUES ('0fi3-1iot-6tbq', '8x83-e8ky-bhea', 'Owner');
+INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role", "group_id") VALUES ('ului-yd9x-o35w', 'lt3h-edgt-ac97', 'Owner', NULL);
+INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role", "group_id") VALUES ('wrwk-cz9g-g3wi', 'lt3h-edgt-ac97', 'Owner', NULL);
+INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role", "group_id") VALUES ('0fi3-1iot-6tbq', '8x83-e8ky-bhea', 'Owner', NULL);
 
 
 --
@@ -764,6 +765,8 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m077_2026_09
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m078_2026_10_user_add_email', '2026-10-05 16:10:28.154262+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m079_2026_10_rename_entry_table', '2026-10-06 14:39:24.927487+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m080_2026_10_groups__create_table_groups', '2026-10-06 20:57:50.482607+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m081_2026_10_group_actors', '2026-10-08 09:21:50.427731+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m082_2026_10_lookup_indices', '2026-10-08 09:21:50.517716+00');
 
 
 --
@@ -1144,11 +1147,11 @@ ALTER TABLE ONLY "dancelor"."dance_devisers"
 
 
 --
--- Name: entity_actors uq_entity_actors_entity_id_user_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: entity_actors uq_entity_actors_entity_id_user_id_group_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
 ALTER TABLE ONLY "dancelor"."entity_actors"
-    ADD CONSTRAINT "uq_entity_actors_entity_id_user_id" UNIQUE ("entity_id", "user_id");
+    ADD CONSTRAINT "uq_entity_actors_entity_id_user_id_group_id" UNIQUE ("entity_id", "user_id", "group_id");
 
 
 --
@@ -1264,6 +1267,34 @@ ALTER TABLE ONLY "dancelor"."user"
 
 
 --
+-- Name: idx_book_authors_author_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_authors_author_id" ON "dancelor"."book_authors" USING "btree" ("author_id");
+
+
+--
+-- Name: idx_book_content_dance_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_content_dance_id" ON "dancelor"."book_content" USING "btree" ("dance_id");
+
+
+--
+-- Name: idx_book_content_set_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_content_set_id" ON "dancelor"."book_content" USING "btree" ("set_id");
+
+
+--
+-- Name: idx_book_content_versions_version_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_content_versions_version_id" ON "dancelor"."book_content_versions" USING "btree" ("version_id");
+
+
+--
 -- Name: idx_book_name; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1275,6 +1306,27 @@ CREATE INDEX "idx_book_name" ON "dancelor"."book" USING "gin" ("name" "public"."
 --
 
 CREATE INDEX "idx_book_name_search" ON "dancelor"."book" USING "gin" ("name_search" "public"."gin_trgm_ops");
+
+
+--
+-- Name: idx_book_sources_source_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_sources_source_id" ON "dancelor"."book_sources" USING "btree" ("source_id");
+
+
+--
+-- Name: idx_dance_devisers_deviser_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_dance_devisers_deviser_id" ON "dancelor"."dance_devisers" USING "btree" ("deviser_id");
+
+
+--
+-- Name: idx_dance_extra_names_dance_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_dance_extra_names_dance_id" ON "dancelor"."dance_extra_names" USING "btree" ("dance_id");
 
 
 --
@@ -1306,6 +1358,27 @@ CREATE INDEX "idx_dance_name_search" ON "dancelor"."dance" USING "gin" ("name_se
 
 
 --
+-- Name: idx_entity_actors_group_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_entity_actors_group_id" ON "dancelor"."entity_actors" USING "btree" ("group_id");
+
+
+--
+-- Name: idx_entity_actors_user_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_entity_actors_user_id" ON "dancelor"."entity_actors" USING "btree" ("user_id");
+
+
+--
+-- Name: idx_group_members_member_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_group_members_member_id" ON "dancelor"."group_members" USING "btree" ("member_id");
+
+
+--
 -- Name: idx_person_name; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1317,6 +1390,27 @@ CREATE INDEX "idx_person_name" ON "dancelor"."person" USING "gin" ("name" "publi
 --
 
 CREATE INDEX "idx_person_name_search" ON "dancelor"."person" USING "gin" ("name_search" "public"."gin_trgm_ops");
+
+
+--
+-- Name: idx_recommended_tunes_tune_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_recommended_tunes_tune_id" ON "dancelor"."recommended_tunes" USING "btree" ("tune_id");
+
+
+--
+-- Name: idx_set_conceptors_conceptor_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_set_conceptors_conceptor_id" ON "dancelor"."set_conceptors" USING "btree" ("conceptor_id");
+
+
+--
+-- Name: idx_set_content_version_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_set_content_version_id" ON "dancelor"."set_content" USING "btree" ("version_id");
 
 
 --
@@ -1334,6 +1428,13 @@ CREATE INDEX "idx_set_name_search" ON "dancelor"."set" USING "gin" ("name_search
 
 
 --
+-- Name: idx_source_editors_person_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_source_editors_person_id" ON "dancelor"."source_editors" USING "btree" ("person_id");
+
+
+--
 -- Name: idx_source_name; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1345,6 +1446,13 @@ CREATE INDEX "idx_source_name" ON "dancelor"."source" USING "gin" ("name" "publi
 --
 
 CREATE INDEX "idx_source_name_search" ON "dancelor"."source" USING "gin" ("name_search" "public"."gin_trgm_ops");
+
+
+--
+-- Name: idx_tune_composers_composer_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_tune_composers_composer_id" ON "dancelor"."tune_composers" USING "btree" ("composer_id");
 
 
 --
@@ -1362,6 +1470,13 @@ CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "dancelor"."tune_extra_
 
 
 --
+-- Name: idx_tune_extra_names_tune_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_tune_extra_names_tune_id" ON "dancelor"."tune_extra_names" USING "btree" ("tune_id");
+
+
+--
 -- Name: idx_tune_name; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1376,6 +1491,13 @@ CREATE INDEX "idx_tune_name_search" ON "dancelor"."tune" USING "gin" ("name_sear
 
 
 --
+-- Name: idx_user_person_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_user_person_id" ON "dancelor"."user" USING "btree" ("person_id");
+
+
+--
 -- Name: idx_user_username; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1387,6 +1509,27 @@ CREATE INDEX "idx_user_username" ON "dancelor"."user" USING "gin" ("username" "p
 --
 
 CREATE INDEX "idx_user_username_search" ON "dancelor"."user" USING "gin" ("username_search" "public"."gin_trgm_ops");
+
+
+--
+-- Name: idx_version_arrangers_arranger_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_version_arrangers_arranger_id" ON "dancelor"."version_arrangers" USING "btree" ("arranger_id");
+
+
+--
+-- Name: idx_version_sources_source_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_version_sources_source_id" ON "dancelor"."version_sources" USING "btree" ("source_id");
+
+
+--
+-- Name: idx_version_tune_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_version_tune_id" ON "dancelor"."version" USING "btree" ("tune_id");
 
 
 --
