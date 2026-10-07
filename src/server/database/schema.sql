@@ -74,12 +74,15 @@ CREATE TABLE "entity_actors" (
     -- [sqlgg] module=Sql_types.Untagged_id_conv
     "entity_id" VARCHAR(14) NOT NULL,
     -- [sqlgg] module=Sql_types.User_id_conv
-    "user_id" VARCHAR(14) NOT NULL,
+    "user_id" VARCHAR(14),
     -- [sqlgg] module=Sql_types.Actor_role_conv
     "role" "actor_role" NOT NULL,
+    -- [sqlgg] module=Sql_types.Group_id_conv
+    "group_id" VARCHAR(14),
     CONSTRAINT "fk_entity_actors_entity_id" FOREIGN KEY ("entity_id") REFERENCES "entities" ("id"),
     CONSTRAINT "fk_entity_actors_user_id" FOREIGN KEY ("user_id") REFERENCES "user" ("id"),
-    CONSTRAINT "uq_entity_actors_entity_id_user_id" UNIQUE ("entity_id", "user_id")
+    CONSTRAINT "uq_entity_actors_entity_id_user_id_group_id" UNIQUE ("entity_id", "user_id", "group_id")
+    -- INVARIANT: user_id IS NULL <=> group_id IS NOT NULL
 );
 
 CREATE TABLE "remember_me_tokens" (

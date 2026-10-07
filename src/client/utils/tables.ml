@@ -245,10 +245,10 @@ let entity_to_icon_and_string = function
   | `User _ -> (Icon.User, "User")
   | `Group _ -> (Icon.Group, "Group")
 
-let entity_row ?classes ?in_search entity =
+let entity_row ?classes ?onclick ?(prefix = []) ?(suffix = []) ?in_search (entity : [< Entity_row.t]) =
   let prefix =
     let (icon, type_) = entity_to_icon_and_string entity in
-    [
+    prefix @ [
       td
         ~a: [a_class ["text-nowrap"; "pe-none"]]
         [
@@ -257,8 +257,8 @@ let entity_row ?classes ?in_search entity =
         ]
     ]
   in
-  let suffix = [
-    td
+  let suffix =
+    [td
       ~a: [a_class ["text-end"]]
       [
         let permission =
@@ -284,19 +284,19 @@ let entity_row ?classes ?in_search entity =
             | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])
           in
           Icon.html icon ~tooltip ~classes
-      ]
-  ]
+      ]] @
+      suffix
   in
   match entity with
-  | `Source source -> source_row ?classes ?in_search ~prefix ~suffix source
-  | `Person person -> person_row ?classes ?in_search ~prefix ~suffix person
-  | `Dance dance -> dance_row ?classes ?in_search ~prefix ~suffix dance
-  | `Book book -> book_row ?classes ?in_search ~prefix ~suffix book
-  | `Set set -> set_row ?classes ?in_search ~prefix ~suffix set
-  | `Tune tune -> tune_row ?classes ?in_search ~prefix ~suffix tune
-  | `Version version -> version_row ?classes ?in_search ~prefix ~suffix version
-  | `User user -> user_row ?classes ~prefix ~suffix user
-  | `Group group -> group_row ?classes ~prefix ~suffix group
+  | `Source source -> source_row ?classes ?onclick ?in_search ~prefix ~suffix source
+  | `Person person -> person_row ?classes ?onclick ?in_search ~prefix ~suffix person
+  | `Dance dance -> dance_row ?classes ?onclick ?in_search ~prefix ~suffix dance
+  | `Book book -> book_row ?classes ?onclick ?in_search ~prefix ~suffix book
+  | `Set set -> set_row ?classes ?onclick ?in_search ~prefix ~suffix set
+  | `Tune tune -> tune_row ?classes ?onclick ?in_search ~prefix ~suffix tune
+  | `Version version -> version_row ?classes ?onclick ?in_search ~prefix ~suffix version
+  | `User user -> user_row ?classes ?onclick ~prefix ~suffix user
+  | `Group group -> group_row ?classes ?onclick ~prefix ~suffix group
 
 (** {2 Tables} *)
 

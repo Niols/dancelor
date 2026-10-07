@@ -55,6 +55,16 @@ let entity_rows env ids =
       )
       ids
 
+let principal_row env (id : Principal_id.t) : Principal_row.t Lwt.t =
+  let%lwt rows =
+    List.map (function #Principal_row.t as r -> r | _ -> assert false)
+    <$> entity_rows env [id]
+  in
+  match rows with
+  | [] -> Shared.reject_can_get ()
+  | [row] -> lwt row
+  | _ -> assert false
+
 let resource_rows env (ids : Resource_id.t list) : Resource_row.t list Lwt.t =
   List.map (function #Resource_row.t as r -> r | _ -> assert false)
   <$> entity_rows env ids
@@ -189,7 +199,31 @@ module Generic_entity_search = struct
     lwt {Search_result.total; items}
 end
 
-let cache : (Environment.cache_key * Resource_query.t, (Resource_row.t * float) Search_result.t Lwt.t) Cache.t =
+let cache_principals : (Environment.cache_key * Principal_query.t, (Principal_row.t * float) Search_result.t Lwt.t) Cache.t =
+  Cache.create ~lifetime: 60 ()
+
+let search_principals' =
+  let search_principals' =
+    Generic_entity_search.make
+      ~search_functions: Generic_entity_search.[user; group]
+      ~restrict_result_type: (function
+        | (`User _ | `Group _) as p -> p
+        | _ -> assert false
+      )
+  in
+  fun env ({common; specific}: Principal_query.t) ->
+    Cache.use ~cache: cache_principals ~key: (Environment.cache_key env, {common; specific}) @@ fun () ->
+    match specific with
+    | None -> search_principals' env common
+    | Some`User specific -> search'_user env {common; specific}
+    | Some`Group specific -> search'_group env {common; specific}
+
+let search_principals env slice query =
+  let%lwt {total; items} = search_principals' env query in
+  let items = List.map fst @@ Slice.list ~strict: false slice items in
+  lwt {Search_result.total; items}
+
+let cache_resources : (Environment.cache_key * Resource_query.t, (Resource_row.t * float) Search_result.t Lwt.t) Cache.t =
   Cache.create ~lifetime: 60 ()
 
 let search_resources' =
@@ -202,7 +236,7 @@ let search_resources' =
       )
   in
   fun env ({common; specific}: Resource_query.t) ->
-    Cache.use ~cache ~key: (Environment.cache_key env, {common; specific}) @@ fun () ->
+    Cache.use ~cache: cache_resources ~key: (Environment.cache_key env, {common; specific}) @@ fun () ->
     match specific with
     | None -> search_resources' env common
     | Some`Person specific -> search'_person env {common; specific}
@@ -259,9 +293,11 @@ let set_permissions env id {Permissions_form.entity_is_public; actor_roles} =
 
 let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Entity.t -> a = fun env endpoint ->
   match endpoint with
+  | Principal_row -> principal_row env
   | Resource_type -> resource_type env
   | Resource_rows -> resource_rows env
   | Newest_resources -> newest_resources env
+  | Search_principals -> search_principals env
   | Search_resources -> search_resources env
   | Search_resources_context_5_10 -> search_resources_context_5_10 env
   | Get_permissions -> get_permissions env

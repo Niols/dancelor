@@ -26,10 +26,10 @@ val get_newest_resources : actor_id: User_id.t option -> limit: int -> Resource_
 
 val get_permission : Connection.t -> actor_id: User_id.t option -> 'tag Id.t -> Permission.t option Lwt.t
 
-val get_actor_roles : Connection.t -> 'tag Id.t -> (User_row.t * Permission.actor_role) list Lwt.t
+val get_actor_roles : Connection.t -> 'tag Id.t -> (Principal_row.t * Permission.actor_role) list Lwt.t
 
 val set_is_public : Connection.t -> 'tag Id.t -> bool -> unit Lwt.t
 
-val set_actor_roles : Connection.t -> 'tag Id.t -> (User_row.t * Permission.actor_role) list -> unit Lwt.t
+val set_actor_roles : Connection.t -> 'tag Id.t -> (Principal_row.t * Permission.actor_role) list -> unit Lwt.t
 
 val get_type : actor_id: User_id.t option -> Untagged.t Id.t -> Entity_type.t option Lwt.t

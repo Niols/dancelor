@@ -425,6 +425,11 @@ module Principal_query = struct
 
   type t = specific option Query.t
   [@@deriving yojson]
+
+  let parse (query : string) : (t, string) result =
+    parse_query_generic
+      ~restrict_specific_type: (function #specific as q -> Some q | _ -> None)
+      query
 end
 
 module Entity_query = struct

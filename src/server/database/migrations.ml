@@ -1091,6 +1091,12 @@ let migrations : migration list = [
     Migrations_sql.m080_2026_10_groups__create_type_group_member_role;
     Migrations_sql.m080_2026_10_groups__create_table_group_members;
   ];
+  make_ddls "m081_2026_10_group_actors" [
+    Migrations_sql.m081_2026_10_group_actors__entity_actors_add_column_group_id;
+    Migrations_sql.m081_2026_10_group_actors__entity_actors_drop_user_id_not_null;
+    bypass {|ALTER TABLE "entity_actors" DROP CONSTRAINT "uq_entity_actors_entity_id_user_id"|};
+    Migrations_sql.m081_2026_10_group_actors__entity_actors_add_new_unique_constraint;
+  ];
 ]
 
 exception Migration_failed of string * exn

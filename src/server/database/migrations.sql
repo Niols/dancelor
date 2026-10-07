@@ -1690,3 +1690,15 @@ CREATE TABLE "group_members" (
     CONSTRAINT "fk_group_members_member_id" FOREIGN KEY ("member_id") REFERENCES "user" ("id"),
     CONSTRAINT "uq_group_members_group_id_member_id" UNIQUE ("group_id", "member_id")
 );
+
+-- @m081_2026_10_group_actors__entity_actors_add_column_group_id
+ALTER TABLE "entity_actors" ADD COLUMN "group_id" VARCHAR(14);
+
+-- @m081_2026_10_group_actors__entity_actors_drop_user_id_not_null
+ALTER TABLE "entity_actors" ALTER COLUMN "user_id" DROP NOT NULL;
+
+-- -- @m081_2026_10_group_actors__entity_actors_drop_unique_constraint
+-- ALTER TABLE "entity_actors" DROP CONSTRAINT "uq_entity_actors_entity_id_user_id";
+
+-- @m081_2026_10_group_actors__entity_actors_add_new_unique_constraint
+ALTER TABLE "entity_actors" ADD CONSTRAINT "uq_entity_actors_entity_id_user_id_group_id" UNIQUE ("entity_id", "user_id", "group_id");

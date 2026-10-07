@@ -48,18 +48,21 @@ let component =
               Selector.prepare
                 ~label: "Actor"
                 ~model_name: "user"
-                ~make_descr: (fun user -> lwt @@ Username.to_string user.User_row.username)
-                ~make_result: Tables.user_row
-                ~results_when_no_search: (Option.to_list % Option.map Actor.to_user_row <$> Environment.actor)
-                ~search: (fun slice input ->
-                  match User_query.parse input with
-                  | Error msg -> lwt_error msg
-                  | Ok query -> ok <$> Api.call_exn (User Search) slice query
+                ~make_descr: (function
+                  | `User user -> lwt @@ ((^) "User ") @@ Username.to_string user.User_row.username
+                  | `Group group -> lwt @@ ((^) "Group ") @@ group.Group_row.name
                 )
-                ~id_to_yojson: Id.to_yojson'
-                ~id_of_yojson: Id.of_yojson'
-                ~serialise: User_row.id
-                ~unserialise: (Api.call_or_option @@ User Get_row)
+                ~make_result: (Tables.entity_row ?in_search: None)
+                ~results_when_no_search: (List.map Principal_row.user % Option.to_list % Option.map Actor.to_user_row <$> Environment.actor)
+                ~search: (fun slice input ->
+                  match Principal_query.parse input with
+                  | Error msg -> lwt_error msg
+                  | Ok query -> ok <$> Api.call_exn (Entity Search_principals) slice query
+                )
+                ~id_to_yojson: Principal_id.to_yojson
+                ~id_of_yojson: Principal_id.of_yojson
+                ~serialise: Principal_row.to_id
+                ~unserialise: (Api.call_or_option @@ Entity Principal_row)
                 ()
             )
             (
@@ -96,9 +99,9 @@ let open_ (id : Entity_id.t) (permissions : Permissions_form.t) =
     in
     let actor_roles_state =
       List.map
-        (fun (user, role) ->
+        (fun (principal, role) ->
           (
-            Some user.User_row.id,
+            Some (Principal_row.to_id principal),
             (
               (
                 (match (role : Permission.actor_role) with Owner -> Some 0 | Viewer -> Some 1),
@@ -172,8 +175,10 @@ let open_dialog_button id =
           else
             let other_actors =
               List.filter
-                (fun ({User_row.id = actor_id'; _}, _) ->
-                  not @@ Option.equal Id.equal' (Some actor_id') actor_id
+                (function
+                  | (`User {User_row.id = actor_id'; _}, _) ->
+                    not @@ Option.equal Id.equal' (Some actor_id') actor_id
+                  | _ -> false
                 )
                 permissions.actor_roles
             in

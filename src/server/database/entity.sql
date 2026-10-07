@@ -56,10 +56,12 @@ WHERE "entity_id" = @entity_id;
 INSERT INTO "entity_actors" (
     "entity_id",
     "user_id",
+    "group_id",
     "role"
 ) VALUES (
     @entity_id,
     @user_id,
+    @group_id,
     @role
 );
 
@@ -78,12 +80,17 @@ FROM "entities"
 WHERE "id" = @id;
 
 -- @get_actor_roles
-WITH "users" AS &user_rows
+WITH "users" AS &user_rows,
+     "groups" AS &group_rows
 SELECT
     "entity_actors"."role",
-    "users".*
+    "users"."id" AS "user_id",
+    "users"."username",
+    "groups"."id" AS "group_id",
+    "groups"."name" AS "group_name"
 FROM "entity_actors"
-JOIN "users" ON "entity_actors"."user_id" = "users"."id"
+LEFT JOIN "users" ON "entity_actors"."user_id" = "users"."id"
+LEFT JOIN "groups" ON "entity_actors"."group_id" = "groups"."id"
 WHERE "entity_id" = @entity_id;
 
 -- @set_is_public
