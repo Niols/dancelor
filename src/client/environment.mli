@@ -16,6 +16,7 @@ val server_status : server_status S.t
     it is needed, hence the promise. *)
 val actor : Actor.t option Lwt.t
 val actor_id : User_id.t option Lwt.t
+val actor_id_s : User_id.t option option S.t
 
 (** For places where we don't want to wait for the promise to resolve, we can
     use {!actor_now}. This might however answer [None] even though we are
