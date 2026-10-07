@@ -19,7 +19,7 @@ let view query page =
   let page_url = ref (fun _n -> assert false) in
   let search =
     Search.make
-      ~search: Api.any_search
+      ~search: Api.entity_search
       ~initial_input: query
       ~initial_page: page
       ~pagination_mode: (Pagination ())
@@ -36,7 +36,7 @@ let view query page =
     [
       Search.render
         search
-        ~make_result: (fun ?in_search result -> Any_result.make_result ?in_search result)
+        ~make_result: (fun ?in_search result -> Tables.entity_row ?in_search result)
         ~attached_buttons: [
           Button.make
             ~label: "Filter"
@@ -48,7 +48,7 @@ let view query page =
               let%lwt query = Search_complex_filters_dialog.open_ search_text in
               Option.iter
                 (fun query ->
-                  let text = Any_query.print query ^ " " in
+                  let text = Entity_query.print query ^ " " in
                   let bar = Search.search_bar search in
                   Search_bar.set_text bar text;
                   update_uri text None;

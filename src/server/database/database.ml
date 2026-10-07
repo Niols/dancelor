@@ -1,5 +1,4 @@
-module Entry = Entry
-module Any = Any
+module Entity = Entity
 module Book = Book
 module Dance = Dance
 module Person = Person
@@ -7,6 +6,7 @@ module Set = Set
 module Source = Source
 module Tune = Tune
 module User = User
+module Group = Group
 module Version = Version
 module Utils = Utils
 

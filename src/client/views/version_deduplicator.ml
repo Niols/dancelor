@@ -237,7 +237,7 @@ let confirmation_dialog ~this_version_id ~other_version_id =
       ~buttons: [
         Button.make_a
           ~label: "Go to other version"
-          ~icon: (Model Version)
+          ~icon: (Entity Version)
           ~classes: ["btn-primary"]
           ~href: (S.const @@ Endpoints.Page.href_version other_version_id)
           ();

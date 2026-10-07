@@ -179,15 +179,15 @@ let make_and_render_gen
       ]
   ]
 
-let for_search query (any_id : Any_id.t) =
+let for_search query (resource_id : Resource_id.t) =
   Option.fold
     query
     ~none: (no_context_links ())
     ~some: (fun (query : Endpoints.Page.In_search.t) ->
       let query = Endpoints.Page.In_search.project query in
       let neighbours_lwt =
-        let%olwt query = lwt @@ Result.to_option @@ Any_query.parse query in
-        Result.to_option <$> Api.call (Any Search_context_5_10) query any_id
+        let%olwt query = lwt @@ Result.to_option @@ Resource_query.parse query in
+        Result.to_option <$> Api.call (Entity Search_resources_context_5_10) query resource_id
       in
       let parent_page =
         let open Endpoints.Page in
@@ -196,7 +196,7 @@ let for_search query (any_id : Any_id.t) =
         (* NOTE: sync with search.ml *)
         S.const @@ href Explore query (Option.value page ~default: 1)
       in
-      let this_page = Some (Endpoints.Page.href_any_full any_id) in
+      let this_page = Some (Endpoints.Page.href_entity_full resource_id) in
       let index_total_category_name_lwt =
         let%lwt (index, total) =
           Lwt.map
@@ -212,15 +212,15 @@ let for_search query (any_id : Any_id.t) =
         in
         lwt (index, total, category, name)
       in
-      let page_href any = lwt @@ Endpoints.Page.href_any_full ~in_search: (Endpoints.Page.In_search.inject query) any in
+      let page_href any = lwt @@ Endpoints.Page.href_entity_full ~in_search: (Endpoints.Page.In_search.inject query) any in
       let page_descr _any = "FIXME" in
-      let versions_in_page : Any_id.t -> (Version_id.t * Version_parameters.t) list Lwt.t = function
-        (** NOTE: This is about the versions that are **visible** in the any.
+      let versions_in_page : Resource_id.t -> (Version_id.t * Version_parameters.t) list Lwt.t = function
+        (** NOTE: This is about the versions that are **visible** in the entity.
             In particular, we don't return the versions in a book. *)
-        | Person _ | Dance _ | Source _ | User _ | Tune _ | Book _ -> lwt_nil
-        | Version version ->
+        | `Person _ | `Dance _ | `Source _ | `Tune _ | `Book _ -> lwt_nil
+        | `Version version ->
           lwt [(version, Version_parameters.none)]
-        | Set set ->
+        | `Set set ->
           let%lwt set = Api.call_exn (Set Get_view) set in
           lwt @@ List.map (Pair.map_fst Version_row.id) set.content
       in

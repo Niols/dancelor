@@ -28,14 +28,14 @@ let search query : (Person_row.t * float) list Lwt.t =
     (fun ~score -> person_sql_to_row ~k: (Pair.snoc score))
 
 let create db person =
-  let%lwt id = Entry.make_public db Person in
+  let%lwt id = Entity.make_public db `Person in
   let%lwt _ = person_form_to_sql (Person_sql.create db) id person in
   lwt id
 
 let update db id person =
-  Entry.touch db id;%lwt
+  Entity.touch db id;%lwt
   ignore <$> person_form_to_sql (fun ~id -> Person_sql.update db ~id) id person
 
 let delete db id =
   ignore <$> Person_sql.delete db ~id;%lwt
-  Entry.delete db id
+  Entity.delete db id

@@ -44,7 +44,7 @@ let editor =
             (
               Selector.prepare
                 ~make_descr: (lwt % Person_row.name)
-                ~make_result: (Any_result.make_person_result ?in_search: None)
+                ~make_result: (Tables.person_row ?in_search: None)
                 ~results_when_no_search: (Option.to_list <$> Environment.person)
                 ~label: "Composer"
                 ~model_name: "person"
@@ -89,7 +89,7 @@ let editor =
             ~serialise: Dance_row.id
             ~unserialise: (Api.call_or_option @@ Dance Get_row)
             ~make_descr: (lwt % Dance_row.name)
-            ~make_result: (Any_result.make_dance_result ?in_search: None)
+            ~make_result: (Tables.dance_row ?in_search: None)
             ~label: "Dance"
             ~model_name: "dance"
             ~create_dialog_content: Dance_editor.create_row
@@ -133,7 +133,7 @@ let create mode =
   Main_page.assert_can_create_public @@ fun () ->
   Editor.make_page
     ~key: "tune"
-    ~icon: (Model Tune)
+    ~icon: (Entity Tune)
     editor
     ~mode
     ~format: (Formatters.Tune.name ~link: true % With_id.map Tune_form.to_name)

@@ -8,10 +8,10 @@ type visibility = [
 
 type visibility_or_public = [visibility | `Public]
 
-val make_public : Connection.t -> Any_id.Type.t -> 'tag Id.t Lwt.t
+val make_public : Connection.t -> Entity_type.t -> 'tag Id.t Lwt.t
 (** Make a public entry and return the new id. *)
 
-val make_private : Connection.t -> Any_id.Type.t -> User_id.t -> 'tag Id.t Lwt.t
+val make_private : Connection.t -> Entity_type.t -> User_id.t -> 'tag Id.t Lwt.t
 (** Make a private entry, handling its access, and return the new id. *)
 
 val touch : Connection.t -> 'tag Id.t -> unit Lwt.t
@@ -20,7 +20,7 @@ val touch : Connection.t -> 'tag Id.t -> unit Lwt.t
 val delete : Connection.t -> 'tag Id.t -> unit Lwt.t
 (** Deletes the given entry. *)
 
-val get_newest : actor_id: User_id.t option -> limit: int -> Any_id.t list Lwt.t
+val get_newest_resources : actor_id: User_id.t option -> limit: int -> Resource_id.t list Lwt.t
 (** Return the [~limit] newest elements in the database that the user
     has access to. *)
 
@@ -31,3 +31,5 @@ val get_actor_roles : Connection.t -> 'tag Id.t -> (User_row.t * Permission.acto
 val set_is_public : Connection.t -> 'tag Id.t -> bool -> unit Lwt.t
 
 val set_actor_roles : Connection.t -> 'tag Id.t -> (User_row.t * Permission.actor_role) list -> unit Lwt.t
+
+val get_type : actor_id: User_id.t option -> Untagged.t Id.t -> Entity_type.t option Lwt.t

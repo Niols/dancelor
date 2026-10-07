@@ -8,7 +8,7 @@ module Book = Book
 module Dance = Dance
 module Version = Version
 module Tune = Tune
-module Any = Any
+module Entity = Entity
 module Job = Job
 module Metrics = Metrics
 
@@ -23,7 +23,8 @@ let dispatch : type a r. Environment.t -> (a, r Lwt.t, r) Endpoints.Api.t -> a =
   | Dance endpoint -> Dance.dispatch env endpoint
   | Set endpoint -> Set.dispatch env endpoint
   | Tune endpoint -> Tune.dispatch env endpoint
-  | Any endpoint -> Any.dispatch env endpoint
   | User endpoint -> User.dispatch env endpoint
+  | Group endpoint -> Group.dispatch env endpoint
+  | Entity endpoint -> Entity.dispatch env endpoint
   | Job endpoint -> Job.dispatch env endpoint
   | Report_issue -> Issue_report.report env

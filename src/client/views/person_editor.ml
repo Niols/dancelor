@@ -46,7 +46,7 @@ let create mode =
   Main_page.assert_can_create_public @@ fun () ->
   Editor.make_page
     ~key: "person"
-    ~icon: (Model Person)
+    ~icon: (Entity Person)
     editor
     ~mode
     ~submit

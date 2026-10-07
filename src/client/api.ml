@@ -37,11 +37,6 @@ let tune_search slice input =
   | Error msg -> lwt_error msg
   | Ok query -> ok <$> call_exn (Tune Search) slice query
 
-let user_search slice input =
-  match User_query.parse input with
-  | Error msg -> lwt_error msg
-  | Ok query -> ok <$> call_exn (User Search) slice query
-
 let set_search slice input =
   match Set_query.parse input with
   | Error msg -> lwt_error msg
@@ -52,7 +47,17 @@ let book_search slice input =
   | Error msg -> lwt_error msg
   | Ok query -> ok <$> call_exn (Book Search) slice query
 
-let any_search slice input =
-  match Any_query.parse input with
+let user_search slice input =
+  match User_query.parse input with
   | Error msg -> lwt_error msg
-  | Ok query -> ok <$> call_exn (Any Search) slice query
+  | Ok query -> ok <$> call_exn (User Search) slice query
+
+let group_search slice input =
+  match Group_query.parse input with
+  | Error msg -> lwt_error msg
+  | Ok query -> ok <$> call_exn (Group Search) slice query
+
+let entity_search slice input =
+  match Resource_query.parse input with
+  | Error msg -> lwt_error msg
+  | Ok query -> ok <$> call_exn (Entity Search_resources) slice query

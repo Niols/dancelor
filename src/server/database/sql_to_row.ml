@@ -109,3 +109,6 @@ let user_sql_to_row
     id;
     username = Username.of_string_exn username;
   }
+
+let group_sql_to_row ~id ~name ~(k : Group_row.t -> 'w) : 'w =
+  k {id; name}

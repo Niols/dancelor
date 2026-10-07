@@ -73,7 +73,7 @@ let get_password_reset_token_from_username username =
 
 let create {User_form.username; email} ~password_reset_token_hash ~password_reset_token_max_date =
   Connection.with_ @@ fun db ->
-  let%lwt id = Entry.make_public db User in
+  let%lwt id = Entity.make_public db `User in
   ignore
   <$> User_sql.create
       db

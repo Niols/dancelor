@@ -217,3 +217,17 @@ module User_form = struct
   let to_row id {username; _} : User_row.t =
     {id; username}
 end
+
+module Group_form = struct
+  type t = {
+    name: NEString.t;
+    members: User_row.t list;
+  }
+  [@@deriving eq, yojson, fields]
+
+  let to_name id {name; _} : Group_name.t =
+    {id; name = NEString.to_string name}
+
+  let to_row id {name; _} : Group_row.t =
+    {id; name = NEString.to_string name}
+end

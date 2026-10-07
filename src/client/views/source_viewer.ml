@@ -7,12 +7,12 @@ let view in_search id =
   Main_page.madge_call_or_404 (Source Get_view) id @@ fun source ->
   Page.make'
     ~parent_title: "Source"
-    ~before_title: [Components.Context_links.for_search in_search (Any_id.Source id)]
+    ~before_title: [Components.Context_links.for_search in_search @@ `Source id]
     ~title: (lwt source.name)
     ~subtitles: [
       span (Formatters.Source.date_and_editors source);
     ]
-    ~share: (Sharing_dialog.copy_link_button @@ Source id)
+    ~share: (Sharing_dialog.copy_link_button @@ `Source id)
     ~actions: [
       (
         match%lwt Main_page.can_update_public () with
@@ -54,7 +54,7 @@ let view in_search id =
               | None -> p [txt "no description available"]
             );
             quick_explorer_links [
-              ("versions from this source", Any_query.specific_only (Any_query.Version (Version_query.make_specific ~source: (Some [id]) ())));
+              ("versions from this source", Entity_query.specific_only (`Version (Version_query.make_specific ~source: (Some [id]) ())));
             ];
           ];
         ];

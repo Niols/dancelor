@@ -38,7 +38,7 @@ let assert_can_create _db env =
 
 let assert_can_update db env id k =
   let actor_id = Environment.actor_id env in
-  let%lwt permission = Database.Entry.get_permission db ~actor_id id in
+  let%lwt permission = Database.Entity.get_permission db ~actor_id id in
   assert_permission
     ~access_type: "update"
     ~pp_reason: Permission.pp_edit_reason
@@ -48,7 +48,7 @@ let assert_can_update db env id k =
 
 let assert_can_delete db env id k =
   let actor_id = Environment.actor_id env in
-  let%lwt permission = Database.Entry.get_permission db ~actor_id id in
+  let%lwt permission = Database.Entity.get_permission db ~actor_id id in
   assert_permission
     ~access_type: "delete"
     ~pp_reason: Permission.pp_delete_reason
@@ -89,6 +89,18 @@ let assert_can_edit_user env user_id k =
         match can_administrate env with
         | true -> Some `Admin
         | false -> None
+    )
+    (fun _reason -> k ())
+
+let assert_can_edit_group env _group_id k =
+  assert_permission
+    ~access_type: "edit"
+    ~pp_reason: (fun fmt _reason -> fpf fmt "FIXME")
+    env
+    (
+      match can_administrate env with
+      | true -> Some `Admin
+      | false -> None
     )
     (fun _reason -> k ())
 

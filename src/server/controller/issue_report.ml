@@ -12,6 +12,8 @@ include Endpoints.Page.Make_describe(struct
   let get_version_name env id = Tune_row.name % Version_row.tune <$> Version.get_row env id
   let get_set_name env id = Set_row.name <$> Set.get_row env id
   let get_book_name env id = Book_row.name <$> Book.get_row env id
+  let get_user_name env id = Username.to_string % User_row.username <$> User.get_row env id
+  let get_group_name env id = Group_row.name <$> Group.get_row env id
 end)
 
 (* used at the end of the {!report} function below *)

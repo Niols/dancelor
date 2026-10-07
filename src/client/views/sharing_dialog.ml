@@ -4,12 +4,12 @@ open Html
 open Dancelor_common
 open Components
 
-let copy_link_button ?(object_is_public = false) (id : Any_id.t) =
+let copy_link_button ?(object_is_public = false) (id : Entity_id.t) =
   Button.make
     ~icon: (Action Share)
     ~classes: ["btn-primary"]
     ~onclick: (fun _ ->
-      write_to_clipboard @@ href_any_for_sharing id;
+      write_to_clipboard @@ href_entity_for_sharing id;
       Toast.open_ ~title: "Copied to clipboard" [
         txt "The link to this page was copied to your clipboard.";
         txt (
@@ -49,7 +49,7 @@ let component =
                 ~label: "Actor"
                 ~model_name: "user"
                 ~make_descr: (fun user -> lwt @@ Username.to_string user.User_row.username)
-                ~make_result: (Any_result.make_user_result ?in_search: None)
+                ~make_result: Tables.user_row
                 ~results_when_no_search: (Option.to_list % Option.map Actor.to_user_row <$> Environment.actor)
                 ~search: (fun slice input ->
                   match User_query.parse input with
@@ -86,7 +86,7 @@ let component =
         )
     )
 
-let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
+let open_ (id : Entity_id.t) (permissions : Permissions_form.t) =
   let component_state =
     (* FIXME: OMG it is so hackish to have to make a state by hand?! *)
     let is_public_state =
@@ -116,7 +116,7 @@ let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
   let disabled = S.map Result.is_error @@ Component.signal component in
   let update () =
     let permissions = Result.get_ok @@ S.value @@ Component.signal component in
-    Api.call_exn (Any Set_permissions) (Any_id.to_untagged id) permissions
+    Api.call_exn (Entity Set_permissions) (Entity_id.to_untagged id) permissions
   in
   ignore
   <$> Page.open_dialog @@ fun return ->
@@ -145,7 +145,7 @@ let open_ (id : Any_id.t) (permissions : Permissions_form.t) =
           ~disabled
           ~onclick: (fun _ ->
             update ();%lwt
-            write_to_clipboard @@ href_any_for_sharing id;
+            write_to_clipboard @@ href_entity_for_sharing id;
             Toast.open_ ~title: "Permissions updated" [txt "The permissions have been updated, and a link to this page was copied to your clipboard."];
             return (some ());
             lwt_unit
@@ -164,7 +164,7 @@ let open_dialog_button id =
         ();
       ]
       (
-        let%lwt permissions = Api.call_exn (Any Get_permissions) (Any_id.to_untagged id) in
+        let%lwt permissions = Api.call_exn (Entity Get_permissions) (Entity_id.to_untagged id) in
         let%lwt actor_id = Environment.actor_id in
         let badge =
           if permissions.entity_is_public then

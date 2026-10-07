@@ -7,9 +7,9 @@ let view in_search id =
   Main_page.madge_call_or_404 (Person Get_view) id @@ fun person ->
   Page.make'
     ~parent_title: "Person"
-    ~before_title: [Components.Context_links.for_search in_search (Any_id.Person id)]
+    ~before_title: [Components.Context_links.for_search in_search (`Person id)]
     ~title: (lwt person.name)
-    ~share: (Sharing_dialog.copy_link_button @@ Person id)
+    ~share: (Sharing_dialog.copy_link_button @@ `Person id)
     ~actions: [
       (
         match%lwt Main_page.can_update_public () with
@@ -57,11 +57,11 @@ let view in_search id =
         else []
       );
       quick_explorer_links [
-        ("tunes they composed", Any_query.specific_only (Any_query.Tune (Tune_query.make_specific ~composer: (Some [person.id]) ())));
-        ("versions of tunes they composed", Any_query.specific_only (Any_query.Version (Version_query.make_specific ~tune: (Tune_query.make_specific ~composer: (Some [person.id]) ()) ())));
-        ("dances they devised", Any_query.specific_only (Any_query.Dance (Dance_query.make_specific ~deviser: (Some [person.id]) ())));
-        ("sets they conceived", Any_query.specific_only (Any_query.Set (Set_query.make_specific ~conceptor: (Some [person.id]) ())));
-        ("books they edited", Any_query.specific_only (Any_query.Book (Book_query.make_specific ~author: (Some [person.id]) ())));
-        ("sources they edited", Any_query.specific_only (Any_query.Source (Source_query.make_specific ~editor: (Some [person.id]) ())));
+        ("tunes they composed", Entity_query.specific_only (`Tune (Tune_query.make_specific ~composer: (Some [person.id]) ())));
+        ("versions of tunes they composed", Entity_query.specific_only (`Version (Version_query.make_specific ~tune: (Tune_query.make_specific ~composer: (Some [person.id]) ()) ())));
+        ("dances they devised", Entity_query.specific_only (`Dance (Dance_query.make_specific ~deviser: (Some [person.id]) ())));
+        ("sets they conceived", Entity_query.specific_only (`Set (Set_query.make_specific ~conceptor: (Some [person.id]) ())));
+        ("books they edited", Entity_query.specific_only (`Book (Book_query.make_specific ~author: (Some [person.id]) ())));
+        ("sources they edited", Entity_query.specific_only (`Source (Source_query.make_specific ~editor: (Some [person.id]) ())));
       ];
     ]

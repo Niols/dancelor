@@ -98,13 +98,13 @@ let update_other_tables db ~tune_id ~extra_names ~composers ~dances =
     dances
 
 let create db tune =
-  let%lwt id = Entry.make_public db Tune in
+  let%lwt id = Entity.make_public db `Tune in
   ignore <$> tune_form_to_sql (Tune_sql.create db) id tune;%lwt
   update_other_tables db ~tune_id: id ~extra_names: (NEList.tl tune.names) ~composers: tune.composers ~dances: tune.dances;%lwt
   lwt id
 
 let update db id tune =
-  Entry.touch db id;%lwt
+  Entity.touch db id;%lwt
   ignore <$> tune_form_to_sql (fun ~id -> Tune_sql.update db ~id) id tune;%lwt
   update_other_tables db ~tune_id: id ~extra_names: (NEList.tl tune.names) ~composers: tune.composers ~dances: tune.dances
 
@@ -113,4 +113,4 @@ let delete db id =
   ignore <$> Tune_sql.delete_all_composers db ~tune_id: id;%lwt
   ignore <$> Tune_sql.delete_all_dances db ~tune_id: id;%lwt
   ignore <$> Tune_sql.delete db ~id;%lwt
-  Entry.delete db id
+  Entity.delete db id

@@ -1085,6 +1085,12 @@ let migrations : migration list = [
     Migrations_sql.m079_2026_10_entities__rename_entity_actors_fk_entry_actors_entry_id_constraint;
     Migrations_sql.m079_2026_10_entities__rename_entity_actors_fk_entry_actors_user_id_constraint;
   ];
+  make_ddls "m080_2026_10_groups__create_table_groups" [
+    Migrations_sql.m080_2026_10_groups__add_group_to_type_enum;
+    Migrations_sql.m080_2026_10_groups__create_table_groups;
+    Migrations_sql.m080_2026_10_groups__create_type_group_member_role;
+    Migrations_sql.m080_2026_10_groups__create_table_group_members;
+  ];
 ]
 
 exception Migration_failed of string * exn

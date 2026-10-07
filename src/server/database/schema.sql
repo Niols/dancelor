@@ -1,9 +1,8 @@
-CREATE TYPE "type" AS ENUM ('Person', 'User', 'Dance', 'Source', 'Tune', 'Version', 'Set', 'Book');
+CREATE TYPE "type" AS ENUM ('Person', 'User', 'Dance', 'Source', 'Tune', 'Version', 'Set', 'Book', 'Group');
 
 CREATE TABLE "entities" (
     -- [sqlgg] module=Sql_types.Untagged_id_conv
     "id" VARCHAR(14) NOT NULL,
-    -- [sqlgg] module=Sql_types.Type_conv
     "type" "type" NOT NULL,
     "created_at" TIMESTAMP NOT NULL,
     "modified_at" TIMESTAMP NOT NULL,
@@ -46,6 +45,27 @@ CREATE TABLE "user" (
     CONSTRAINT "fk_user_id" FOREIGN KEY ("id") REFERENCES "entities" ("id"),
     CONSTRAINT "fk_user_person_id" FOREIGN KEY ("person_id") REFERENCES "person" ("id"),
     CONSTRAINT "uq_user_email" UNIQUE ("email")
+);
+
+CREATE TABLE "groups" (
+    -- [sqlgg] module=Sql_types.Group_id_conv
+    "id" VARCHAR(14) NOT NULL PRIMARY KEY,
+    "name" VARCHAR(256) NOT NULL,
+    "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
+    CONSTRAINT "fk_group_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
+);
+
+CREATE TYPE "group_member_role" AS ENUM ('Group_admin', 'Regular_member');
+
+CREATE TABLE "group_members" (
+    -- [sqlgg] module=Sql_types.Group_id_conv
+    "group_id" VARCHAR(14) NOT NULL,
+    -- [sqlgg] module=Sql_types.User_id_conv
+    "member_id" VARCHAR(14) NOT NULL,
+    "member_role" "group_member_role" NOT NULL DEFAULT 'Regular_member',
+    CONSTRAINT "fk_group_members_group_id" FOREIGN KEY ("group_id") REFERENCES "groups" ("id"),
+    CONSTRAINT "fk_group_members_member_id" FOREIGN KEY ("member_id") REFERENCES "user" ("id"),
+    CONSTRAINT "uq_group_members_group_id_member_id" UNIQUE ("group_id", "member_id")
 );
 
 CREATE TYPE "actor_role" AS ENUM ('Owner', 'Viewer');

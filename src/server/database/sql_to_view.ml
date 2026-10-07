@@ -209,3 +209,16 @@ let user_sql_to_view
     username = Username.of_string_exn username;
     joined
   }
+
+let group_sql_to_view
+    ~id
+    ~name
+    ~members
+    ~(k : Group_view.t -> 'w)
+    : 'w
+  =
+  k {
+    id;
+    name;
+    members;
+  }

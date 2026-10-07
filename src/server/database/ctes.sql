@@ -58,6 +58,10 @@ SELECT
     "username"
 FROM "user";
 
+-- @group_rows | include: reuse
+SELECT "id", "name"
+FROM "groups";
+
 -- @tune_ids_for_dances | include: reuse
 SELECT DISTINCT "tune_id"
 FROM "recommended_tunes"

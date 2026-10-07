@@ -87,8 +87,8 @@ let serve_index =
 let static_pages = List.map Uri.of_string ["/"; "/explore"]
 
 let serve_sitemap env =
-  let%lwt anys = Search_result.items <$> Controller.Any.search env Slice.everything (Any_query.empty) in
-  let urls = static_pages @ List.map (Endpoints.Page.href_any_full % Any_row.to_id) anys in
+  let%lwt resources = Search_result.items <$> Controller.Entity.search_resources env Slice.everything (Entity_query.empty) in
+  let urls = static_pages @ List.map (Endpoints.Page.href_entity_full % Resource_row.to_id) resources in
   let urls = List.map (fun url -> Uri.with_path base_url (Uri.path url)) urls in
   let%lwt sitemap =
     let buf = Buffer.create 10240 in

@@ -9,16 +9,16 @@ module Log = (val Logs.src_log @@ Logs.Src.create "client": Logs.LOG)
 
 let get_uri () = Uri.of_string (Js.to_string Dom_html.window##.location##.href)
 
-let redirect_any id =
-  Main_page.madge_call_or_404 (Any Get_type) id @@ fun type_ ->
-  Redirection_viewer.create @@ Endpoints.Page.href_any_full @@ Any_id.of_untagged type_ id
+let redirect_entity id =
+  Main_page.madge_call_or_404 (Entity Resource_type) id @@ fun type_ ->
+  Redirection_viewer.create @@ Endpoints.Page.href_entity_full @@ Resource_id.of_untagged type_ id
 
 let () = Madge_client.initialise_batch_route Endpoints.Api.(route_full Batch)
 
 let dispatch uri =
   let dispatch : type a r. (a, Page.t Lwt.t, r) Endpoints.Page.t -> a = function
     | Index -> Index.create ()
-    | Any -> redirect_any
+    | Entity -> redirect_entity
     | Explore -> Explorer.view
     | Book Add -> Book_editor.add ()
     | Book Edit -> Book_editor.edit
@@ -47,6 +47,9 @@ let dispatch uri =
     | User Create -> User_creator.create ()
     | User Prepare_reset_password -> User_password_reset_preparer.create ()
     | User Password_reset -> User_password_resetter.create
+    | Group View -> Group_viewer.view
+    | Group Create -> Group_editor.add ()
+    | Group Edit -> Group_editor.edit
   in
   let madge_match_apply_all : Page.t Lwt.t Endpoints.Page.wrapped' list -> (unit -> Page.t Lwt.t) option =
     List.find_map @@ fun (Endpoints.Page.W' endpoint) ->

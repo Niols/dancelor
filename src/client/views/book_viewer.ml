@@ -64,35 +64,35 @@ let table_contents ~this_id content =
               in
               match page with
               | Book_view.Part title ->
-                Any_result.make_part_result
+                Tables.part_row
                   ~prefix: [td [txt "Part"]]
                   ~suffix
                   title
               | Book_view.Dance (dance, Dance_only) ->
-                Any_result.make_dance_result
+                Tables.dance_row
                   ~prefix: [td [txt "Dance"]]
                   ~suffix
                   dance
               | Book_view.Dance (dance, Dance_versions versions_and_params) ->
-                Any_result.make_dance_plus_versions_result
-                  ~prefix: [td [txt "Dance"; Any_result.block_details [txt (if List.is_singleton versions_and_params then "+Tune" else "+Tunes")]]]
+                Tables.dance_plus_versions_row
+                  ~prefix: [td [txt "Dance"; Tables.block_details [txt (if List.is_singleton versions_and_params then "+Tune" else "+Tunes")]]]
                   ~suffix
                   dance
                   versions_and_params
               | Book_view.Dance (dance, Dance_set (set, params)) ->
-                Any_result.make_dance_plus_set_result
-                  ~prefix: [td [txt "Dance"; Any_result.block_details [txt "+Set"]]]
+                Tables.dance_plus_set_row
+                  ~prefix: [td [txt "Dance"; Tables.block_details [txt "+Set"]]]
                   ~suffix
                   dance
                   set
                   ~set_params: params
               | Book_view.Versions versions_and_params ->
-                Any_result.make_versions_result
+                Tables.versions_row
                   ~prefix: [td [txt @@ if List.is_singleton versions_and_params then "Tune" else "Tunes"]]
                   ~suffix
                   versions_and_params
               | Book_view.Set (set, params) ->
-                Any_result.make_set_or_forbidden_result
+                Tables.set_or_forbidden_row
                   ~prefix: [td [txt "Set"]]
                   ~suffix
                   ~params
@@ -108,13 +108,13 @@ let view in_search id =
   Main_page.madge_call_or_404 (Book Get_view) id @@ fun book ->
   Page.make'
     ~parent_title: "Book"
-    ~before_title: [Components.Context_links.for_search in_search (Any_id.Book id)]
+    ~before_title: [Components.Context_links.for_search in_search @@ `Book id]
     ~title: (lwt book.name)
     ~subtitles: [span (Formatters.Book.date_and_editors book)]
     ~share: (
       match Permission.share_reason book.permission with
-      | Some _ -> Sharing_dialog.open_dialog_button @@ Book id
-      | None -> Sharing_dialog.copy_link_button @@ Book id
+      | Some _ -> Sharing_dialog.open_dialog_button @@ `Book id
+      | None -> Sharing_dialog.copy_link_button @@ `Book id
     )
     ~actions: [
       lwt [
