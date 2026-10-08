@@ -245,21 +245,32 @@ let entity_to_icon_and_string = function
   | `User _ -> (Icon.User, "User")
   | `Group _ -> (Icon.Group, "Group")
 
-let entity_row ?classes ?in_search entity =
+let entity_row ?classes ?onclick ?(prefix = []) ?(suffix = []) ?in_search (entity : [< Entity_row.t]) =
   let prefix =
     let (icon, type_) = entity_to_icon_and_string entity in
-    [
+    prefix @ [
       td
-        ~a: [a_class ["text-nowrap"; "pe-none"]]
+        ~a: [
+          (* NOTE: disable mouse interaction in a regular table but leave it on if there is an onclick *)
+          a_class ["text-nowrap"; (if onclick = None then "pe-none" else "")];
+          (* NOTE: hint at a minuscule size, which, with the nowrap above, will cause the browser to
+             use the smallest size that can contain the text. *)
+          a_style "width: 1%;";
+        ]
         [
           Icon.(html (Entity icon));
           span ~a: [a_class ["d-none"; "d-sm-inline"]] [txt " "; txt type_];
         ]
     ]
   in
-  let suffix = [
-    td
-      ~a: [a_class ["text-end"]]
+  let suffix =
+    [td
+      ~a: [
+        a_class ["text-nowrap"; "text-end"];
+        (* NOTE: hint at a minuscule size, which, with the nowrap above, will cause the browser to
+           use the smallest size that can contain the text. *)
+        a_style "width: 1%;";
+      ]
       [
         let permission =
           match entity with
@@ -279,24 +290,26 @@ let entity_row ?classes ?in_search entity =
           let (icon, tooltip, classes) =
             match Permission.view_reason permission with
             | Public -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
-            | Viewer -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
-            | Owner -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
+            | Viewer Direct -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
+            | Viewer Via_group group -> (Icon.(Access Viewer), spf "You can see this entry because its owner marked your group “%s” as one of its viewers." group.name, ["opacity-75"])
+            | Owner Direct -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
+            | Owner Via_group group -> (Icon.(Access Owner), spf "You can see this entry because your group “%s” is (one of) its owners." group.name, [])
             | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])
           in
           Icon.html icon ~tooltip ~classes
-      ]
-  ]
+      ]] @
+      suffix
   in
   match entity with
-  | `Source source -> source_row ?classes ?in_search ~prefix ~suffix source
-  | `Person person -> person_row ?classes ?in_search ~prefix ~suffix person
-  | `Dance dance -> dance_row ?classes ?in_search ~prefix ~suffix dance
-  | `Book book -> book_row ?classes ?in_search ~prefix ~suffix book
-  | `Set set -> set_row ?classes ?in_search ~prefix ~suffix set
-  | `Tune tune -> tune_row ?classes ?in_search ~prefix ~suffix tune
-  | `Version version -> version_row ?classes ?in_search ~prefix ~suffix version
-  | `User user -> user_row ?classes ~prefix ~suffix user
-  | `Group group -> group_row ?classes ~prefix ~suffix group
+  | `Source source -> source_row ?classes ?onclick ?in_search ~prefix ~suffix source
+  | `Person person -> person_row ?classes ?onclick ?in_search ~prefix ~suffix person
+  | `Dance dance -> dance_row ?classes ?onclick ?in_search ~prefix ~suffix dance
+  | `Book book -> book_row ?classes ?onclick ?in_search ~prefix ~suffix book
+  | `Set set -> set_row ?classes ?onclick ?in_search ~prefix ~suffix set
+  | `Tune tune -> tune_row ?classes ?onclick ?in_search ~prefix ~suffix tune
+  | `Version version -> version_row ?classes ?onclick ?in_search ~prefix ~suffix version
+  | `User user -> user_row ?classes ?onclick ~prefix ~suffix user
+  | `Group group -> group_row ?classes ?onclick ~prefix ~suffix group
 
 (** {2 Tables} *)
 

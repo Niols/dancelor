@@ -11,6 +11,7 @@ let () = Madge_client.on_server_unreachable := (fun () -> set_server_status Unre
 
 let actor = Api.call_exn (User Status)
 let actor_id = Option.map Actor.id <$> actor
+let actor_id_s = S.from_lwt None (some <$> actor_id)
 
 let is_connected = Lwt.map Option.is_some actor
 

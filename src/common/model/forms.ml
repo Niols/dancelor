@@ -199,7 +199,7 @@ end
 module Permissions_form = struct
   type t = {
     entity_is_public: bool;
-    actor_roles: (User_row.t * Permission.actor_role) list;
+    actor_roles: (Principal_row.t * Permission.actor_role) list;
   }
   [@@deriving eq, yojson]
 end

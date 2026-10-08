@@ -30,33 +30,6 @@ let insert_to_entities_table db ~is_public type_ =
       make () (* extremely unlikely *)
   in make ()
 
-(** Takes a function [f] that handles inserting/updating to the ["entites"]
-    table and handles everything else that has to do with private access. *)
-let insert_or_update_private db ~viewers ~owners f =
-  let%lwt id = f () in
-  ignore <$> Entity_sql.delete_all_actors db ~entity_id: id;%lwt
-  Lwt_list.iter_s
-    (fun viewer ->
-      ignore
-      <$> Entity_sql.add_one_actor
-          db
-          ~entity_id: id
-          ~user_id: viewer
-          ~role: Viewer
-    )
-    viewers;%lwt
-  Lwt_list.iter_s
-    (fun owner ->
-      ignore
-      <$> Entity_sql.add_one_actor
-          db
-          ~entity_id: id
-          ~user_id: owner
-          ~role: Owner
-    )
-    owners;%lwt
-  lwt @@ Id.unsafe_coerce id
-
 let make_public db type_ =
   assert (classify_type type_ = `Public);
   (* Public objects only need the ["entities"] table in which they have no
@@ -65,8 +38,15 @@ let make_public db type_ =
 
 let make_private db type_ owner =
   assert (classify_type type_ = `Private);
-  insert_or_update_private db ~viewers: [] ~owners: [owner] @@ fun () ->
-  insert_to_entities_table db type_ ~is_public: false
+  let%lwt id = insert_to_entities_table db type_ ~is_public: false in
+  ignore
+  <$> Entity_sql.add_one_actor
+      db
+      ~entity_id: id
+      ~user_id: (Some owner)
+      ~group_id: None
+      ~role: Owner;%lwt
+  lwt @@ Id.unsafe_coerce id
 
 let touch db id =
   ignore <$> Entity_sql.touch db ~id: (Id.unsafe_coerce id)
@@ -89,15 +69,16 @@ let get_newest_resources ~actor_id ~limit =
 
 let get_permission db ~actor_id id =
   let id = Id.unsafe_coerce id in
-  Option.map
-    (fun (entity_is_public, actor_role, actor_is_omniscient_administrator) ->
-      {Permission.entity_is_public; actor_role; actor_is_omniscient_administrator}
-    )
-  <$> Entity_sql.get_permission db ~actor_id ~id
+  Entity_sql.Single.get_permission db ~actor_id ~id sql_to_permission
 
 let get_actor_roles db id =
   let id = Id.unsafe_coerce id in
-  Entity_sql.List.get_actor_roles db ~entity_id: id (fun ~role -> user_sql_to_row ~k: (fun actor -> (actor, role)))
+  Entity_sql.List.get_actor_roles db ~entity_id: id (fun ~role ~user_id ~username ~group_id ~group_name ->
+    match ((user_id, username), (group_id, group_name)) with
+    | ((Some id, Some username), (None, None)) -> user_sql_to_row ~id ~username ~k: (fun user -> (`User user, role))
+    | ((None, None), (Some id, Some name)) -> group_sql_to_row ~id ~name ~k: (fun group -> (`Group group, role))
+    | _ -> assert false
+  )
 
 let set_is_public db id is_public =
   let id = Id.unsafe_coerce id in
@@ -107,8 +88,13 @@ let set_actor_roles db id actor_roles =
   let id = Id.unsafe_coerce id in
   ignore <$> Entity_sql.delete_all_actors db ~entity_id: id;%lwt
   Lwt_list.iter_s
-    (fun ({User_row.id = user_id; _}, role) ->
-      ignore <$> Entity_sql.add_one_actor db ~entity_id: id ~user_id ~role
+    (fun (principal_row, role) ->
+      let (user_id, group_id) =
+        match principal_row with
+        | `User {User_row.id; _} -> (Some id, None)
+        | `Group {Group_row.id; _} -> (None, Some id)
+      in
+      ignore <$> Entity_sql.add_one_actor db ~entity_id: id ~user_id ~group_id ~role
     )
     actor_roles
 

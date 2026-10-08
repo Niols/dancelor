@@ -293,8 +293,9 @@ CREATE TABLE "dancelor"."entities" (
 
 CREATE TABLE "dancelor"."entity_actors" (
     "entity_id" character varying(14) NOT NULL,
-    "user_id" character varying(14) NOT NULL,
-    "role" "dancelor"."actor_role" NOT NULL
+    "user_id" character varying(14),
+    "role" "dancelor"."actor_role" NOT NULL,
+    "group_id" character varying(14)
 );
 
 
@@ -657,27 +658,32 @@ INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "i
 INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('wrwk-cz9g-g3wi', 'Set', '2023-05-02 12:16:55', '2023-06-25 15:51:15', false);
 INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('8x83-e8ky-bhea', 'User', '2026-09-11 15:59:59.329756', '2026-09-11 15:59:59.329756', true);
 INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('0fi3-1iot-6tbq', 'Book', '2026-05-14 14:40:42', '2026-09-11 16:02:09.685942', true);
+INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('hfj6-cybi-twwr', 'User', '2026-10-08 09:46:37.57984', '2026-10-08 09:46:37.57984', true);
+INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('qlmq-z3p4-y749', 'Group', '2026-10-08 09:46:54.53616', '2026-10-08 09:46:54.53616', true);
 
 
 --
 -- Data for Name: entity_actors; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role") VALUES ('ului-yd9x-o35w', 'lt3h-edgt-ac97', 'Owner');
-INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role") VALUES ('wrwk-cz9g-g3wi', 'lt3h-edgt-ac97', 'Owner');
-INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role") VALUES ('0fi3-1iot-6tbq', '8x83-e8ky-bhea', 'Owner');
+INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role", "group_id") VALUES ('ului-yd9x-o35w', 'lt3h-edgt-ac97', 'Owner', NULL);
+INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role", "group_id") VALUES ('wrwk-cz9g-g3wi', 'lt3h-edgt-ac97', 'Owner', NULL);
+INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role", "group_id") VALUES ('0fi3-1iot-6tbq', '8x83-e8ky-bhea', 'Owner', NULL);
 
 
 --
 -- Data for Name: group_members; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
+INSERT INTO "dancelor"."group_members" ("group_id", "member_id", "member_role") VALUES ('qlmq-z3p4-y749', '8x83-e8ky-bhea', 'Regular_member');
+INSERT INTO "dancelor"."group_members" ("group_id", "member_id", "member_role") VALUES ('qlmq-z3p4-y749', 'hfj6-cybi-twwr', 'Regular_member');
 
 
 --
 -- Data for Name: groups; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
+INSERT INTO "dancelor"."groups" ("id", "name") VALUES ('qlmq-z3p4-y749', 'The Testouilles');
 
 
 --
@@ -764,6 +770,8 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m077_2026_09
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m078_2026_10_user_add_email', '2026-10-05 16:10:28.154262+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m079_2026_10_rename_entry_table', '2026-10-06 14:39:24.927487+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m080_2026_10_groups__create_table_groups', '2026-10-06 20:57:50.482607+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m081_2026_10_group_actors', '2026-10-08 09:21:50.427731+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m082_2026_10_lookup_indices', '2026-10-08 09:21:50.517716+00');
 
 
 --
@@ -790,6 +798,7 @@ INSERT INTO "dancelor"."recommended_tunes" ("dance_id", "tune_id") VALUES ('0xf7
 
 INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', '33733a85f3dd0c049d7c00bb498c1cfc', '$argon2id$v=19$m=65536,t=2,p=1$LZJ1jidMtFWhex5/c37KNw$kTcM92VAz9mjp9RKIt1xVRf/tdTmQs8vhhqnUlKCYOg', '2088-11-06 11:36:51');
 INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', '73de50d67abb397f4bbf96f2698c6e1d', '$argon2id$v=19$m=65536,t=2,p=1$sL5VHwewFdNUUHwgw+FJYg$OFSNCjlQn+33iAyo3q2hdmSFsF4X1beuDPq2eWv3SkY', '2026-11-08 10:09:09');
+INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', 'e07273df572ca6039be011d52eb8008', '$argon2id$v=19$m=65536,t=2,p=1$ZzwcWFoF3U2+4Y7RT03DJw$wOtbQSQV5rc5lQ49OrvMyPAPpPtQbLlED04H0+86Kw8', '2027-04-06 09:47:15');
 
 
 --
@@ -863,6 +872,7 @@ INSERT INTO "dancelor"."tune_composers" ("tune_id", "index", "composer_id", "det
 
 INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols', 'placeholder-4423700875@example.com', false);
 INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, NULL, 'Normal_user', NULL, 'placeholder-9704806487@example.com', false);
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('hfj6-cybi-twwr', 'TestouilleAgain', NULL, '$argon2id$v=19$m=65536,t=2,p=1$V3nYxXwSkOgrKKeWyRPnVQ$bogCIMZGoRHCePUDf0ahKkGUw8tlpfGra5+jD26mSmM', '2026-10-11 09:46:37', false, NULL, 'Normal_user', NULL, 'testouille.again@example.com', false);
 
 
 --
@@ -1144,11 +1154,11 @@ ALTER TABLE ONLY "dancelor"."dance_devisers"
 
 
 --
--- Name: entity_actors uq_entity_actors_entity_id_user_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: entity_actors uq_entity_actors_entity_id_user_id_group_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
 ALTER TABLE ONLY "dancelor"."entity_actors"
-    ADD CONSTRAINT "uq_entity_actors_entity_id_user_id" UNIQUE ("entity_id", "user_id");
+    ADD CONSTRAINT "uq_entity_actors_entity_id_user_id_group_id" UNIQUE ("entity_id", "user_id", "group_id");
 
 
 --
@@ -1264,6 +1274,34 @@ ALTER TABLE ONLY "dancelor"."user"
 
 
 --
+-- Name: idx_book_authors_author_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_authors_author_id" ON "dancelor"."book_authors" USING "btree" ("author_id");
+
+
+--
+-- Name: idx_book_content_dance_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_content_dance_id" ON "dancelor"."book_content" USING "btree" ("dance_id");
+
+
+--
+-- Name: idx_book_content_set_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_content_set_id" ON "dancelor"."book_content" USING "btree" ("set_id");
+
+
+--
+-- Name: idx_book_content_versions_version_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_content_versions_version_id" ON "dancelor"."book_content_versions" USING "btree" ("version_id");
+
+
+--
 -- Name: idx_book_name; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1275,6 +1313,27 @@ CREATE INDEX "idx_book_name" ON "dancelor"."book" USING "gin" ("name" "public"."
 --
 
 CREATE INDEX "idx_book_name_search" ON "dancelor"."book" USING "gin" ("name_search" "public"."gin_trgm_ops");
+
+
+--
+-- Name: idx_book_sources_source_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_book_sources_source_id" ON "dancelor"."book_sources" USING "btree" ("source_id");
+
+
+--
+-- Name: idx_dance_devisers_deviser_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_dance_devisers_deviser_id" ON "dancelor"."dance_devisers" USING "btree" ("deviser_id");
+
+
+--
+-- Name: idx_dance_extra_names_dance_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_dance_extra_names_dance_id" ON "dancelor"."dance_extra_names" USING "btree" ("dance_id");
 
 
 --
@@ -1306,6 +1365,27 @@ CREATE INDEX "idx_dance_name_search" ON "dancelor"."dance" USING "gin" ("name_se
 
 
 --
+-- Name: idx_entity_actors_group_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_entity_actors_group_id" ON "dancelor"."entity_actors" USING "btree" ("group_id");
+
+
+--
+-- Name: idx_entity_actors_user_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_entity_actors_user_id" ON "dancelor"."entity_actors" USING "btree" ("user_id");
+
+
+--
+-- Name: idx_group_members_member_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_group_members_member_id" ON "dancelor"."group_members" USING "btree" ("member_id");
+
+
+--
 -- Name: idx_person_name; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1317,6 +1397,27 @@ CREATE INDEX "idx_person_name" ON "dancelor"."person" USING "gin" ("name" "publi
 --
 
 CREATE INDEX "idx_person_name_search" ON "dancelor"."person" USING "gin" ("name_search" "public"."gin_trgm_ops");
+
+
+--
+-- Name: idx_recommended_tunes_tune_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_recommended_tunes_tune_id" ON "dancelor"."recommended_tunes" USING "btree" ("tune_id");
+
+
+--
+-- Name: idx_set_conceptors_conceptor_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_set_conceptors_conceptor_id" ON "dancelor"."set_conceptors" USING "btree" ("conceptor_id");
+
+
+--
+-- Name: idx_set_content_version_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_set_content_version_id" ON "dancelor"."set_content" USING "btree" ("version_id");
 
 
 --
@@ -1334,6 +1435,13 @@ CREATE INDEX "idx_set_name_search" ON "dancelor"."set" USING "gin" ("name_search
 
 
 --
+-- Name: idx_source_editors_person_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_source_editors_person_id" ON "dancelor"."source_editors" USING "btree" ("person_id");
+
+
+--
 -- Name: idx_source_name; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1345,6 +1453,13 @@ CREATE INDEX "idx_source_name" ON "dancelor"."source" USING "gin" ("name" "publi
 --
 
 CREATE INDEX "idx_source_name_search" ON "dancelor"."source" USING "gin" ("name_search" "public"."gin_trgm_ops");
+
+
+--
+-- Name: idx_tune_composers_composer_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_tune_composers_composer_id" ON "dancelor"."tune_composers" USING "btree" ("composer_id");
 
 
 --
@@ -1362,6 +1477,13 @@ CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "dancelor"."tune_extra_
 
 
 --
+-- Name: idx_tune_extra_names_tune_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_tune_extra_names_tune_id" ON "dancelor"."tune_extra_names" USING "btree" ("tune_id");
+
+
+--
 -- Name: idx_tune_name; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1376,6 +1498,13 @@ CREATE INDEX "idx_tune_name_search" ON "dancelor"."tune" USING "gin" ("name_sear
 
 
 --
+-- Name: idx_user_person_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_user_person_id" ON "dancelor"."user" USING "btree" ("person_id");
+
+
+--
 -- Name: idx_user_username; Type: INDEX; Schema: dancelor; Owner: -
 --
 
@@ -1387,6 +1516,27 @@ CREATE INDEX "idx_user_username" ON "dancelor"."user" USING "gin" ("username" "p
 --
 
 CREATE INDEX "idx_user_username_search" ON "dancelor"."user" USING "gin" ("username_search" "public"."gin_trgm_ops");
+
+
+--
+-- Name: idx_version_arrangers_arranger_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_version_arrangers_arranger_id" ON "dancelor"."version_arrangers" USING "btree" ("arranger_id");
+
+
+--
+-- Name: idx_version_sources_source_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_version_sources_source_id" ON "dancelor"."version_sources" USING "btree" ("source_id");
+
+
+--
+-- Name: idx_version_tune_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_version_tune_id" ON "dancelor"."version" USING "btree" ("tune_id");
 
 
 --

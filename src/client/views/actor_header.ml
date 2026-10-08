@@ -170,6 +170,14 @@ let header_item =
                         ];
                         li [
                           Button.make_a
+                            ~label: "Create group"
+                            ~icon: (Action Add)
+                            ~dropdown: true
+                            ~href: (S.const @@ Endpoints.Page.(href @@ Group Create))
+                            ()
+                        ];
+                        li [
+                          Button.make_a
                             ~label: "Reset user password"
                             ~icon: (Action Edit)
                             ~dropdown: true

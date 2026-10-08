@@ -65,7 +65,7 @@ module Entity_id = struct
     [Principal_id.t | Resource_id.t]
   [@@deriving eq, yojson, show {with_path = false}]
 
-  let to_untagged : t -> Untagged.t Id.t = function
+  let to_untagged : [< t] -> Untagged.t Id.t = function
     | `Person x -> Id.unsafe_coerce x
     | `Dance x -> Id.unsafe_coerce x
     | `Source x -> Id.unsafe_coerce x
@@ -76,7 +76,7 @@ module Entity_id = struct
     | `User x -> Id.unsafe_coerce x
     | `Group x -> Id.unsafe_coerce x
 
-  let classify : t -> (Resource_id.t, Principal_id.t) resource_or_principal = function
+  let classify : [< t] -> (Resource_id.t, Principal_id.t) resource_or_principal = function
     | #Resource_id.t as r -> Resource r
     | #Principal_id.t as p -> Principal p
 end

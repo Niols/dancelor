@@ -1178,8 +1178,8 @@ UPDATE "book"
 SET "remark" = NULL
 WHERE "remark" = '';
 
--- -- @m060_2026_06_create_extension_pg_trgm
--- CREATE EXTENSION IF NOT EXISTS pg_trgm;
+-- @m060_2026_06_create_extension_pg_trgm
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- @m061_2026_06_use_enum_for_user_role__create_type_role
 CREATE TYPE "role" AS ENUM ('Normal_user', 'Maintainer', 'Administrator');
@@ -1355,6 +1355,9 @@ ALTER TABLE "entry" DROP PRIMARY KEY;
 -- @m066_2026_06_rename_table_globally_unique_id__add_primary_key__for_sqlgg
 ALTER TABLE "entry" ADD CONSTRAINT "pk_entry" PRIMARY KEY ("id");
 
+
+-- @m066_2026_06_rename_table_globally_unique_id__constraint
+ALTER TABLE "entry" RENAME CONSTRAINT "globally_unique_id_pkey" TO "pk_entry";
 -- @m067_2026_06_move_created_update_at_to_entry_table__add_columns_to_entry
 ALTER TABLE "entry"
   ADD COLUMN "created_at" TIMESTAMP,
@@ -1369,6 +1372,30 @@ ALTER TABLE "entry"
 -- @m067_2026_06_move_created_update_at_to_entry_table__copy_from_set
 -- @m067_2026_06_move_created_update_at_to_entry_table__copy_from_book
 
+
+-- @m067_2026_06_move_created_update_at_to_entry_table__copy_person
+UPDATE "entry" SET "created_at" = "person"."created_at", "modified_at" = "person"."modified_at" FROM "person" WHERE "entry"."id" = "person"."id";
+
+-- @m067_2026_06_move_created_update_at_to_entry_table__copy_user
+UPDATE "entry" SET "created_at" = "user"."created_at", "modified_at" = "user"."modified_at" FROM "user" WHERE "entry"."id" = "user"."id";
+
+-- @m067_2026_06_move_created_update_at_to_entry_table__copy_source
+UPDATE "entry" SET "created_at" = "source"."created_at", "modified_at" = "source"."modified_at" FROM "source" WHERE "entry"."id" = "source"."id";
+
+-- @m067_2026_06_move_created_update_at_to_entry_table__copy_dance
+UPDATE "entry" SET "created_at" = "dance"."created_at", "modified_at" = "dance"."modified_at" FROM "dance" WHERE "entry"."id" = "dance"."id";
+
+-- @m067_2026_06_move_created_update_at_to_entry_table__copy_tune
+UPDATE "entry" SET "created_at" = "tune"."created_at", "modified_at" = "tune"."modified_at" FROM "tune" WHERE "entry"."id" = "tune"."id";
+
+-- @m067_2026_06_move_created_update_at_to_entry_table__copy_version
+UPDATE "entry" SET "created_at" = "version"."created_at", "modified_at" = "version"."modified_at" FROM "version" WHERE "entry"."id" = "version"."id";
+
+-- @m067_2026_06_move_created_update_at_to_entry_table__copy_set
+UPDATE "entry" SET "created_at" = "set"."created_at", "modified_at" = "set"."modified_at" FROM "set" WHERE "entry"."id" = "set"."id";
+
+-- @m067_2026_06_move_created_update_at_to_entry_table__copy_book
+UPDATE "entry" SET "created_at" = "book"."created_at", "modified_at" = "book"."modified_at" FROM "book" WHERE "entry"."id" = "book"."id";
 -- @m067_2026_06_move_created_update_at_to_entry_table__drop_person_columns
 ALTER TABLE "person"
   DROP COLUMN "created_at",
@@ -1440,6 +1467,12 @@ CREATE TABLE "entry_owners" (
     CONSTRAINT "uq_entry_owners_entry_id_owner_id" UNIQUE ("entry_id", "owner_id")
 );
 
+
+-- @m068_2026_06_move_access_to_entry_table__copy_set_visibility
+UPDATE "entry" SET "visibility" = "set"."visibility" FROM "set" WHERE "entry"."id" = "set"."id";
+
+-- @m068_2026_06_move_access_to_entry_table__copy_book_visibility
+UPDATE "entry" SET "visibility" = "book"."visibility" FROM "book" WHERE "entry"."id" = "book"."id";
 -- @m068_2026_06_move_access_to_entry_table__copy_set_viewers
 INSERT INTO "entry_viewers" ("entry_id", "viewer_id") SELECT "set_id", "viewer_id" FROM "set_viewers";
 
@@ -1494,7 +1527,9 @@ ALTER TABLE "tune"
   RENAME COLUMN "kind_new" TO "kind";
 
 -- @m070_2026_07_name_search__create_extension_unaccent
--- @m070_2026_07_name_search__create_function_name_search
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;
+
+-- -- @m070_2026_07_name_search__create_function_name_search
 
 -- @m070_2026_07_name_search__add_column_person_name_search
 ALTER TABLE "person"
@@ -1541,8 +1576,65 @@ ALTER TABLE "tune_extra_names"
   ADD COLUMN "extra_name_search" text
   GENERATED ALWAYS AS ("make_name_search"(extra_name)) STORED;
 
--- @m071_2026_07_move_pg_trgm_to_public
--- @m072_2026_07_gin_indices
+-- @m071_2026_07_move_pg_trgm_to_public__drop_extension
+DROP EXTENSION pg_trgm;
+
+-- @m071_2026_07_move_pg_trgm_to_public__create_extension
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+
+-- @m072_2026_07_gin_indices__idx_person_name
+CREATE INDEX "idx_person_name" ON "person" USING GIN ("name" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_person_name_search
+CREATE INDEX "idx_person_name_search" ON "person" USING GIN ("name_search" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_dance_name
+CREATE INDEX "idx_dance_name" ON "dance" USING GIN ("name" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_dance_name_search
+CREATE INDEX "idx_dance_name_search" ON "dance" USING GIN ("name_search" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_source_name
+CREATE INDEX "idx_source_name" ON "source" USING GIN ("name" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_source_name_search
+CREATE INDEX "idx_source_name_search" ON "source" USING GIN ("name_search" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_tune_name
+CREATE INDEX "idx_tune_name" ON "tune" USING GIN ("name" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_tune_name_search
+CREATE INDEX "idx_tune_name_search" ON "tune" USING GIN ("name_search" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_set_name
+CREATE INDEX "idx_set_name" ON "set" USING GIN ("name" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_set_name_search
+CREATE INDEX "idx_set_name_search" ON "set" USING GIN ("name_search" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_book_name
+CREATE INDEX "idx_book_name" ON "book" USING GIN ("name" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_book_name_search
+CREATE INDEX "idx_book_name_search" ON "book" USING GIN ("name_search" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_user_username
+CREATE INDEX "idx_user_username" ON "user" USING GIN ("username" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_user_username_search
+CREATE INDEX "idx_user_username_search" ON "user" USING GIN ("username_search" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_dance_extra_names_extra_name
+CREATE INDEX "idx_dance_extra_names_extra_name" ON "dance_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_dance_extra_names_extra_name_search
+CREATE INDEX "idx_dance_extra_names_extra_name_search" ON "dance_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_tune_extra_names_extra_name
+CREATE INDEX "idx_tune_extra_names_extra_name" ON "tune_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops");
+
+-- @m072_2026_07_gin_indices__idx_tune_extra_names_extra_name_search
+CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "tune_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops");
 
 -- @m073_2026_08_user_github_handle
 ALTER TABLE "user" ADD COLUMN "github_handle" VARCHAR(64);
@@ -1620,14 +1712,27 @@ ALTER TABLE "version" ADD COLUMN "destructured_as_2_4" BOOLEAN NOT NULL DEFAULT 
 -- @m076_2026_09_version_add_destructured_as_2_4__drop_default
 ALTER TABLE "version" ALTER COLUMN "destructured_as_2_4" DROP DEFAULT;
 
--- -- @m077_2026_09_kind_type_add_missing_values
--- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Air';
--- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Hornpipe';
--- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_2_4';
--- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_4_4';
--- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_6_8';
--- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Schottische';
--- ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Two_step';
+
+-- @m077_2026_09_kind_type_add_missing_values__air
+ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Air';
+
+-- @m077_2026_09_kind_type_add_missing_values__hornpipe
+ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Hornpipe';
+
+-- @m077_2026_09_kind_type_add_missing_values__march_2_4
+ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_2_4';
+
+-- @m077_2026_09_kind_type_add_missing_values__march_4_4
+ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_4_4';
+
+-- @m077_2026_09_kind_type_add_missing_values__march_6_8
+ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'March_6_8';
+
+-- @m077_2026_09_kind_type_add_missing_values__schottische
+ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Schottische';
+
+-- @m077_2026_09_kind_type_add_missing_values__two_step
+ALTER TYPE "kind" ADD VALUE IF NOT EXISTS 'Two_step';
 
 -- @m078_2026_10_user_add_email__add_column_email
 ALTER TABLE "user" ADD COLUMN "email" VARCHAR(256);
@@ -1690,3 +1795,75 @@ CREATE TABLE "group_members" (
     CONSTRAINT "fk_group_members_member_id" FOREIGN KEY ("member_id") REFERENCES "user" ("id"),
     CONSTRAINT "uq_group_members_group_id_member_id" UNIQUE ("group_id", "member_id")
 );
+
+-- @m081_2026_10_group_actors__entity_actors_add_column_group_id
+ALTER TABLE "entity_actors" ADD COLUMN "group_id" VARCHAR(14);
+
+-- @m081_2026_10_group_actors__entity_actors_drop_user_id_not_null
+ALTER TABLE "entity_actors" ALTER COLUMN "user_id" DROP NOT NULL;
+
+-- -- @m081_2026_10_group_actors__entity_actors_drop_unique_constraint
+-- ALTER TABLE "entity_actors" DROP CONSTRAINT "uq_entity_actors_entity_id_user_id";
+
+-- @m081_2026_10_group_actors__entity_actors_add_new_unique_constraint
+ALTER TABLE "entity_actors" ADD CONSTRAINT "uq_entity_actors_entity_id_user_id_group_id" UNIQUE ("entity_id", "user_id", "group_id");
+
+-- @m082_2026_10_lookup_indices__idx_entity_actors_user_id
+CREATE INDEX "idx_entity_actors_user_id" ON "entity_actors" ("user_id");
+
+-- @m082_2026_10_lookup_indices__idx_entity_actors_group_id
+CREATE INDEX "idx_entity_actors_group_id" ON "entity_actors" ("group_id");
+
+-- @m082_2026_10_lookup_indices__idx_group_members_member_id
+CREATE INDEX "idx_group_members_member_id" ON "group_members" ("member_id");
+
+-- @m082_2026_10_lookup_indices__idx_version_tune_id
+CREATE INDEX "idx_version_tune_id" ON "version" ("tune_id");
+
+-- @m082_2026_10_lookup_indices__idx_set_content_version_id
+CREATE INDEX "idx_set_content_version_id" ON "set_content" ("version_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_content_versions_version_id
+CREATE INDEX "idx_book_content_versions_version_id" ON "book_content_versions" ("version_id");
+
+-- @m082_2026_10_lookup_indices__idx_tune_composers_composer_id
+CREATE INDEX "idx_tune_composers_composer_id" ON "tune_composers" ("composer_id");
+
+-- @m082_2026_10_lookup_indices__idx_version_sources_source_id
+CREATE INDEX "idx_version_sources_source_id" ON "version_sources" ("source_id");
+
+-- @m082_2026_10_lookup_indices__idx_version_arrangers_arranger_id
+CREATE INDEX "idx_version_arrangers_arranger_id" ON "version_arrangers" ("arranger_id");
+
+-- @m082_2026_10_lookup_indices__idx_dance_devisers_deviser_id
+CREATE INDEX "idx_dance_devisers_deviser_id" ON "dance_devisers" ("deviser_id");
+
+-- @m082_2026_10_lookup_indices__idx_source_editors_person_id
+CREATE INDEX "idx_source_editors_person_id" ON "source_editors" ("person_id");
+
+-- @m082_2026_10_lookup_indices__idx_recommended_tunes_tune_id
+CREATE INDEX "idx_recommended_tunes_tune_id" ON "recommended_tunes" ("tune_id");
+
+-- @m082_2026_10_lookup_indices__idx_set_conceptors_conceptor_id
+CREATE INDEX "idx_set_conceptors_conceptor_id" ON "set_conceptors" ("conceptor_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_sources_source_id
+CREATE INDEX "idx_book_sources_source_id" ON "book_sources" ("source_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_authors_author_id
+CREATE INDEX "idx_book_authors_author_id" ON "book_authors" ("author_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_content_dance_id
+CREATE INDEX "idx_book_content_dance_id" ON "book_content" ("dance_id");
+
+-- @m082_2026_10_lookup_indices__idx_book_content_set_id
+CREATE INDEX "idx_book_content_set_id" ON "book_content" ("set_id");
+
+-- @m082_2026_10_lookup_indices__idx_dance_extra_names_dance_id
+CREATE INDEX "idx_dance_extra_names_dance_id" ON "dance_extra_names" ("dance_id");
+
+-- @m082_2026_10_lookup_indices__idx_tune_extra_names_tune_id
+CREATE INDEX "idx_tune_extra_names_tune_id" ON "tune_extra_names" ("tune_id");
+
+-- @m082_2026_10_lookup_indices__idx_user_person_id
+CREATE INDEX "idx_user_person_id" ON "user" ("person_id");

@@ -1,5 +1,5 @@
--- NOTE: For schema elements that sqlgg cannot parse. This file will
--- be included before `schema.sql` in tests only.
+-- NOTE: For schema elements that sqlgg cannot parse, plus the extensions that
+-- they depend on. This file will be included before `schema.sql` in tests only.
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 

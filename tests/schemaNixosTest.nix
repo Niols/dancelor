@@ -52,7 +52,6 @@
       machine.succeed("sudo -u postgres createdb --owner=dancelor dancelor_from_schema")
       machine.succeed("sudo -u dancelor psql --dbname=dancelor_from_schema --file=${../src/server/database/schema-extra-before.sql}")
       machine.succeed("sudo -u dancelor psql --dbname=dancelor_from_schema --file=${../src/server/database/schema.sql}")
-      machine.succeed("sudo -u dancelor psql --dbname=dancelor_from_schema --file=${../src/server/database/schema-extra-after.sql}")
 
       ## Dump both schemas and compare.
       machine.succeed("${dump "dancelor"} > /tmp/from-migrations.sql")

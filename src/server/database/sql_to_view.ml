@@ -1,5 +1,6 @@
 open Nes
 open Dancelor_common
+open Sql_to_row
 
 let person_sql_to_view ~id ~name ~scddb_id ~composed_tunes_are_public ~published_tunes_are_public ~(k : Person_view.t -> 'w) : 'w =
   k {
@@ -148,6 +149,8 @@ let set_sql_to_view
     ~id
     ~entity_is_public
     ~actor_role
+    ~actor_group_id
+    ~actor_group_name
     ~actor_is_omniscient_administrator
     ~name
     ~kind
@@ -166,13 +169,15 @@ let set_sql_to_view
     content; (* (Version_row.t * Model_builder.Core.Version_parameters.t) list *)
     order = Set_order.of_string order;
     remark;
-    permission = {entity_is_public; actor_role; actor_is_omniscient_administrator};
+    permission = sql_to_permission ~entity_is_public ~actor_role ~actor_group_id ~actor_group_name ~actor_is_omniscient_administrator;
   }
 
 let book_sql_to_view
     ~id
     ~entity_is_public
     ~actor_role
+    ~actor_group_id
+    ~actor_group_name
     ~actor_is_omniscient_administrator
     ~name
     ~date
@@ -194,7 +199,7 @@ let book_sql_to_view
     sources;
     scddb_id = Option.map Int64.to_int scddb_id;
     warnings = [];
-    permission = {entity_is_public; actor_role; actor_is_omniscient_administrator};
+    permission = sql_to_permission ~entity_is_public ~actor_role ~actor_group_id ~actor_group_name ~actor_is_omniscient_administrator;
   }
 
 let user_sql_to_view
