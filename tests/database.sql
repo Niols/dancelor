@@ -658,6 +658,8 @@ INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "i
 INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('wrwk-cz9g-g3wi', 'Set', '2023-05-02 12:16:55', '2023-06-25 15:51:15', false);
 INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('8x83-e8ky-bhea', 'User', '2026-09-11 15:59:59.329756', '2026-09-11 15:59:59.329756', true);
 INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('0fi3-1iot-6tbq', 'Book', '2026-05-14 14:40:42', '2026-09-11 16:02:09.685942', true);
+INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('hfj6-cybi-twwr', 'User', '2026-10-08 09:46:37.57984', '2026-10-08 09:46:37.57984', true);
+INSERT INTO "dancelor"."entities" ("id", "type", "created_at", "modified_at", "is_public") VALUES ('qlmq-z3p4-y749', 'Group', '2026-10-08 09:46:54.53616', '2026-10-08 09:46:54.53616', true);
 
 
 --
@@ -673,12 +675,15 @@ INSERT INTO "dancelor"."entity_actors" ("entity_id", "user_id", "role", "group_i
 -- Data for Name: group_members; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
+INSERT INTO "dancelor"."group_members" ("group_id", "member_id", "member_role") VALUES ('qlmq-z3p4-y749', '8x83-e8ky-bhea', 'Regular_member');
+INSERT INTO "dancelor"."group_members" ("group_id", "member_id", "member_role") VALUES ('qlmq-z3p4-y749', 'hfj6-cybi-twwr', 'Regular_member');
 
 
 --
 -- Data for Name: groups; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
+INSERT INTO "dancelor"."groups" ("id", "name") VALUES ('qlmq-z3p4-y749', 'The Testouilles');
 
 
 --
@@ -793,6 +798,7 @@ INSERT INTO "dancelor"."recommended_tunes" ("dance_id", "tune_id") VALUES ('0xf7
 
 INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', '33733a85f3dd0c049d7c00bb498c1cfc', '$argon2id$v=19$m=65536,t=2,p=1$LZJ1jidMtFWhex5/c37KNw$kTcM92VAz9mjp9RKIt1xVRf/tdTmQs8vhhqnUlKCYOg', '2088-11-06 11:36:51');
 INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', '73de50d67abb397f4bbf96f2698c6e1d', '$argon2id$v=19$m=65536,t=2,p=1$sL5VHwewFdNUUHwgw+FJYg$OFSNCjlQn+33iAyo3q2hdmSFsF4X1beuDPq2eWv3SkY', '2026-11-08 10:09:09');
+INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', 'e07273df572ca6039be011d52eb8008', '$argon2id$v=19$m=65536,t=2,p=1$ZzwcWFoF3U2+4Y7RT03DJw$wOtbQSQV5rc5lQ49OrvMyPAPpPtQbLlED04H0+86Kw8', '2027-04-06 09:47:15');
 
 
 --
@@ -866,6 +872,7 @@ INSERT INTO "dancelor"."tune_composers" ("tune_id", "index", "composer_id", "det
 
 INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols', 'placeholder-4423700875@example.com', false);
 INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, NULL, 'Normal_user', NULL, 'placeholder-9704806487@example.com', false);
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('hfj6-cybi-twwr', 'TestouilleAgain', NULL, '$argon2id$v=19$m=65536,t=2,p=1$V3nYxXwSkOgrKKeWyRPnVQ$bogCIMZGoRHCePUDf0ahKkGUw8tlpfGra5+jD26mSmM', '2026-10-11 09:46:37', false, NULL, 'Normal_user', NULL, 'testouille.again@example.com', false);
 
 
 --
