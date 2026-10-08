@@ -250,7 +250,13 @@ let entity_row ?classes ?onclick ?(prefix = []) ?(suffix = []) ?in_search (entit
     let (icon, type_) = entity_to_icon_and_string entity in
     prefix @ [
       td
-        ~a: [a_class ["text-nowrap"; "pe-none"]]
+        ~a: [
+          (* NOTE: disable mouse interaction in a regular table but leave it on if there is an onclick *)
+          a_class ["text-nowrap"; (if onclick = None then "pe-none" else "")];
+          (* NOTE: hint at a minuscule size, which, with the nowrap above, will cause the browser to
+             use the smallest size that can contain the text. *)
+          a_style "width: 1%;";
+        ]
         [
           Icon.(html (Entity icon));
           span ~a: [a_class ["d-none"; "d-sm-inline"]] [txt " "; txt type_];
@@ -259,7 +265,12 @@ let entity_row ?classes ?onclick ?(prefix = []) ?(suffix = []) ?in_search (entit
   in
   let suffix =
     [td
-      ~a: [a_class ["text-end"]]
+      ~a: [
+        a_class ["text-nowrap"; "text-end"];
+        (* NOTE: hint at a minuscule size, which, with the nowrap above, will cause the browser to
+           use the smallest size that can contain the text. *)
+        a_style "width: 1%;";
+      ]
       [
         let permission =
           match entity with
