@@ -50,6 +50,7 @@ let dispatch uri =
     | Group View -> Group_viewer.view
     | Group Create -> Group_editor.add ()
     | Group Edit -> Group_editor.edit
+    | Admin Users_and_groups -> Admin_users_and_groups.view ()
   in
   let madge_match_apply_all : Page.t Lwt.t Endpoints.Page.wrapped' list -> (unit -> Page.t Lwt.t) option =
     List.find_map @@ fun (Endpoints.Page.W' endpoint) ->

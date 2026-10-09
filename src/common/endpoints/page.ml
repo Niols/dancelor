@@ -73,6 +73,10 @@ type (_, _, _) group =
   | Edit : (Group_id.t -> 'w, 'w, Void.t) group
 [@@deriving madge_wrapped_endpoints]
 
+type (_, _, _) admin =
+  | Users_and_groups : ('w, 'w, Void.t) admin
+[@@deriving madge_wrapped_endpoints]
+
 type (_, _, _) t =
   | Index : ('w, 'w, Void.t) t
   | Explore : (string -> int -> 'w, 'w, Void.t) t
@@ -87,6 +91,7 @@ type (_, _, _) t =
   | Book : ('a, 'w, 'r) book -> ('a, 'w, 'r) t
   | User : ('a, 'w, 'r) user -> ('a, 'w, 'r) t
   | Group : ('a, 'w, 'r) group -> ('a, 'w, 'r) t
+  | Admin : ('a, 'w, 'r) admin -> ('a, 'w, 'r) t
 [@@deriving madge_wrapped_endpoints]
 
 (** {2 Routes} *)
@@ -159,6 +164,11 @@ let route_group : type a w r. (a, w, r) group -> (a, w, r) route =
     | Edit -> literal "edit" @@ variable (module Group_id) @@ void ()
     | Create -> literal "create" @@ void ()
 
+let route_admin : type a w r. (a, w, r) admin -> (a, w, r) route =
+  let open Route in
+  function
+    | Users_and_groups -> literal "users-and-groups" @@ void ()
+
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in
   function
@@ -174,6 +184,7 @@ let route : type a w r. (a, w, r) t -> (a, w, r) route =
     | Book page -> literal "book" @@ route_book page
     | User page -> literal "user" @@ route_user page
     | Group page -> literal "group" @@ route_group page
+    | Admin page -> literal "admin" @@ route_admin page
 
 let href : type a r. (a, Uri.t, r) t -> a = fun page ->
   with_request (route page) @@ fun (module _) request ->
@@ -241,6 +252,7 @@ let consume : type a w r. return: w -> (a, w, r) t -> a = fun ~return: value end
   | Group View -> const value
   | Group Create -> value
   | Group Edit -> const value
+  | Admin Users_and_groups -> value
 
 module type Entity_id_to_name = sig
   type env

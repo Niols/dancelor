@@ -57,7 +57,12 @@ let group_search slice input =
   | Error msg -> lwt_error msg
   | Ok query -> ok <$> call_exn (Group Search) slice query
 
-let entity_search slice input =
+let principal_search slice input =
+  match Principal_query.parse input with
+  | Error msg -> lwt_error msg
+  | Ok query -> ok <$> call_exn (Entity Search_principals) slice query
+
+let resource_search slice input =
   match Resource_query.parse input with
   | Error msg -> lwt_error msg
   | Ok query -> ok <$> call_exn (Entity Search_resources) slice query

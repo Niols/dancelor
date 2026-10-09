@@ -19,7 +19,7 @@ let view query page =
   let page_url = ref (fun _n -> assert false) in
   let search =
     Search.make
-      ~search: Api.entity_search
+      ~search: Api.resource_search
       ~initial_input: query
       ~initial_page: page
       ~pagination_mode: (Pagination ())
