@@ -20,7 +20,7 @@ let quick_search_to_explorer value =
 
 let quick_search =
   Components.Search.Quick.make
-    ~search: Api.entity_search
+    ~search: Api.resource_search
     ~on_enter: (fun value -> Lwt.async (fun () -> quick_search_to_explorer value))
     ()
 

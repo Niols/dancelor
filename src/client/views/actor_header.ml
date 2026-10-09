@@ -162,26 +162,10 @@ let header_item =
                       [
                         li [
                           Button.make_a
-                            ~label: "Create user"
-                            ~icon: (Action Add)
-                            ~dropdown: true
-                            ~href: (S.const @@ Endpoints.Page.(href @@ User Create))
-                            ()
-                        ];
-                        li [
-                          Button.make_a
-                            ~label: "Create group"
-                            ~icon: (Action Add)
-                            ~dropdown: true
-                            ~href: (S.const @@ Endpoints.Page.(href @@ Group Create))
-                            ()
-                        ];
-                        li [
-                          Button.make_a
-                            ~label: "Reset user password"
+                            ~label: "Admin users & groups"
                             ~icon: (Action Edit)
                             ~dropdown: true
-                            ~href: (S.const @@ Endpoints.Page.(href @@ User Prepare_reset_password))
+                            ~href: (S.const @@ Endpoints.Page.(href @@ Admin Users_and_groups))
                             ()
                         ];
                         li [
