@@ -67,8 +67,7 @@ let component =
                 ()
             )
             (
-              let open Plus.Tuple_elt in
-              Plus.prepare
+              plus
                 ~label: "Role"
                 ~cast: (function
                   | Zero() -> (Owner : Permission.actor_role)
@@ -81,7 +80,6 @@ let component =
                 )
                 ~selected_when_empty: 1
                 (
-                  let open Plus.Bundle in
                   Nil.prepare ~label: "Owner" () ^::
                   Nil.prepare ~label: "Viewer" () ^::
                   nil

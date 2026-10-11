@@ -63,8 +63,7 @@ let content_destructured () =
     (
       structure ~label: "Default structure" () ^::
       (
-        let open Plus.Tuple_elt in
-        Plus.prepare
+        plus
           ~label: "How this reel should be written"
           ~cast: (function
             | Zero() -> false
@@ -77,7 +76,6 @@ let content_destructured () =
           )
           ~selected_when_empty: 0
           (
-            let open Plus.Bundle in
             Nil.prepare ~label: "As 2/2" () ^::
             Nil.prepare ~label: "As 2/4" () ^::
             nil
@@ -90,36 +88,27 @@ let content_destructured () =
           (
             group
               ~label: "Part"
+              ~stacking: No_label
               ~wrap: (fun (melody, (chords, ())) -> {Version_content.Voices.melody; chords})
               ~unwrap: (fun {Version_content.Voices.melody; chords} -> (melody, (chords, ())))
               (
-                cons
-                  ~stacking: No_label
-                  (
-                    Input.prepare
-                      ~type_: (Textarea {rows = 11})
-                      ~font: Monospace
-                      ~label: "Melody"
-                      ~serialise: id
-                      ~validate: (S.const % ok)
-                      ~placeholder: "\\partial 4 a4 |\nd,4 fis8 a b4 a |\nb8 a b cis d4 d8 cis |\nb4 d8 fis b a g fis |\ne d cis b a g fis e |\n\\break\n\nd4 fis8 a b4 a |\nb8 a b cis d4 d8 cis |\nb4 d8 fis b a g fis |\ne d e fis d4"
-                      ()
-                  )
-                  (
-                    cons
-                      ~stacking: No_label
-                      (
-                        Input.prepare
-                          ~type_: (Textarea {rows = 2})
-                          ~font: Monospace
-                          ~label: "Chords"
-                          ~serialise: id
-                          ~validate: (S.const % ok)
-                          ~placeholder: "s4 | d2 g | a d | b:m e:m | a2 a:7 |\nd2 g | a d | b:m e:m | a2:7 d4"
-                          ()
-                      )
-                      nil
-                  )
+                Input.prepare
+                  ~type_: (Textarea {rows = 11})
+                  ~font: Monospace
+                  ~label: "Melody"
+                  ~serialise: id
+                  ~validate: (S.const % ok)
+                  ~placeholder: "\\partial 4 a4 |\nd,4 fis8 a b4 a |\nb8 a b cis d4 d8 cis |\nb4 d8 fis b a g fis |\ne d cis b a g fis e |\n\\break\n\nd4 fis8 a b4 a |\nb8 a b cis d4 d8 cis |\nb4 d8 fis b a g fis |\ne d e fis d4"
+                  () ^::
+                Input.prepare
+                  ~type_: (Textarea {rows = 2})
+                  ~font: Monospace
+                  ~label: "Chords"
+                  ~serialise: id
+                  ~validate: (S.const % ok)
+                  ~placeholder: "s4 | d2 g | a d | b:m e:m | a2 a:7 |\nd2 g | a d | b:m e:m | a2:7 d4"
+                  () ^::
+                nil
               )
           )
       ) ^::
@@ -197,8 +186,8 @@ let content_destructured () =
     )
 
 let content () =
-  let open Plus.Tuple_elt in
-  Plus.prepare
+  let open Bundle in
+  plus
     ~label: "Content"
     ~cast: (function
       | Zero() -> Version_content.No_content
@@ -213,7 +202,6 @@ let content () =
     )
     ~selected_when_empty: 0
     (
-      let open Plus.Bundle in
       Nil.prepare ~label: "No content" () ^::
       content_destructured () ^::
       content_monolithic () ^::
@@ -283,44 +271,33 @@ let editor =
         (
           group
             ~label: "Source"
+            ~stacking: No_label
             ~wrap: (fun (source, (structure, (details, ()))) -> {Version_form.source; structure; details})
             ~unwrap: (fun {Version_form.source; structure; details} -> (source, (structure, (details, ()))))
             (
-              cons
-                ~stacking: No_label
-                (
-                  Selector.prepare
-                    ~make_descr: (lwt % Source_row.name)
-                    ~make_result: (Tables.source_row ?in_search: None)
-                    ~label: "Source"
-                    ~model_name: "source"
-                    ~create_dialog_content: Source_editor.create_row
-                    ~search: Api.source_search
-                    ~id_to_yojson: Id.to_yojson'
-                    ~id_of_yojson: Id.of_yojson'
-                    ~serialise: Source_row.id
-                    ~unserialise: (Api.call_or_option @@ Source Get_row)
-                    ()
-                )
-                (
-                  cons
-                    ~stacking: No_label
-                    (structure ~label: "Structure in that particular source" ())
-                    (
-                      cons
-                        ~stacking: No_label
-                        (
-                          Input.prepare_option
-                            ~type_: Text
-                            ~label: "FIXME"
-                            ~placeholder: "eg. “for The Eightsome Reel” or “as a 2/4 reel”"
-                            ~serialise: id
-                            ~validate: (S.const % ok)
-                            ()
-                        )
-                        nil
-                    )
-                )
+              Selector.prepare
+                ~make_descr: (lwt % Source_row.name)
+                ~make_result: (Tables.source_row ?in_search: None)
+                ~label: "Source"
+                ~model_name: "source"
+                ~create_dialog_content: Source_editor.create_row
+                ~search: Api.source_search
+                ~id_to_yojson: Id.to_yojson'
+                ~id_of_yojson: Id.of_yojson'
+                ~serialise: Source_row.id
+                ~unserialise: (Api.call_or_option @@ Source Get_row)
+                () ^::
+              structure
+                ~label: "Structure in that particular source"
+                () ^::
+              Input.prepare_option
+                ~type_: Text
+                ~label: "FIXME"
+                ~placeholder: "eg. “for The Eightsome Reel” or “as a 2/4 reel”"
+                ~serialise: id
+                ~validate: (S.const % ok)
+                () ^::
+              nil
             )
         ) ^::
       Input.prepare_option
