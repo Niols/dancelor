@@ -13,9 +13,13 @@ let get_row_for ids : (User_id.t -> User_row.t option) Lwt.t =
 let get_row id =
   (fun f -> f id) <$> get_row_for [id]
 
+let make_groups_for db user_ids =
+  Utils.fold_to_get_list (User_sql.Fold.groups_for db ~user_ids) (fun k ~user_id -> group_sql_to_row ~k: (k user_id))
+
 let get_view id : User_view.t option Lwt.t =
   Connection.with_ @@ fun db ->
-  User_sql.Single.get_view db ~id (user_sql_to_view ~id ~k: Fun.id)
+  let%lwt groups = (fun f -> f id) <$> make_groups_for db (`One_of [id]) in
+  User_sql.Single.get_view db ~id (user_sql_to_view ~id ~groups ~k: Fun.id)
 
 let get_form id : User_form.t option Lwt.t =
   Connection.with_ @@ fun db ->

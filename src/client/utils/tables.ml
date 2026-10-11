@@ -343,6 +343,9 @@ let tunes tunes =
 let users users =
   map_table ~header: [""; ""; ""] user_row users
 
+let groups groups =
+  map_table ~header: [""; ""; ""] group_row groups
+
 let versions ?onclick versions =
   map_table
     ~header: [""; ""; ""]

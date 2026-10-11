@@ -159,6 +159,8 @@ let create_row (mode : (Tune_row.t, 'a) Editor.mode) =
   in
   create mode
 
+let () = Dance_editor.tune_editor_create_row_ref := Some create_row
+
 let add () =
   create Create_with_local_storage
 

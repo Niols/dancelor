@@ -208,6 +208,7 @@ let user_sql_to_view
     ~username
     ~full_name
     ~joined
+    ~groups
     ~(k : User_view.t -> 'w)
     : 'w
   =
@@ -215,13 +216,15 @@ let user_sql_to_view
     id;
     username = Username.of_string_exn username;
     full_name;
-    joined
+    joined;
+    groups;
   }
 
 let group_sql_to_view
     ~id
     ~name
     ~members
+    ~description
     ~(k : Group_view.t -> 'w)
     : 'w
   =
@@ -229,4 +232,5 @@ let group_sql_to_view
     id;
     name;
     members;
+    description;
   }

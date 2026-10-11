@@ -4,14 +4,33 @@ open Components
 open Html
 open Utils
 
+(* HACK: The tune and the dance editor have a dependency cycle, so we break it
+   with this, but that is a bit disgusting. Sadly, we need to know the type of
+   the state of the tune editor also. *)
+let tune_editor_create_row_ref
+    : ((Tune_row.t, string list
+    * (bool list
+    * ((Person_id.t option * (string * unit)) list
+    * (string
+    * (Dance_id.t option list
+    *
+      (string * (string * unit))))))) Editor.mode ->
+    Page.t Lwt.t) option ref
+  =
+  ref None
+let tune_editor_create_row mode =
+  match !tune_editor_create_row_ref with
+  | None -> failwith "Dance_editor.tune_editor_create_row"
+  | Some f -> f mode
+
 let editor =
   let open Bundle in
   group
-    ~wrap: (fun (names, (kind, (devisers, (date, (disambiguation, (two_chords, (scddb_id, ()))))))) ->
-      {Dance_form.names; kind; devisers; two_chords; scddb_id; disambiguation; date}
+    ~wrap: (fun (names, (kind, (devisers, (tunes, (date, (disambiguation, (two_chords, (scddb_id, ())))))))) ->
+      {Dance_form.names; kind; devisers; tunes; two_chords; scddb_id; disambiguation; date}
     )
-    ~unwrap: (fun {Dance_form.names; kind; devisers; two_chords; scddb_id; disambiguation; date} ->
-      (names, (kind, (devisers, (date, (disambiguation, (two_chords, (scddb_id, ())))))))
+    ~unwrap: (fun {Dance_form.names; kind; devisers; tunes; two_chords; scddb_id; disambiguation; date} ->
+      (names, (kind, (devisers, (tunes, (date, (disambiguation, (two_chords, (scddb_id, ()))))))))
     )
     ~check: Dance_form.equal
     (
@@ -50,6 +69,22 @@ let editor =
             ~results_when_no_search: (Option.to_list <$> Environment.person)
             ~model_name: "person"
             ~create_dialog_content: Person_editor.create_row
+            ()
+        ) ^::
+      Star.prepare
+        ~label: "Recommended tunes"
+        (
+          Selector.prepare
+            ~label: "Tune"
+            ~search: Api.tune_search
+            ~id_to_yojson: Id.to_yojson'
+            ~id_of_yojson: Id.of_yojson'
+            ~serialise: Tune_row.id
+            ~unserialise: (Api.call_or_option @@ Tune Get_row)
+            ~make_descr: (lwt % Tune_row.name)
+            ~make_result: (Tables.tune_row ?in_search: None)
+            ~model_name: "tune"
+            ~create_dialog_content: tune_editor_create_row
             ()
         ) ^::
       Input.prepare_option

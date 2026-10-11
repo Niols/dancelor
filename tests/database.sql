@@ -317,7 +317,8 @@ CREATE TABLE "dancelor"."group_members" (
 CREATE TABLE "dancelor"."groups" (
     "id" character varying(14) NOT NULL,
     "name" character varying(256) NOT NULL,
-    "name_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("name")::"text")) STORED
+    "name_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("name")::"text")) STORED,
+    "description" "text"
 );
 
 
@@ -685,7 +686,7 @@ INSERT INTO "dancelor"."group_members" ("group_id", "member_id", "member_role") 
 -- Data for Name: groups; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."groups" ("id", "name") VALUES ('qlmq-z3p4-y749', 'The Testouilles');
+INSERT INTO "dancelor"."groups" ("id", "name", "description") VALUES ('qlmq-z3p4-y749', 'The Testouilles', 'This is the description of the group “The Testouilles”. It is very instructive.');
 
 
 --
@@ -776,6 +777,7 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m081_2026_10
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m082_2026_10_lookup_indices', '2026-10-08 09:21:50.517716+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m083_2026_10_person_copyright_names', '2026-10-11 15:01:50.168826+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m084_2026_10_user_full_names', '2026-10-11 15:01:50.172174+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m085_2026_10_group_descriptions', '2026-10-11 18:59:23.867826+00');
 
 
 --
@@ -803,6 +805,7 @@ INSERT INTO "dancelor"."recommended_tunes" ("dance_id", "tune_id") VALUES ('0xf7
 INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', '33733a85f3dd0c049d7c00bb498c1cfc', '$argon2id$v=19$m=65536,t=2,p=1$LZJ1jidMtFWhex5/c37KNw$kTcM92VAz9mjp9RKIt1xVRf/tdTmQs8vhhqnUlKCYOg', '2088-11-06 11:36:51');
 INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', '73de50d67abb397f4bbf96f2698c6e1d', '$argon2id$v=19$m=65536,t=2,p=1$sL5VHwewFdNUUHwgw+FJYg$OFSNCjlQn+33iAyo3q2hdmSFsF4X1beuDPq2eWv3SkY', '2026-11-08 10:09:09');
 INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', 'e07273df572ca6039be011d52eb8008', '$argon2id$v=19$m=65536,t=2,p=1$ZzwcWFoF3U2+4Y7RT03DJw$wOtbQSQV5rc5lQ49OrvMyPAPpPtQbLlED04H0+86Kw8', '2027-04-06 09:47:15');
+INSERT INTO "dancelor"."remember_me_tokens" ("user_id", "key", "hash", "max_date") VALUES ('lt3h-edgt-ac97', 'ed4bfb28667bbce743735d11705fb5bd', '$argon2id$v=19$m=65536,t=2,p=1$V8d1+4iUbDN52g/s/3prNA$arDrjUK0IoNeLx27k+zHZtKm6Ncma3fxiQSh9Vp3x98', '2027-04-09 15:50:00');
 
 
 --

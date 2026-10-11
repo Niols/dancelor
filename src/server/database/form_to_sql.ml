@@ -17,7 +17,7 @@ let source_form_to_sql query id {Source_form.name; short_name; scddb_id; descrip
     ~description
     ~date: (Option.map Partial_date.to_string date)
 
-let dance_form_to_sql query id {Dance_form.names; kind; two_chords; scddb_id; disambiguation; date; devisers = _} =
+let dance_form_to_sql query id {Dance_form.names; kind; two_chords; scddb_id; disambiguation; date; devisers = _; tunes = _} =
   query
     ~id
     ~name: (NEString.to_string @@ NEList.hd names)
@@ -120,9 +120,11 @@ let group_form_to_sql
     id
     {
       Group_form.name;
+      description;
       members = _;
     }
   =
   query
     ~id
     ~name: (NEString.to_string name)
+    ~description: (Option.map NEString.to_string description)

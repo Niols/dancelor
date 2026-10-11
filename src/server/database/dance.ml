@@ -34,7 +34,8 @@ let get_form id : Dance_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt extra_names = (fun f -> f id) <$> get_extra_names_for db (`One_of [id]) in
   let%lwt devisers = (fun f -> f id) <$> get_devisers_for db (`One_of [id]) in
-  Dance_sql.Single.get_form db ~id (dance_sql_to_form ~extra_names ~devisers ~k: Fun.id)
+  let%lwt tunes = (fun f -> f id) <$> get_tunes_for db (`One_of [id]) in
+  Dance_sql.Single.get_form db ~id (dance_sql_to_form ~extra_names ~devisers ~tunes ~k: Fun.id)
 
 let search query : (Dance_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Dance_query.deviser}} = query in
@@ -46,7 +47,7 @@ let search query : (Dance_row.t * float) list Lwt.t =
     ~deviser: (Utils.option_to_sql deviser)
     (fun ~score ~id -> dance_sql_to_row ~id ~devisers: (devisers_for id) ~k: (Pair.snoc score))
 
-let update_other_tables db ~dance_id ~extra_names ~devisers =
+let update_other_tables db ~dance_id ~extra_names ~devisers ~tunes =
   ignore <$> Dance_sql.delete_all_extra_names db ~dance_id;%lwt
   Lwt_list.iter_s
     (fun extra_name ->
@@ -58,18 +59,24 @@ let update_other_tables db ~dance_id ~extra_names ~devisers =
     (fun index deviser ->
       ignore <$> Dance_sql.add_one_deviser db ~dance_id ~index: (Int64.of_int index) ~deviser_id: (Person_row.id deviser)
     )
-    devisers
+    devisers;%lwt
+  ignore <$> Dance_sql.delete_all_tunes db ~dance_id;%lwt
+  Lwt_list.iter_s
+    (fun tune ->
+      ignore <$> Dance_sql.add_one_tune db ~dance_id ~tune_id: (Tune_row.id tune)
+    )
+    tunes
 
 let create db dance =
   let%lwt id = Entity.make_public db `Dance in
   ignore <$> dance_form_to_sql (Dance_sql.create db) id dance;%lwt
-  update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers;%lwt
+  update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers ~tunes: dance.tunes;%lwt
   lwt id
 
 let update db id dance =
   Entity.touch db id;%lwt
   ignore <$> dance_form_to_sql (fun ~id -> Dance_sql.update db ~id) id dance;%lwt
-  update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers
+  update_other_tables db ~dance_id: id ~extra_names: (NEList.tl dance.names) ~devisers: dance.devisers ~tunes: dance.tunes
 
 let delete db id =
   ignore <$> Dance_sql.delete_all_extra_names db ~dance_id: id;%lwt

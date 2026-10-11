@@ -1,17 +1,20 @@
 -- @create
 INSERT INTO "groups" (
     "id",
-    "name"
+    "name",
+    "description"
 )
 VALUES (
     @id,
-    @name
+    @name,
+    @description
 );
 
 -- @update
 UPDATE "groups"
 SET
-    "name" = @name
+    "name" = @name,
+    "description" = @description
 WHERE "id" = @id;
 
 -- @get_rows
@@ -21,13 +24,17 @@ FROM "groups"
 WHERE "id" IN @ids;
 
 -- @get_view
-SELECT "name"
+SELECT
+    "name",
+    "description"
 FROM "groups"
 WHERE "id" = @id
 LIMIT 1;
 
 -- @get_form
-SELECT "name"
+SELECT
+    "name",
+    "description"
 FROM "groups"
 WHERE "id" = @id;
 

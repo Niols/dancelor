@@ -1873,3 +1873,6 @@ ALTER TABLE "person" ADD COLUMN "copyright_name" VARCHAR(256);
 
 -- @m084_2026_10_user_full_names
 ALTER TABLE "user" ADD COLUMN "full_name" VARCHAR(256);
+
+-- @m085_2026_10_group_descriptions
+ALTER TABLE "groups" ADD COLUMN "description" TEXT;

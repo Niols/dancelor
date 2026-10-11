@@ -30,4 +30,9 @@ let view id =
       div [
         txtf "Joined %s" @@ Datetime.to_string user.joined
       ];
+      section (
+        match user.groups with
+        | [] -> []
+        | groups -> [h3 ~a: [a_class ["mt-4"]] [txt "Groups"]; Tables.groups groups]
+      );
     ]

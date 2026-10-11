@@ -166,3 +166,12 @@ FROM "user"
 JOIN "user_rows" ON "user"."id" = "user_rows"."id"
 WHERE (@terms = '' OR @terms <% "user"."username" OR make_name_search(@terms) <% "username_search")
 ORDER BY "score" DESC, "username_search" ASC, "username" ASC;
+
+-- @groups_for
+WITH "groups" AS &group_rows
+SELECT
+    "group_members"."member_id" AS "user_id",
+    "groups".*
+FROM "groups"
+JOIN "group_members" ON "group_members"."group_id" = "groups"."id"
+WHERE @user_ids { One_of { "member_id" IN @user_ids } | All { TRUE } };

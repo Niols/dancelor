@@ -54,6 +54,7 @@ CREATE TABLE "groups" (
     "id" VARCHAR(14) NOT NULL PRIMARY KEY,
     "name" VARCHAR(256) NOT NULL,
     "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
+    "description" TEXT,
     CONSTRAINT "fk_group_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
