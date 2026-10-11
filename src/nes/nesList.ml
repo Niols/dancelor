@@ -84,7 +84,7 @@ let findi_context ~n_prev ~n_next p l =
       Some {
         element;
         index;
-        total = 1 + index + length l;
+        total = index + 1 + length next;
         next = take n_next next;
         previous = take n_prev previous;
       }
@@ -93,7 +93,12 @@ let findi_context ~n_prev ~n_next p l =
   in
   findi_context [] 0 l
 
-let find_context ~n_prev ~n_next p = findi_context ~n_prev ~n_next (Fun.const p)
+let%test _ =
+  findi_context ~n_prev: 2 ~n_next: 2 (fun i x -> i = x) [1; 2; 3; 77; 4; 5; 6; 7]
+  = Some {index = 4; element = 4; previous = [77; 3]; next = [5; 6]; total = 8}
+
+let find_context ~n_prev ~n_next p =
+  findi_context ~n_prev ~n_next (Fun.const p)
 
 let map_context f c = {
   element = f c.element;
