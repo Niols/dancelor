@@ -8,6 +8,7 @@ val make :
   ?make_header: (int -> Html_types.div_content_fun elt) ->
   ?more_actions: Html_types.div_content_fun elt list S.t ->
   ?empty: 'state list ->
+  ?hide_up_down_arrows: bool ->
   ('value, 'state) Component.s ->
   'state list ->
   ('value list, 'state list) Component.t Lwt.t
@@ -22,6 +23,7 @@ val make_non_empty :
   ?make_header: (int -> Html_types.div_content_fun elt) ->
   ?more_actions: Html_types.div_content_fun elt list S.t ->
   ?empty: 'state list ->
+  ?hide_up_down_arrows: bool ->
   ('value, 'state) Component.s ->
   'state list ->
   ('value NEList.t, 'state list) Component.t Lwt.t
@@ -35,6 +37,7 @@ val prepare :
   ?make_header: (int -> Html_types.div_content_fun elt) ->
   ?more_actions: Html_types.div_content_fun elt list S.t ->
   ?empty: 'state list ->
+  ?hide_up_down_arrows: bool ->
   ('value, 'state) Component.s ->
   ('value list, 'state list) Component.s
 (** Variant of {!make} that only prepares the component. It must still be
@@ -45,6 +48,7 @@ val prepare_non_empty :
   ?make_header: (int -> Html_types.div_content_fun elt) ->
   ?more_actions: Html_types.div_content_fun elt list S.t ->
   ?empty: 'state list ->
+  ?hide_up_down_arrows: bool ->
   ('value, 'state) Component.s ->
   ('value NEList.t, 'state list) Component.s
 (** Variant of {!make_non_empty} that only prepares the component. It must still

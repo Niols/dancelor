@@ -37,6 +37,7 @@ let component =
     (
       Star.prepare
         ~label: "Actors"
+        ~hide_up_down_arrows: true
         (
           let open Bundle in
           pair
