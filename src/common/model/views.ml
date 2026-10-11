@@ -210,6 +210,7 @@ module User_view = struct
     username: Username.t;
     full_name: string option; [@default None]
     joined: Datetime.t;
+    groups: Group_row.t list; [@default []]
   }
   [@@deriving eq, yojson, fields]
 end
@@ -218,7 +219,7 @@ module Group_view = struct
   type t = {
     id: Group_id.t;
     name: string;
-    members: User_row.t list;
+    members: User_row.t list; [@default []]
   }
   [@@deriving eq, yojson, fields]
 end
