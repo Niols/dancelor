@@ -8,6 +8,7 @@ WHERE "id" IN @ids;
 SELECT
     "id",
     "name",
+    "copyright_name",
     "scddb_id",
     "composed_tunes_are_public",
     "published_tunes_are_public"
@@ -18,6 +19,7 @@ WHERE "id" = @id;
 SELECT
     "id",
     "name",
+    "copyright_name",
     "scddb_id"
 FROM "person"
 WHERE "id" = @id;
@@ -39,6 +41,7 @@ ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 INSERT INTO "person" (
     "id",
     "name",
+    "copyright_name",
     "scddb_id",
     "composed_tunes_are_public",
     "published_tunes_are_public"
@@ -46,6 +49,7 @@ INSERT INTO "person" (
 VALUES (
     @id,
     @name,
+    @copyright_name,
     @scddb_id,
     FALSE,
     FALSE
@@ -55,6 +59,7 @@ VALUES (
 UPDATE "person"
 SET
     "name" = @name,
+    "copyright_name" = @copyright_name,
     "scddb_id" = @scddb_id
 WHERE "id" = @id;
 

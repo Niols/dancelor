@@ -39,6 +39,11 @@ let view in_search id =
     ]
     [
       div (
+        match person.copyright_name with
+        | None -> []
+        | Some n -> [txtf "Copyright name: %s" n]
+      );
+      div (
         if person.composed_tunes_are_public then
           [
             txt

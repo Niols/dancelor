@@ -6,16 +6,23 @@ open Html
 let editor =
   let open Bundle in
   group
-    ~wrap: (fun (username, (email, ())) -> {User_form.username; email})
-    ~unwrap: (fun {User_form.username; email} -> (username, (email, ())))
+    ~wrap: (fun (username, (full_name, (email, ()))) -> {User_form.username; full_name; email})
+    ~unwrap: (fun {User_form.username; full_name; email} -> (username, (full_name, (email, ()))))
     ~check: User_form.equal
     (
       Input.prepare
         ~type_: Text
-        ~placeholder: "JeanMilligan"
+        ~placeholder: "J34nM"
         ~label: "Username"
         ~serialise: Username.to_string
         ~validate: (S.const % Option.to_result ~none: "Invalid username format." % Username.from_string)
+        () ^::
+      Input.prepare_option
+        ~type_: Text
+        ~placeholder: "Jean Milligan"
+        ~label: "Full name"
+        ~serialise: Fun.id
+        ~validate: (S.const % ok)
         () ^::
       Input.prepare
         ~type_: Text

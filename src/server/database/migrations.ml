@@ -1117,6 +1117,8 @@ let migrations : migration list = [
     Migrations_sql.m082_2026_10_lookup_indices__idx_tune_extra_names_tune_id;
     Migrations_sql.m082_2026_10_lookup_indices__idx_user_person_id;
   ];
+  make_ddl "m083_2026_10_person_copyright_names" Migrations_sql.m083_2026_10_person_copyright_names;
+  make_ddl "m084_2026_10_user_full_names" Migrations_sql.m084_2026_10_user_full_names;
 ]
 
 exception Migration_failed of string * exn

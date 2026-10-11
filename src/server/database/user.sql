@@ -28,6 +28,7 @@ WHERE "username" = @username;
 INSERT INTO "user" (
     "id",
     "username",
+    "full_name",
     "email",
     "password_reset_token_hash",
     "password_reset_token_max_date",
@@ -38,6 +39,7 @@ INSERT INTO "user" (
 VALUES (
     @id,
     @username,
+    @full_name,
     @email,
     @password_reset_token_hash,
     @password_reset_token_max_date,
@@ -50,6 +52,7 @@ VALUES (
 UPDATE "user"
 SET
     "username" = @username,
+    "full_name" = @full_name,
     "email" = @email
 WHERE "id" = @id;
 
@@ -113,6 +116,7 @@ WHERE "id" IN @ids;
 -- @get_view
 SELECT
     "username",
+    "full_name",
     "created_at" AS "joined"
 FROM "user"
 JOIN "entities" USING ("id")
@@ -122,6 +126,7 @@ LIMIT 1;
 -- @get_form
 SELECT
     "username",
+    "full_name",
     "email"
 FROM "user"
 WHERE "id" = @id;
@@ -130,6 +135,7 @@ WHERE "id" = @id;
 SELECT
     "user"."id",
     "username",
+    "full_name",
     "github_handle",
     "role",
     "omniscience",

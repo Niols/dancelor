@@ -16,6 +16,7 @@ module Person_view = struct
   type t = {
     id: Person_id.t;
     name: string;
+    copyright_name: string option; [@default None]
     scddb_id: int option; [@default None]
     composed_tunes_are_public: bool; [@default false]
     published_tunes_are_public: bool; [@default false]
@@ -207,6 +208,7 @@ module User_view = struct
   type t = {
     id: User_id.t;
     username: Username.t;
+    full_name: string option; [@default None]
     joined: Datetime.t;
   }
   [@@deriving eq, yojson, fields]

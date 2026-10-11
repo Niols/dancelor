@@ -118,7 +118,8 @@ FROM "dance";
 -- @user_rows | include: reuse
 SELECT
     "id",
-    "username"
+    "username",
+    "full_name"
 FROM "user";
 
 -- @group_rows | include: reuse

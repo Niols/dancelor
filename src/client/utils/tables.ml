@@ -218,7 +218,10 @@ let user_row ?classes ?onclick ?(prefix = []) ?(suffix = []) (user : User_row.t)
     ?onclick
     (
       prefix @
-      [td ~a: [a_colspan 3] [Formatters.User.username ~link: (onclick = None) (User_row.to_name user)];
+      [td ~a: [a_colspan 3] (
+        Formatters.User.username ~link: (onclick = None) (User_row.to_name user) ::
+          (match user.full_name with None -> [] | Some full_name -> [block_details [txt full_name]])
+      );
       ] @
       suffix
     )

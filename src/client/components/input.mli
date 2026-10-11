@@ -19,6 +19,18 @@ val make :
   string ->
   ('value, string) Component.t Lwt.t
 
+val make_option :
+  type_: type_ ->
+  ?font: font ->
+  label: string ->
+  ?placeholder: string ->
+  serialise: ('value -> NEString.t) ->
+  validate: (NEString.t -> ('value, string) result S.t) ->
+  ?oninput: (string -> unit) ->
+  ?template: string ->
+  string ->
+  ('value option, string) Component.t Lwt.t
+
 val make_non_empty :
   type_: type_ ->
   ?font: font ->

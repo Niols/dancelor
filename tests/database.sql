@@ -341,7 +341,8 @@ CREATE TABLE "dancelor"."person" (
     "scddb_id" integer,
     "composed_tunes_are_public" boolean NOT NULL,
     "published_tunes_are_public" boolean NOT NULL,
-    "name_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("name")::"text")) STORED
+    "name_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("name")::"text")) STORED,
+    "copyright_name" character varying(256)
 );
 
 
@@ -489,7 +490,8 @@ CREATE TABLE "dancelor"."user" (
     "username_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("username")::"text")) STORED,
     "github_handle" character varying(64),
     "email" character varying(256) NOT NULL,
-    "email_verified" boolean DEFAULT false NOT NULL
+    "email_verified" boolean DEFAULT false NOT NULL,
+    "full_name" character varying(256)
 );
 
 
@@ -772,16 +774,18 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m079_2026_10
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m080_2026_10_groups__create_table_groups', '2026-10-06 20:57:50.482607+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m081_2026_10_group_actors', '2026-10-08 09:21:50.427731+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m082_2026_10_lookup_indices', '2026-10-08 09:21:50.517716+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m083_2026_10_person_copyright_names', '2026-10-11 15:01:50.168826+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m084_2026_10_user_full_names', '2026-10-11 15:01:50.172174+00');
 
 
 --
 -- Data for Name: person; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."person" ("id", "name", "scddb_id", "composed_tunes_are_public", "published_tunes_are_public") VALUES ('4plf-srss-ihav', 'Davey Arthur', NULL, true, false);
-INSERT INTO "dancelor"."person" ("id", "name", "scddb_id", "composed_tunes_are_public", "published_tunes_are_public") VALUES ('8h62-3eis-xfem', 'Mervyn C Short', 347, false, false);
-INSERT INTO "dancelor"."person" ("id", "name", "scddb_id", "composed_tunes_are_public", "published_tunes_are_public") VALUES ('uwoe-u6ij-ikgp', 'Nicolas “Niols” Jeannerod', 11781, true, false);
-INSERT INTO "dancelor"."person" ("id", "name", "scddb_id", "composed_tunes_are_public", "published_tunes_are_public") VALUES ('9fdg-glrm-0zoi', 'John Doe', 129872873, false, false);
+INSERT INTO "dancelor"."person" ("id", "name", "scddb_id", "composed_tunes_are_public", "published_tunes_are_public", "copyright_name") VALUES ('4plf-srss-ihav', 'Davey Arthur', NULL, true, false, NULL);
+INSERT INTO "dancelor"."person" ("id", "name", "scddb_id", "composed_tunes_are_public", "published_tunes_are_public", "copyright_name") VALUES ('8h62-3eis-xfem', 'Mervyn C Short', 347, false, false, NULL);
+INSERT INTO "dancelor"."person" ("id", "name", "scddb_id", "composed_tunes_are_public", "published_tunes_are_public", "copyright_name") VALUES ('uwoe-u6ij-ikgp', 'Nicolas “Niols” Jeannerod', 11781, true, false, NULL);
+INSERT INTO "dancelor"."person" ("id", "name", "scddb_id", "composed_tunes_are_public", "published_tunes_are_public", "copyright_name") VALUES ('9fdg-glrm-0zoi', 'John Doe', 129872873, false, false, NULL);
 
 
 --
@@ -870,9 +874,9 @@ INSERT INTO "dancelor"."tune_composers" ("tune_id", "index", "composer_id", "det
 -- Data for Name: user; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols', 'placeholder-4423700875@example.com', false);
-INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, NULL, 'Normal_user', NULL, 'placeholder-9704806487@example.com', false);
-INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified") VALUES ('hfj6-cybi-twwr', 'TestouilleAgain', NULL, '$argon2id$v=19$m=65536,t=2,p=1$V3nYxXwSkOgrKKeWyRPnVQ$bogCIMZGoRHCePUDf0ahKkGUw8tlpfGra5+jD26mSmM', '2026-10-11 09:46:37', false, NULL, 'Normal_user', NULL, 'testouille.again@example.com', false);
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols', 'placeholder-4423700875@example.com', false, NULL);
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, NULL, 'Normal_user', NULL, 'placeholder-9704806487@example.com', false, NULL);
+INSERT INTO "dancelor"."user" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('hfj6-cybi-twwr', 'TestouilleAgain', NULL, '$argon2id$v=19$m=65536,t=2,p=1$V3nYxXwSkOgrKKeWyRPnVQ$bogCIMZGoRHCePUDf0ahKkGUw8tlpfGra5+jD26mSmM', '2026-10-11 09:46:37', false, NULL, 'Normal_user', NULL, 'testouille.again@example.com', false, NULL);
 
 
 --
