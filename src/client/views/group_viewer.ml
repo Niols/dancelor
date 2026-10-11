@@ -24,5 +24,13 @@ let view id =
       );
     ]
     [
-      Tables.users group.members;
+      section (
+        match group.description with
+        | None -> []
+        | Some description -> [h3 [txt "Description"]; Markdown.to_html description]
+      );
+      section ~a: [a_class ["mt-4"]] [
+        h3 [txt "Members"];
+        Tables.users group.members;
+      ];
     ]

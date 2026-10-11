@@ -224,6 +224,7 @@ let group_sql_to_view
     ~id
     ~name
     ~members
+    ~description
     ~(k : Group_view.t -> 'w)
     : 'w
   =
@@ -231,4 +232,5 @@ let group_sql_to_view
     id;
     name;
     members;
+    description;
   }

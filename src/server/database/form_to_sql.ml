@@ -120,9 +120,11 @@ let group_form_to_sql
     id
     {
       Group_form.name;
+      description;
       members = _;
     }
   =
   query
     ~id
     ~name: (NEString.to_string name)
+    ~description: (Option.map NEString.to_string description)

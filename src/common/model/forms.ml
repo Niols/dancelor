@@ -224,6 +224,7 @@ module Group_form = struct
   type t = {
     name: NEString.t;
     members: User_row.t list;
+    description: NEString.t option;
   }
   [@@deriving eq, yojson, fields]
 

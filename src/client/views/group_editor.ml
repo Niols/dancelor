@@ -2,18 +2,25 @@ open Nes
 open Dancelor_common
 open Components
 open Utils
+open Html
 
 let editor =
   let open Bundle in
   group
-    ~wrap: (fun (name, (members, ())) -> {Group_form.name; members})
-    ~unwrap: (fun {Group_form.name; members} -> (name, (members, ())))
+    ~wrap: (fun (name, (description, (members, ()))) -> {Group_form.name; description; members})
+    ~unwrap: (fun {Group_form.name; description; members} -> (name, (description, (members, ()))))
     ~check: Group_form.equal
     (
       Input.prepare_non_empty
         ~type_: Text
         ~label: "Name"
         ~placeholder: "eg. The Dusty Miller"
+        () ^::
+      Input.prepare_option
+        ~type_: (Textarea {rows = 15})
+        ~label: "Description"
+        ~serialise: Fun.id
+        ~validate: (S.const % ok)
         () ^::
       Star.prepare
         ~label: "Members"

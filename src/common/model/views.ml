@@ -220,6 +220,7 @@ module Group_view = struct
     id: Group_id.t;
     name: string;
     members: User_row.t list; [@default []]
+    description: string option; [@default None]
   }
   [@@deriving eq, yojson, fields]
 end

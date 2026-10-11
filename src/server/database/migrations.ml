@@ -1119,6 +1119,7 @@ let migrations : migration list = [
   ];
   make_ddl "m083_2026_10_person_copyright_names" Migrations_sql.m083_2026_10_person_copyright_names;
   make_ddl "m084_2026_10_user_full_names" Migrations_sql.m084_2026_10_user_full_names;
+  make_ddl "m085_2026_10_group_descriptions" Migrations_sql.m085_2026_10_group_descriptions;
 ]
 
 exception Migration_failed of string * exn

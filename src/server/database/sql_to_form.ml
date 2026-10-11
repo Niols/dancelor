@@ -169,11 +169,13 @@ let user_sql_to_form
 let group_sql_to_form
     ~id: _
     ~name
+    ~description
     ~members
     ~(k : Group_form.t -> 'w)
     : 'w
   =
   k {
     name = NEString.of_string_exn name;
+    description = Option.map NEString.of_string_exn description;
     members;
   }
