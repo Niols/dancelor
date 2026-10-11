@@ -53,7 +53,7 @@ let component =
                   | `User user -> lwt @@ ((^) "User ") @@ Username.to_string user.User_row.username
                   | `Group group -> lwt @@ ((^) "Group ") @@ group.Group_row.name
                 )
-                ~make_result: (Tables.entity_row ?in_search: None)
+                ~make_result: (Tables.entity_row ~permission_suffix: false ?in_search: None)
                 ~results_when_no_search: (List.map Principal_row.user % Option.to_list % Option.map Actor.to_user_row <$> Environment.actor)
                 ~search: (fun slice input ->
                   match Principal_query.parse input with

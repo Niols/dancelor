@@ -248,7 +248,7 @@ let entity_to_icon_and_string = function
   | `User _ -> (Icon.User, "User")
   | `Group _ -> (Icon.Group, "Group")
 
-let entity_row ?classes ?onclick ?(prefix = []) ?(suffix = []) ?in_search (entity : [< Entity_row.t]) =
+let entity_row ?classes ?onclick ?(prefix = []) ?(permission_suffix = true) ?(suffix = []) ?in_search (entity : [< Entity_row.t]) =
   let prefix =
     let (icon, type_) = entity_to_icon_and_string entity in
     prefix @ [
@@ -266,43 +266,47 @@ let entity_row ?classes ?onclick ?(prefix = []) ?(suffix = []) ?in_search (entit
         ]
     ]
   in
-  let suffix =
-    [td
-      ~a: [
-        a_class ["text-nowrap"; "text-end"];
-        (* NOTE: hint at a minuscule size, which, with the nowrap above, will cause the browser to
-           use the smallest size that can contain the text. *)
-        a_style "width: 1%;";
-      ]
+  let permission_suffix =
+    if permission_suffix then
       [
-        let permission =
-          match entity with
-          | `Source _ -> None
-          | `Person _ -> None
-          | `Dance _ -> None
-          | `Tune _ -> None
-          | `Version _ -> None
-          | `Set set -> Some set.Set_row.permission
-          | `Book book -> Some book.Book_row.permission
-          | `User _ -> None
-          | `Group _ -> None
-        in
-        match permission with
-        | None -> Icon.html Icon.(Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"]
-        | Some permission ->
-          let (icon, tooltip, classes) =
-            match Permission.view_reason permission with
-            | Public -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
-            | Viewer Direct -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
-            | Viewer Via_group group -> (Icon.(Access Viewer), spf "You can see this entry because its owner marked your group “%s” as one of its viewers." group.name, ["opacity-75"])
-            | Owner Direct -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
-            | Owner Via_group group -> (Icon.(Access Owner), spf "You can see this entry because your group “%s” is (one of) its owners." group.name, [])
-            | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])
-          in
-          Icon.html icon ~tooltip ~classes
-      ]] @
-      suffix
+        td
+          ~a: [
+            a_class ["text-nowrap"; "text-end"];
+            (* NOTE: hint at a minuscule size, which, with the nowrap above, will cause the browser to
+               use the smallest size that can contain the text. *)
+            a_style "width: 1%;";
+          ]
+          [
+            let permission =
+              match entity with
+              | `Source _ -> None
+              | `Person _ -> None
+              | `Dance _ -> None
+              | `Tune _ -> None
+              | `Version _ -> None
+              | `Set set -> Some set.Set_row.permission
+              | `Book book -> Some book.Book_row.permission
+              | `User _ -> None
+              | `Group _ -> None
+            in
+            match permission with
+            | None -> Icon.html Icon.(Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"]
+            | Some permission ->
+              let (icon, tooltip, classes) =
+                match Permission.view_reason permission with
+                | Public -> (Icon.(Access Everyone), "You can see this entry because it was made public by its owner.", ["opacity-50"])
+                | Viewer Direct -> (Icon.(Access Viewer), "You can see this entry because its owner marked you as one of its viewers.", ["opacity-75"])
+                | Viewer Via_group group -> (Icon.(Access Viewer), spf "You can see this entry because its owner marked your group “%s” as one of its viewers." group.name, ["opacity-75"])
+                | Owner Direct -> (Icon.(Access Owner), "You can see this entry because you are (one of) its owners.", [])
+                | Owner Via_group group -> (Icon.(Access Owner), spf "You can see this entry because your group “%s” is (one of) its owners." group.name, [])
+                | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])
+              in
+              Icon.html icon ~tooltip ~classes
+          ]
+      ]
+    else []
   in
+  let suffix = permission_suffix @ suffix in
   match entity with
   | `Source source -> source_row ?classes ?onclick ?in_search ~prefix ~suffix source
   | `Person person -> person_row ?classes ?onclick ?in_search ~prefix ~suffix person
