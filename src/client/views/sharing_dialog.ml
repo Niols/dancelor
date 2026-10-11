@@ -37,6 +37,7 @@ let component =
     (
       Star.prepare
         ~label: "Actors"
+        ~hide_up_down_arrows: true
         (
           let open Bundle in
           pair
@@ -47,12 +48,13 @@ let component =
             (
               Selector.prepare
                 ~label: "Actor"
+                ~hide_border_around_selected: true
                 ~model_name: "user"
                 ~make_descr: (function
                   | `User user -> lwt @@ ((^) "User ") @@ Username.to_string user.User_row.username
                   | `Group group -> lwt @@ ((^) "Group ") @@ group.Group_row.name
                 )
-                ~make_result: (Tables.entity_row ?in_search: None)
+                ~make_result: (Tables.entity_row ~permission_suffix: false ?in_search: None)
                 ~results_when_no_search: (List.map Principal_row.user % Option.to_list % Option.map Actor.to_user_row <$> Environment.actor)
                 ~search: (fun slice input ->
                   match Principal_query.parse input with
@@ -66,8 +68,7 @@ let component =
                 ()
             )
             (
-              let open Plus.Tuple_elt in
-              Plus.prepare
+              plus
                 ~label: "Role"
                 ~cast: (function
                   | Zero() -> (Owner : Permission.actor_role)
@@ -80,7 +81,6 @@ let component =
                 )
                 ~selected_when_empty: 1
                 (
-                  let open Plus.Bundle in
                   Nil.prepare ~label: "Owner" () ^::
                   Nil.prepare ~label: "Viewer" () ^::
                   nil

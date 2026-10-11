@@ -17,6 +17,7 @@ let editor =
         () ^::
       Star.prepare
         ~label: "Members"
+        ~hide_up_down_arrows: true
         (
           Selector.prepare
             ~label: "Member"

@@ -8,6 +8,7 @@ let prepare (type value)(type state)
   ?make_header
   ?(more_actions = S.const [])
   ?(empty = [])
+  ?(hide_up_down_arrows = false)
   ((module C): (value, state) Component.s)
   : (value list, state list) Component.s
 = (module struct
@@ -110,26 +111,31 @@ let prepare (type value)(type state)
                     (@)
                     (C.actions component)
                     (
-                      S.const [
+                      S.const (
                         Button.make
                           ~icon: (Action Delete)
                           ~tooltip: ("Remove this " ^ String.lowercase_ascii C.label ^ " from the list. It cannot be recovered.")
                           ~classes: ["btn-warning"]
                           ~onclick: (fun _ -> set_components @@ List.remove n @@ S.value components; lwt_unit)
-                          ();
-                        Button.make
-                          ~icon: (Action Move_down)
-                          ~tooltip: ("Move this " ^ String.lowercase_ascii C.label ^ " down in the list.")
-                          ~classes: (["btn-outline-secondary"] @ (if n = last_index then ["disabled"] else []))
-                          ~onclick: (fun _ -> set_components @@ List.swap n (n + 1) @@ S.value components; lwt_unit)
-                          ();
-                        Button.make
-                          ~icon: (Action Move_up)
-                          ~tooltip: ("Move this " ^ String.lowercase_ascii C.label ^ " up in the list.")
-                          ~classes: (["btn"; "btn-outline-secondary"] @ (if n = 0 then ["disabled"] else []))
-                          ~onclick: (fun _ -> set_components @@ List.swap (n - 1) n @@ S.value components; lwt_unit)
-                          ();
-                      ]
+                          () :: (
+                          if hide_up_down_arrows then []
+                          else
+                            [
+                              Button.make
+                                ~icon: (Action Move_down)
+                                ~tooltip: ("Move this " ^ String.lowercase_ascii C.label ^ " down in the list.")
+                                ~classes: (["btn-outline-secondary"] @ (if n = last_index then ["disabled"] else []))
+                                ~onclick: (fun _ -> set_components @@ List.swap n (n + 1) @@ S.value components; lwt_unit)
+                                ();
+                              Button.make
+                                ~icon: (Action Move_up)
+                                ~tooltip: ("Move this " ^ String.lowercase_ascii C.label ^ " up in the list.")
+                                ~classes: (["btn"; "btn-outline-secondary"] @ (if n = 0 then ["disabled"] else []))
+                                ~onclick: (fun _ -> set_components @@ List.swap (n - 1) n @@ S.value components; lwt_unit)
+                                ();
+                            ]
+                        )
+                      )
                     )
                 );
               ]
@@ -146,21 +152,23 @@ let make (type value)(type state)
     ?make_header
     ?more_actions
     ?empty
+    ?hide_up_down_arrows
     (component : (value, state) Component.s)
     (initial_values : state list)
     : (value list, state list) Component.t Lwt.t
   =
-  Component.initialise (prepare ~label ?make_header ?more_actions ?empty component) initial_values
+  Component.initialise (prepare ~label ?make_header ?more_actions ?empty ?hide_up_down_arrows component) initial_values
 
 let prepare_non_empty (type value)(type state)
   ~label
   ?make_header
   ?more_actions
   ?empty
+  ?hide_up_down_arrows
   ((module C): (value, state) Component.s)
   : (value NEList.t, state list) Component.s
 = (module struct
-  include (val (prepare ~label ?make_header ?more_actions ?empty (module C)))
+  include (val (prepare ~label ?make_header ?more_actions ?empty ?hide_up_down_arrows (module C)))
   type value = C.value NEList.t
   let value_to_string _ = lwt "<FIXME star>"
   let value_to_state = value_to_state % NEList.to_list
@@ -177,8 +185,9 @@ let make_non_empty (type value)(type state)
     ?make_header
     ?more_actions
     ?empty
+    ?hide_up_down_arrows
     (component : (value, state) Component.s)
     (initial_values : state list)
     : (value NEList.t, state list) Component.t Lwt.t
   =
-  Component.initialise (prepare_non_empty ~label ?make_header ?more_actions ?empty component) initial_values
+  Component.initialise (prepare_non_empty ~label ?make_header ?more_actions ?empty ?hide_up_down_arrows component) initial_values

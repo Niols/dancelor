@@ -25,6 +25,7 @@ val make :
   ?results_when_no_search: 'model list Lwt.t ->
   model_name: string ->
   ?create_dialog_content: (('model, 'any) Editor.mode -> Page.t Lwt.t) ->
+  ?hide_border_around_selected: bool ->
   'id option ->
   ('model, 'id option) Component.t Lwt.t
 (** When [?create_dialog_content] is passed, an additional button allows to
@@ -53,6 +54,7 @@ val prepare :
   ?results_when_no_search: 'model list Lwt.t ->
   model_name: string ->
   ?create_dialog_content: (('model, 'any) Editor.mode -> Page.t Lwt.t) ->
+  ?hide_border_around_selected: bool ->
   unit ->
   ('model, 'id option) Component.s
 (** Variant of {!make} that only prepares the component. It must still be

@@ -2,10 +2,6 @@
 SELECT "type" FROM "entities"
 WHERE "id" = @id;
 
--- @get_is_public
-SELECT "is_public" FROM "entities"
-WHERE "id" = @id;
-
 -- @register
 INSERT INTO "entities" (
     "id",
@@ -97,7 +93,10 @@ SELECT
 FROM "entity_actors"
 LEFT JOIN "users" ON "entity_actors"."user_id" = "users"."id"
 LEFT JOIN "groups" ON "entity_actors"."group_id" = "groups"."id"
-WHERE "entity_id" = @entity_id;
+WHERE "entity_id" = @entity_id
+ORDER BY
+    "username" ASC NULLS LAST, -- sort users before groups
+    "group_name" ASC;
 
 -- @set_is_public
 UPDATE "entities"

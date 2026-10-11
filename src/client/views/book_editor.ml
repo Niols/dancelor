@@ -79,8 +79,7 @@ let dance_and_dance_page =
         ()
     )
     (
-      let open Plus.Tuple_elt in
-      Plus.prepare
+      plus
         ~label: "Dance page"
         ~cast: (function
           | Zero() -> Book_form.Dance_only
@@ -95,7 +94,6 @@ let dance_and_dance_page =
         )
         ~selected_when_empty: 0
         (
-          let open Plus.Bundle in
           Nil.prepare ~label: "Dance only" () ^::
           versions_and_parameters ~label: "+Versions" () ^::
           set_and_parameters ~label: "+Set" () ^::
@@ -153,8 +151,7 @@ let editor =
         ~label: "Contents"
         ~make_header: (fun n -> div ~a: [a_class (if n = 0 then [] else ["pt-1"; "mt-1"; "border-top"])] [txtf "Page %d" (n + 1)])
         (
-          let open Plus.Tuple_elt in
-          Plus.prepare
+          plus
             ~label: "Page"
             ~cast: (function
               | Zero title -> Book_form.Part title
@@ -170,7 +167,6 @@ let editor =
               | Book_form.Set (set, params) -> three (set, params)
             )
             (
-              let open Plus.Bundle in
               Input.prepare_non_empty
                 ~type_: Text
                 ~label: "Part"

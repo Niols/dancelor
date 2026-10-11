@@ -51,27 +51,34 @@ let case_errored ~no ~yes signal =
     | Error msg -> yes msg
     | _ -> no
 
+let html'' ~label: the_label ~actions ~signal ~inner_html =
+  div
+    ~a: [a_class ["mb-2"]]
+    [
+      div ~a: [a_class ["row"; "align-items-center"]] [
+        label ~a: [a_class ["col"]] [txt the_label];
+        R.div ~a: [a_class ["col-auto"]] (
+          S.flip_map actions @@ function
+            | [] -> [Button.make ~classes: ["invisible"] ~icon: (Action Add) ()] (* for spacing *)
+            | actions -> actions
+        );
+      ];
+      inner_html;
+      R.div
+        ~a: [R.a_class (case_errored ~no: ["d-block"; "valid-feedback"] ~yes: (const ["d-block"; "invalid-feedback"]) signal)]
+        (case_errored ~no: [txt " "] ~yes: (List.singleton % txt) signal);
+    ]
+
 let html'
   : type a value state. (module S with type t = a and type value = value and type state = state) ->
   a ->
   [> Html_types.div] elt
 = fun (module C) c ->
-  div
-    ~a: [a_class ["mb-2"]]
-    [
-      div ~a: [a_class ["row"; "align-items-center"]] [
-        label ~a: [a_class ["col"]] [txt C.label];
-        R.div ~a: [a_class ["col-auto"]] (
-          S.flip_map (C.actions c) @@ function
-            | [] -> [Button.make ~classes: ["invisible"] ~icon: (Action Add) ()] (* for spacing *)
-            | actions -> actions
-        );
-      ];
-      C.inner_html c;
-      R.div
-        ~a: [R.a_class (case_errored ~no: ["d-block"; "valid-feedback"] ~yes: (const ["d-block"; "invalid-feedback"]) (C.signal c))]
-        (case_errored ~no: [txt " "] ~yes: (List.singleton % txt) (C.signal c));
-    ]
+  html''
+    ~label: C.label
+    ~actions: (C.actions c)
+    ~signal: (C.signal c)
+    ~inner_html: (C.inner_html c)
 
 let html : type value state. (value, state) t -> [> Html_types.div] elt = function
   | Component ((module C), c) -> html' (module C) c

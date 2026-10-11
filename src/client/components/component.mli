@@ -106,6 +106,14 @@ val html' :
   [> Html_types.div] elt
 (** Render the component as HTML, just like {!html} would. *)
 
+val html'' :
+  label: string ->
+  actions: (Html_types.div_content_fun elt list S.t) ->
+  signal: ('a, string) result Html.S.t ->
+  inner_html: Html_types.div_content_fun elt ->
+  [> Html_types.div] elt
+(** Render the HTML, just like {!html} would. *)
+
 val case_errored :
   no: 'b ->
   yes: ('e -> 'b) ->
