@@ -19,11 +19,12 @@ let source_sql_to_form ~id: _ ~name ~short_name ~editors ~scddb_id ~description 
     date = Option.map (Option.get % Partial_date.from_string) date;
   }
 
-let dance_sql_to_form ~id: _ ~name ~extra_names ~kind ~devisers ~scddb_id ~disambiguation ~date ~two_chords ~(k : Dance_form.t -> 'w) : 'w =
+let dance_sql_to_form ~id: _ ~name ~extra_names ~kind ~devisers ~tunes ~scddb_id ~disambiguation ~date ~two_chords ~(k : Dance_form.t -> 'w) : 'w =
   k {
     names = NEList.map NEString.of_string_exn (NEList.cons name extra_names);
     kind = Kind.Dance.of_string kind;
     devisers;
+    tunes;
     scddb_id = Option.map Int64.to_int scddb_id;
     disambiguation = Option.map NEString.of_string_exn disambiguation;
     date = Option.map (Option.get % Partial_date.from_string) date;

@@ -54,11 +54,12 @@ module Dance_form = struct
   type t = {
     names: NEString.t NEList.t;
     kind: Kind.Dance.t;
-    devisers: Person_row.t list;
+    devisers: Person_row.t list; [@default []]
     two_chords: Dance_view.two_chords;
-    scddb_id: int option;
-    disambiguation: NEString.t option;
-    date: Partial_date.t option;
+    scddb_id: int option; [@default None]
+    disambiguation: NEString.t option; [@default None]
+    date: Partial_date.t option; [@default None]
+    tunes: Tune_row.t list; [@default []]
   }
   [@@deriving eq, yojson]
 
@@ -84,11 +85,11 @@ module Tune_form = struct
   type t = {
     names: NEString.t NEList.t;
     kind: Kind.Base.t;
-    composers: composer list;
-    dances: Dance_row.t list;
-    remark: NEString.t option;
-    scddb_id: int option;
-    date: Partial_date.t option;
+    composers: composer list; [@default []]
+    dances: Dance_row.t list; [@default []]
+    remark: NEString.t option; [@default None]
+    scddb_id: int option; [@default None]
+    date: Partial_date.t option; [@default None]
   }
   [@@deriving eq, yojson]
 

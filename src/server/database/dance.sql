@@ -32,20 +32,6 @@ WHERE "id" = @id;
 DELETE FROM "dance"
 WHERE "id" = @id;
 
--- @get_extra_names
-SELECT
-    "extra_name"
-FROM "dance_extra_names"
-WHERE "dance_id" = @dance_id
-ORDER BY "extra_name";
-
--- @get_all_extra_names
-SELECT
-    "dance_id",
-    "extra_name"
-FROM "dance_extra_names"
-ORDER BY "dance_id", "extra_name";
-
 -- @delete_all_extra_names
 DELETE FROM "dance_extra_names"
 WHERE "dance_id" = @dance_id;
@@ -58,20 +44,6 @@ INSERT INTO "dance_extra_names" (
     @dance_id,
     @extra_name
 );
-
--- @get_devisers
-SELECT
-    "deviser_id"
-FROM "dance_devisers"
-WHERE "dance_id" = @dance_id
-ORDER BY "index";
-
--- @get_all_devisers
-SELECT
-    "dance_id",
-    "deviser_id"
-FROM "dance_devisers"
-ORDER BY "dance_id", "index";
 
 -- @delete_all_devisers
 DELETE FROM "dance_devisers"
@@ -86,6 +58,19 @@ INSERT INTO "dance_devisers" (
     @dance_id,
     @index,
     @deviser_id
+);
+
+-- @delete_all_tunes
+DELETE FROM "recommended_tunes"
+WHERE "dance_id" = @dance_id;
+
+-- @add_one_tune
+INSERT INTO "recommended_tunes" (
+    "dance_id",
+    "tune_id"
+) VALUES (
+    @dance_id,
+    @tune_id
 );
 
 -- @get_rows
