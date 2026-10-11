@@ -300,7 +300,13 @@ let group (type value)(type value_wrapped)(type state)
             (List.combine B.all_labels (B.all_inner_htmls t))
         )
       | Horizontal ->
-        div (B.all_inner_htmls t)
+        div ~a: [a_class ["row"; "justify-content-between"]] (
+          List.map
+            (fun inner_html ->
+              div ~a: [a_class ["col-auto"]] [inner_html]
+            )
+            (B.all_inner_htmls t)
+        )
   end)
 
 let pair ?label ?stacking ~wrap ~unwrap c1 c2 =
