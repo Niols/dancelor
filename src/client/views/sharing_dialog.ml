@@ -48,6 +48,7 @@ let component =
             (
               Selector.prepare
                 ~label: "Actor"
+                ~hide_border_around_selected: true
                 ~model_name: "user"
                 ~make_descr: (function
                   | `User user -> lwt @@ ((^) "User ") @@ Username.to_string user.User_row.username

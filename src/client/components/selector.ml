@@ -33,6 +33,7 @@ let prepare_gen (type id)(type model)(type model_validated)
   ?(create_dialog_content : ((model, 'any) Editor.mode -> Page.t Lwt.t) option)
   ~(validate : model option -> (model_validated, string) Result.t)
   ~(unvalidate : model_validated -> model option)
+  ?(hide_border_around_selected = false)
   ()
   : (model_validated, id option) Component.s
 = (module struct
@@ -160,11 +161,17 @@ let prepare_gen (type id)(type model)(type model_validated)
             ]
           | Some model ->
             [
-              div ~a: [a_class ["rounded-2"; "border"; "w-100"; "px-2"; "py-1"]] [
-                tablex
-                  ~a: [a_class ["table"; "table-borderless"; "table-sm"; "m-0"]]
-                  [tbody [make_result model]];
-              ];
+              (
+                let content =
+                  tablex
+                    ~a: [a_class ["table"; "table-borderless"; "table-sm"; "m-0"]]
+                    [tbody [make_result model]]
+                in
+                if hide_border_around_selected then
+                  content
+                else
+                  div ~a: [a_class ["rounded-2"; "border"; "w-100"; "px-2"; "py-1"]] [content]
+              );
               div ~a: [a_class ["row"; "m-0"; "overflow-hidden"]] [
                 tablex
                   ~a: [a_class ["table"; "table-borderless"; "table-sm"; "m-0"; "col"]]
@@ -189,6 +196,7 @@ let prepare
     ?results_when_no_search
     ~model_name
     ?create_dialog_content
+    ?hide_border_around_selected
     ()
     : ('model, 'id option) Component.s
   =
@@ -205,6 +213,7 @@ let prepare
     ?results_when_no_search
     ~model_name
     ?create_dialog_content
+    ?hide_border_around_selected
     ~validate: (Option.to_result ~none: "You must select an element.")
     ~unvalidate: Option.some
     ()
@@ -222,6 +231,7 @@ let make
     ?results_when_no_search
     ~model_name
     ?create_dialog_content
+    ?hide_border_around_selected
     initial_value
   =
   Component.initialise
@@ -239,6 +249,7 @@ let make
         ?results_when_no_search
         ~model_name
         ?create_dialog_content
+        ?hide_border_around_selected
         ()
     )
     initial_value
