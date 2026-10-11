@@ -17,10 +17,11 @@ module User_row = struct
   type t = {
     id: User_id.t;
     username: Username.t;
+    full_name: string option; [@default None]
   }
   [@@deriving eq, yojson, fields, show {with_path = false}]
 
-  let to_name : t -> User_name.t = fun {id; username} ->
+  let to_name : t -> User_name.t = fun {id; username; _} ->
     {id; username = Username.to_string username}
 end
 

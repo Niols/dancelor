@@ -1867,3 +1867,9 @@ CREATE INDEX "idx_tune_extra_names_tune_id" ON "tune_extra_names" ("tune_id");
 
 -- @m082_2026_10_lookup_indices__idx_user_person_id
 CREATE INDEX "idx_user_person_id" ON "user" ("person_id");
+
+-- @m083_2026_10_person_copyright_names
+ALTER TABLE "person" ADD COLUMN "copyright_name" VARCHAR(256);
+
+-- @m084_2026_10_user_full_names
+ALTER TABLE "user" ADD COLUMN "full_name" VARCHAR(256);

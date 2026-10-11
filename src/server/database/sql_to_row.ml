@@ -127,12 +127,14 @@ let book_sql_to_row
 let user_sql_to_row
     ~id
     ~username
+    ~full_name
     ~(k : User_row.t -> 'w)
     : 'w
   =
   k {
     id;
     username = Username.of_string_exn username;
+    full_name;
   }
 
 let group_sql_to_row ~id ~name ~(k : Group_row.t -> 'w) : 'w =

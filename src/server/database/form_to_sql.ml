@@ -1,10 +1,11 @@
 open Nes
 open Dancelor_common
 
-let person_form_to_sql query id {Person_form.name; scddb_id} =
+let person_form_to_sql query id {Person_form.name; copyright_name; scddb_id} =
   query
     ~id
     ~name: (NEString.to_string name)
+    ~copyright_name: (Option.map NEString.to_string copyright_name)
     ~scddb_id: (Option.map Int64.of_int scddb_id)
 
 let source_form_to_sql query id {Source_form.name; short_name; scddb_id; description; date; editors = _} =

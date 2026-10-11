@@ -16,6 +16,7 @@ end
 module Person_form = struct
   type t = {
     name: NEString.t;
+    copyright_name: NEString.t option;
     scddb_id: int option;
   }
   [@@deriving eq, yojson]
@@ -207,6 +208,7 @@ end
 module User_form = struct
   type t = {
     username: Username.t;
+    full_name: NEString.t option;
     email: Email.t;
   }
   [@@deriving eq, yojson, fields]
@@ -214,8 +216,8 @@ module User_form = struct
   let to_name id {username; _} : User_name.t =
     {id; username = Username.to_string username}
 
-  let to_row id {username; _} : User_row.t =
-    {id; username}
+  let to_row id {username; full_name; _} : User_row.t =
+    {id; username; full_name = Option.map NEString.to_string full_name}
 end
 
 module Group_form = struct

@@ -2,10 +2,11 @@ open Nes
 open Dancelor_common
 open Sql_to_row
 
-let person_sql_to_view ~id ~name ~scddb_id ~composed_tunes_are_public ~published_tunes_are_public ~(k : Person_view.t -> 'w) : 'w =
+let person_sql_to_view ~id ~name ~copyright_name ~scddb_id ~composed_tunes_are_public ~published_tunes_are_public ~(k : Person_view.t -> 'w) : 'w =
   k {
     id;
     name;
+    copyright_name;
     scddb_id = Option.map Int64.to_int scddb_id;
     composed_tunes_are_public;
     published_tunes_are_public;
@@ -205,6 +206,7 @@ let book_sql_to_view
 let user_sql_to_view
     ~id
     ~username
+    ~full_name
     ~joined
     ~(k : User_view.t -> 'w)
     : 'w
@@ -212,6 +214,7 @@ let user_sql_to_view
   k {
     id;
     username = Username.of_string_exn username;
+    full_name;
     joined
   }
 

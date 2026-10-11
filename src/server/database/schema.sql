@@ -18,6 +18,7 @@ CREATE TABLE "person" (
     "composed_tunes_are_public" BOOLEAN NOT NULL,
     "published_tunes_are_public" BOOLEAN NOT NULL,
     "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
+    "copyright_name" VARCHAR(256),
     CONSTRAINT "fk_person_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
@@ -42,6 +43,7 @@ CREATE TABLE "user" (
     -- [sqlgg] module=Sql_types.Email_conv
     "email" VARCHAR(256) NOT NULL,
     "email_verified" BOOLEAN NOT NULL DEFAULT FALSE,
+    "full_name" VARCHAR(256),
     CONSTRAINT "fk_user_id" FOREIGN KEY ("id") REFERENCES "entities" ("id"),
     CONSTRAINT "fk_user_person_id" FOREIGN KEY ("person_id") REFERENCES "person" ("id"),
     CONSTRAINT "uq_user_email" UNIQUE ("email")

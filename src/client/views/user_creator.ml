@@ -37,6 +37,15 @@ let create () =
       ~validate: (S.const % Option.to_result ~none: "Invalid username format." % Username.from_string)
       ""
   in
+  let%lwt full_name_input =
+    Input.make_option
+      ~type_: Text
+      ~placeholder: "Jean Milligan"
+      ~label: "Full name"
+      ~serialise: Fun.id
+      ~validate: (S.const % ok)
+      ""
+  in
   let%lwt email_input =
     Input.make
       ~type_: Text
@@ -48,8 +57,9 @@ let create () =
   in
   let signal =
     RS.bind (Component.signal username_input) @@ fun username ->
+    RS.bind (Component.signal full_name_input) @@ fun full_name ->
     RS.bind (Component.signal email_input) @@ fun email ->
-    S.const @@ Ok {User_form.username; email}
+    S.const @@ Ok {User_form.username; full_name; email}
   in
   Page.make'
     ~title: (lwt "Create user")

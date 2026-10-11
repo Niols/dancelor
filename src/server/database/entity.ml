@@ -73,9 +73,11 @@ let get_permission db ~actor_id id =
 
 let get_actor_roles db id =
   let id = Id.unsafe_coerce id in
-  Entity_sql.List.get_actor_roles db ~entity_id: id (fun ~role ~user_id ~username ~group_id ~group_name ->
+  Entity_sql.List.get_actor_roles db ~entity_id: id (fun ~role ~user_id ~username ~user_full_name ~group_id ~group_name ->
     match ((user_id, username), (group_id, group_name)) with
-    | ((Some id, Some username), (None, None)) -> user_sql_to_row ~id ~username ~k: (fun user -> (`User user, role))
+    | ((Some id, Some username), (None, None)) ->
+      let full_name = user_full_name in
+      user_sql_to_row ~id ~username ~full_name ~k: (fun user -> (`User user, role))
     | ((None, None), (Some id, Some name)) -> group_sql_to_row ~id ~name ~k: (fun group -> (`Group group, role))
     | _ -> assert false
   )

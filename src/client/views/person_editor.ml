@@ -6,14 +6,21 @@ open Html
 let editor =
   let open Bundle in
   group
-    ~wrap: (fun (name, (scddb_id, ())) -> {Person_form.name; scddb_id})
-    ~unwrap: (fun {Person_form.name; scddb_id} -> (name, (scddb_id, ())))
+    ~wrap: (fun (name, (copyright_name, (scddb_id, ()))) -> {Person_form.name; copyright_name; scddb_id})
+    ~unwrap: (fun {Person_form.name; copyright_name; scddb_id} -> (name, (copyright_name, (scddb_id, ()))))
     ~check: Person_form.equal
     (
       Input.prepare_non_empty
         ~type_: Text
         ~label: "Name"
         ~placeholder: "eg. John Doe"
+        () ^::
+      Input.prepare_option
+        ~type_: Text
+        ~label: "Copyright Name"
+        ~placeholder: "eg. John M. Doe"
+        ~serialise: Fun.id
+        ~validate: (S.const % ok)
         () ^::
       Input.prepare
         ~type_: Text

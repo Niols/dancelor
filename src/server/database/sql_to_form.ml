@@ -2,9 +2,10 @@ open Nes
 open Dancelor_common
 open Sql_to_row
 
-let person_sql_to_form ~id: _ ~name ~scddb_id ~(k : Person_form.t -> 'w) : 'w =
+let person_sql_to_form ~id: _ ~name ~copyright_name ~scddb_id ~(k : Person_form.t -> 'w) : 'w =
   k {
     name = NEString.of_string_exn name;
+    copyright_name = Option.map NEString.of_string_exn copyright_name;
     scddb_id = Option.map Int64.to_int scddb_id;
   }
 
@@ -154,12 +155,14 @@ let book_sql_to_form
 let user_sql_to_form
     ~id: _
     ~username
+    ~full_name
     ~email
     ~(k : User_form.t -> 'w)
     : 'w
   =
   k {
     username = Username.of_string_exn username;
+    full_name = Option.map NEString.of_string_exn full_name;
     email;
   }
 

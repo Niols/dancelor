@@ -91,6 +91,7 @@ SELECT
     "entity_actors"."role",
     "users"."id" AS "user_id",
     "users"."username",
+    "users"."full_name" AS "user_full_name",
     "groups"."id" AS "group_id",
     "groups"."name" AS "group_name"
 FROM "entity_actors"

@@ -33,10 +33,11 @@ let get_actor_gen f =
   Connection.with_ @@ fun db ->
   match%lwt f db with
   | None -> lwt_none
-  | Some (id, username, github_handle, role, omniscience, person_id, person_name) ->
+  | Some (id, username, full_name, github_handle, role, omniscience, person_id, person_name) ->
     lwt_some {
       Actor.id;
       username = Username.of_string_exn username;
+      full_name;
       github_handle;
       role;
       omniscience;
@@ -71,7 +72,7 @@ let get_password_reset_token_from_username username =
       Some (password_reset_token_hash, password_reset_token_max_date)
     )
 
-let create {User_form.username; email} ~password_reset_token_hash ~password_reset_token_max_date =
+let create {User_form.username; full_name; email} ~password_reset_token_hash ~password_reset_token_max_date =
   Connection.with_ @@ fun db ->
   let%lwt id = Entity.make_public db `User in
   ignore
@@ -79,18 +80,20 @@ let create {User_form.username; email} ~password_reset_token_hash ~password_rese
       db
       ~id
       ~username: (Username.to_string username)
+      ~full_name: (Option.map NEString.to_string full_name)
       ~email
       ~password_reset_token_hash: (Some password_reset_token_hash)
       ~password_reset_token_max_date: (Some password_reset_token_max_date);%lwt
   lwt id
 
-let update id {User_form.username; email} =
+let update id {User_form.username; full_name; email} =
   Connection.with_ @@ fun db ->
   ignore
   <$> User_sql.update
       db
       ~id
       ~username: (Username.to_string username)
+      ~full_name: (Option.map NEString.to_string full_name)
       ~email
 
 let remove_all_remember_me_tokens user_id =

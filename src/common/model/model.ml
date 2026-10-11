@@ -21,6 +21,7 @@ module Actor = struct
   type t = {
     id: User_id.t;
     username: Username.t;
+    full_name: string option; (* FIXME: I think we only need it to generate a user row from an actor? *)
     github_handle: string option; (* FIXME: probably only the server cares? *)
     role: Permission.role;
     omniscience: bool;
@@ -28,6 +29,6 @@ module Actor = struct
   }
   [@@deriving eq, fields, yojson]
 
-  let to_user_row {id; username; _} : User_row.t =
-    {id; username}
+  let to_user_row {id; username; full_name; _} : User_row.t =
+    {id; username; full_name}
 end
