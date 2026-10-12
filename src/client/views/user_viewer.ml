@@ -28,11 +28,14 @@ let view id =
     ]
     [
       div [
-        txtf "Joined %s" @@ Datetime.to_string user.joined
+        txtf "Joined %s" @@ Partial_date.to_pretty_string ~at: true user.joined
       ];
-      section (
-        match user.groups with
-        | [] -> []
-        | groups -> [h3 ~a: [a_class ["mt-4"]] [txt "Groups"]; Tables.groups groups]
-      );
+      section [
+        h3 ~a: [a_class ["mt-4"]] [txt "Groups"];
+        (
+          match user.groups with
+          | [] -> txt "This user does not belong to any group."
+          | groups -> Tables.groups groups
+        );
+      ];
     ]

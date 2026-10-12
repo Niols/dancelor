@@ -216,7 +216,7 @@ let user_sql_to_view
     id;
     username = Username.of_string_exn username;
     full_name;
-    joined;
+    joined = Partial_date.(strip_day % of_timestamp) @@ Datetime.to_timestamp joined;
     groups;
   }
 

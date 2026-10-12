@@ -209,7 +209,7 @@ module User_view = struct
     id: User_id.t;
     username: Username.t;
     full_name: string option; [@default None]
-    joined: Datetime.t;
+    joined: Partial_date.t;
     groups: Group_row.t list; [@default []]
   }
   [@@deriving eq, yojson, fields]

@@ -44,3 +44,7 @@ let make_in_the_past d =
 
 let make_in_the_future d =
   now () +. d
+
+let to_timestamp = Fun.id
+
+let of_timestamp = Fun.id
