@@ -26,3 +26,7 @@ val make_in_the_future : float -> t
 
 val in_the_past : t -> bool
 (** Whether the given datetime is in the past. *)
+
+val to_timestamp : t -> float
+val of_timestamp : float -> t
+(** Number of seconds since 1 Jan 1970. *)
