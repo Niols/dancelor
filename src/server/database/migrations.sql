@@ -1894,3 +1894,195 @@ ALTER TABLE "groups" ADD COLUMN "description" TEXT;
 --                   r.tbl, r.conname, r.table_name || '_pkey');
 --   END LOOP;
 -- END $$;
+
+-- @m087_2026_10_rename_tables_to_plural__person
+ALTER TABLE "person" RENAME TO "persons";
+
+-- @m087_2026_10_rename_tables_to_plural__person_pkey
+ALTER TABLE "persons" RENAME CONSTRAINT "person_pkey" TO "pk_persons";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_person_id
+ALTER TABLE "persons" RENAME CONSTRAINT "fk_person_id" TO "fk_persons_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_person_name
+ALTER INDEX "idx_person_name" RENAME TO "idx_persons_name";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_person_name_search
+ALTER INDEX "idx_person_name_search" RENAME TO "idx_persons_name_search";
+
+-- @m087_2026_10_rename_tables_to_plural__user
+ALTER TABLE "user" RENAME TO "users";
+
+-- @m087_2026_10_rename_tables_to_plural__user_pkey
+ALTER TABLE "users" RENAME CONSTRAINT "user_pkey" TO "pk_users";
+
+-- @m087_2026_10_rename_tables_to_plural__user_username_key
+ALTER TABLE "users" RENAME CONSTRAINT "user_username_key" TO "uq_users_username";
+
+-- @m087_2026_10_rename_tables_to_plural__uq_user_email
+ALTER TABLE "users" RENAME CONSTRAINT "uq_user_email" TO "uq_users_email";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_user_id
+ALTER TABLE "users" RENAME CONSTRAINT "fk_user_id" TO "fk_users_id";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_user_person_id
+ALTER TABLE "users" RENAME CONSTRAINT "fk_user_person_id" TO "fk_users_person_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_users_person_id
+ALTER INDEX "idx_user_person_id" RENAME TO "idx_users_person_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_users_username
+ALTER INDEX "idx_user_username" RENAME TO "idx_users_username";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_users_username_search
+ALTER INDEX "idx_user_username_search" RENAME TO "idx_users_username_search";
+
+-- @m087_2026_10_rename_tables_to_plural__dance
+ALTER TABLE "dance" RENAME TO "dances";
+
+-- @m087_2026_10_rename_tables_to_plural__dance_pkey
+ALTER TABLE "dances" RENAME CONSTRAINT "dance_pkey" TO "pk_dances";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_dance_id
+ALTER TABLE "dances" RENAME CONSTRAINT "fk_dance_id" TO "fk_dances_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_dance_name
+ALTER INDEX "idx_dance_name" RENAME TO "idx_dances_name";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_dance_name_search
+ALTER INDEX "idx_dance_name_search" RENAME TO "idx_dances_name_search";
+
+-- @m087_2026_10_rename_tables_to_plural__source
+ALTER TABLE "source" RENAME TO "sources";
+
+-- @m087_2026_10_rename_tables_to_plural__source_pkey
+ALTER TABLE "sources" RENAME CONSTRAINT "source_pkey" TO "pk_sources";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_source_id
+ALTER TABLE "sources" RENAME CONSTRAINT "fk_source_id" TO "fk_sources_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_source_name
+ALTER INDEX "idx_source_name" RENAME TO "idx_sources_name";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_source_name_search
+ALTER INDEX "idx_source_name_search" RENAME TO "idx_sources_name_search";
+
+-- @m087_2026_10_rename_tables_to_plural__tune
+ALTER TABLE "tune" RENAME TO "tunes";
+
+-- @m087_2026_10_rename_tables_to_plural__tune_pkey
+ALTER TABLE "tunes" RENAME CONSTRAINT "tune_pkey" TO "pk_tunes";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_tune_id
+ALTER TABLE "tunes" RENAME CONSTRAINT "fk_tune_id" TO "fk_tunes_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_tune_name
+ALTER INDEX "idx_tune_name" RENAME TO "idx_tunes_name";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_tune_name_search
+ALTER INDEX "idx_tune_name_search" RENAME TO "idx_tunes_name_search";
+
+-- @m087_2026_10_rename_tables_to_plural__version
+ALTER TABLE "version" RENAME TO "versions";
+
+-- @m087_2026_10_rename_tables_to_plural__version_pkey
+ALTER TABLE "versions" RENAME CONSTRAINT "version_pkey" TO "pk_versions";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_version_id
+ALTER TABLE "versions" RENAME CONSTRAINT "fk_version_id" TO "fk_versions_id";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_version_tune_id
+ALTER TABLE "versions" RENAME CONSTRAINT "fk_version_tune_id" TO "fk_versions_tune_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_version_tune_id
+ALTER INDEX "idx_version_tune_id" RENAME TO "idx_versions_tune_id";
+
+-- @m087_2026_10_rename_tables_to_plural__set
+ALTER TABLE "set" RENAME TO "sets";
+
+-- @m087_2026_10_rename_tables_to_plural__set_pkey
+ALTER TABLE "sets" RENAME CONSTRAINT "set_pkey" TO "pk_sets";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_set_id
+ALTER TABLE "sets" RENAME CONSTRAINT "fk_set_id" TO "fk_sets_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_set_name
+ALTER INDEX "idx_set_name" RENAME TO "idx_sets_name";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_set_name_search
+ALTER INDEX "idx_set_name_search" RENAME TO "idx_sets_name_search";
+
+-- @m087_2026_10_rename_tables_to_plural__set_content
+ALTER TABLE "set_content" RENAME TO "set_content_items";
+
+-- @m087_2026_10_rename_tables_to_plural__uq_set_content_set_id_index
+ALTER TABLE "set_content_items" RENAME CONSTRAINT "uq_set_content_set_id_index" TO "uq_set_content_items_set_id_index";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_set_content_set_id
+ALTER TABLE "set_content_items" RENAME CONSTRAINT "fk_set_content_set_id" TO "fk_set_content_items_set_id";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_set_content_version_id
+ALTER TABLE "set_content_items" RENAME CONSTRAINT "fk_set_content_version_id" TO "fk_set_content_items_version_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_set_content_version_id
+ALTER INDEX "idx_set_content_version_id" RENAME TO "idx_set_content_items_version_id";
+
+-- @m087_2026_10_rename_tables_to_plural__book
+ALTER TABLE "book" RENAME TO "books";
+
+-- @m087_2026_10_rename_tables_to_plural__book_pkey
+ALTER TABLE "books" RENAME CONSTRAINT "book_pkey" TO "pk_books";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_book_id
+ALTER TABLE "books" RENAME CONSTRAINT "fk_book_id" TO "fk_books_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_book_name
+ALTER INDEX "idx_book_name" RENAME TO "idx_books_name";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_book_name_search
+ALTER INDEX "idx_book_name_search" RENAME TO "idx_books_name_search";
+
+-- @m087_2026_10_rename_tables_to_plural__book_content
+ALTER TABLE "book_content" RENAME TO "book_content_pages";
+
+-- @m087_2026_10_rename_tables_to_plural__uq_book_content_book_id_index
+ALTER TABLE "book_content_pages" RENAME CONSTRAINT "uq_book_content_book_id_index" TO "uq_book_content_pages_book_id_index";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_book_content_book_id
+ALTER TABLE "book_content_pages" RENAME CONSTRAINT "fk_book_content_book_id" TO "fk_book_content_pages_book_id";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_book_content_dance_id
+ALTER TABLE "book_content_pages" RENAME CONSTRAINT "fk_book_content_dance_id" TO "fk_book_content_pages_dance_id";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_book_content_set_id
+ALTER TABLE "book_content_pages" RENAME CONSTRAINT "fk_book_content_set_id" TO "fk_book_content_pages_set_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_book_content_dance_id
+ALTER INDEX "idx_book_content_dance_id" RENAME TO "idx_book_content_pages_dance_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_book_content_set_id
+ALTER INDEX "idx_book_content_set_id" RENAME TO "idx_book_content_pages_set_id";
+
+-- @m087_2026_10_rename_tables_to_plural__book_content_versions
+ALTER TABLE "book_content_versions" RENAME TO "book_content_page_versions";
+
+-- @m087_2026_10_rename_tables_to_plural__uq_book_content_versions_book_id_content_index_index
+ALTER TABLE "book_content_page_versions" RENAME CONSTRAINT "uq_book_content_versions_book_id_content_index_index" TO "uq_book_content_page_versions_book_id_content_index_index";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_book_content_versions_book_id
+ALTER TABLE "book_content_page_versions" RENAME CONSTRAINT "fk_book_content_versions_book_id" TO "fk_book_content_page_versions_book_id";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_book_content_versions_version_id
+ALTER TABLE "book_content_page_versions" RENAME CONSTRAINT "fk_book_content_versions_version_id" TO "fk_book_content_page_versions_version_id";
+
+-- @m087_2026_10_rename_tables_to_plural__idx_book_content_versions_version_id
+ALTER INDEX "idx_book_content_versions_version_id" RENAME TO "idx_book_content_page_versions_version_id";
+
+-- @m087_2026_10_rename_tables_to_plural__remember_me_tokens_fk_user_id
+ALTER TABLE "remember_me_tokens" RENAME CONSTRAINT "fk_user_id" TO "fk_remember_me_tokens_user_id";
+
+-- @m087_2026_10_rename_tables_to_plural__groups_pkey
+ALTER TABLE "groups" RENAME CONSTRAINT "groups_pkey" TO "pk_groups";
+
+-- @m087_2026_10_rename_tables_to_plural__fk_group_id
+ALTER TABLE "groups" RENAME CONSTRAINT "fk_group_id" TO "fk_groups_id";

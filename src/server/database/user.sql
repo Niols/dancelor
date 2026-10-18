@@ -1,31 +1,31 @@
 -- @get_from_username
 SELECT
-    "user"."id",
+    "users"."id",
     "role",
     "omniscience",
     "github_handle",
     "created_at",
     "modified_at"
-FROM "user"
-JOIN "entities" ON "user"."id" = "entities"."id"
+FROM "users"
+JOIN "entities" ON "users"."id" = "entities"."id"
 WHERE "username" = @username
 LIMIT 1; -- NOTE: to help sqlgg
 
 -- @get_password_from_username
 SELECT
     "password"
-FROM "user"
+FROM "users"
 WHERE "username" = @username;
 
 -- @get_password_reset_token_from_username
 SELECT
     "password_reset_token_hash",
     "password_reset_token_max_date"
-FROM "user"
+FROM "users"
 WHERE "username" = @username;
 
 -- @create
-INSERT INTO "user" (
+INSERT INTO "users" (
     "id",
     "username",
     "full_name",
@@ -49,7 +49,7 @@ VALUES (
 );
 
 -- @update
-UPDATE "user"
+UPDATE "users"
 SET
     "username" = @username,
     "full_name" = @full_name,
@@ -57,7 +57,7 @@ SET
 WHERE "id" = @id;
 
 -- @set_password_reset_token
-UPDATE "user"
+UPDATE "users"
 SET
     "password" = NULL,
     "password_reset_token_hash" = @password_reset_token_hash,
@@ -94,7 +94,7 @@ VALUES (
 );
 
 -- @set_password
-UPDATE "user"
+UPDATE "users"
 SET
     "password" = @password,
     "password_reset_token_hash" = NULL,
@@ -102,7 +102,7 @@ SET
 WHERE "id" = @id;
 
 -- @set_omniscience
-UPDATE "user"
+UPDATE "users"
 SET
     "omniscience" = @omniscience
 WHERE "id" = @id;
@@ -118,7 +118,7 @@ SELECT
     "username",
     "full_name",
     "created_at" AS "joined"
-FROM "user"
+FROM "users"
 JOIN "entities" USING ("id")
 WHERE "id" = @id
 LIMIT 1;
@@ -128,21 +128,21 @@ SELECT
     "username",
     "full_name",
     "email"
-FROM "user"
+FROM "users"
 WHERE "id" = @id;
 
 -- @actors | include: reuse
 SELECT
-    "user"."id",
+    "users"."id",
     "username",
     "full_name",
     "github_handle",
     "role",
     "omniscience",
     "person_id",
-    "person"."name" AS "person_name"
-FROM "user"
-LEFT JOIN "person" ON "user"."person_id" = "person"."id";
+    "persons"."name" AS "person_name"
+FROM "users"
+LEFT JOIN "persons" ON "users"."person_id" = "persons"."id";
 
 -- @get_actor
 WITH "actors" AS &actors
@@ -159,12 +159,12 @@ WITH "user_rows" AS &user_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
-	ELSE GREATEST(word_similarity(@terms, "user"."username"), word_similarity(make_name_search(@terms), "username_search"))
+	ELSE GREATEST(word_similarity(@terms, "users"."username"), word_similarity(make_name_search(@terms), "username_search"))
     END AS "score",
     "user_rows".*
-FROM "user"
-JOIN "user_rows" ON "user"."id" = "user_rows"."id"
-WHERE (@terms = '' OR @terms <% "user"."username" OR make_name_search(@terms) <% "username_search")
+FROM "users"
+JOIN "user_rows" ON "users"."id" = "user_rows"."id"
+WHERE (@terms = '' OR @terms <% "users"."username" OR make_name_search(@terms) <% "username_search")
 ORDER BY "score" DESC, "username_search" ASC, "username" ASC;
 
 -- @groups_for

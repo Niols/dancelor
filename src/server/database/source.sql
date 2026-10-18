@@ -1,5 +1,5 @@
 -- @create
-INSERT INTO "source" (
+INSERT INTO "sources" (
     "id",
     "name",
     "short_name",
@@ -41,7 +41,7 @@ INSERT INTO "source_editors" (
 );
 
 -- @update
-UPDATE "source"
+UPDATE "sources"
 SET
     "name" = @name,
     "short_name" = @short_name,
@@ -51,12 +51,12 @@ SET
 WHERE "id" = @id;
 
 -- @delete
-DELETE FROM "source"
+DELETE FROM "sources"
 WHERE "id" = @id;
 
 -- @get_cover
 SELECT "cover"
-FROM "source"
+FROM "sources"
 WHERE "id" = @id;
 
 -- @get_rows
@@ -73,7 +73,7 @@ SELECT
     "scddb_id",
     "description",
     "date"
-FROM "source"
+FROM "sources"
 WHERE "id" = @id;
 
 -- @get_form
@@ -84,7 +84,7 @@ SELECT
     "scddb_id",
     "description",
     "date"
-FROM "source"
+FROM "sources"
 WHERE "id" = @id;
 
 -- @search
@@ -92,14 +92,14 @@ WITH "source_rows" AS &source_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
-	ELSE GREATEST(word_similarity(@terms, "source"."name"), word_similarity(make_name_search(@terms), "name_search"))
+	ELSE GREATEST(word_similarity(@terms, "sources"."name"), word_similarity(make_name_search(@terms), "name_search"))
     END AS "score",
     "source_rows".*
-FROM "source"
-JOIN "source_rows" ON "source"."id" = "source_rows"."id"
+FROM "sources"
+JOIN "source_rows" ON "sources"."id" = "source_rows"."id"
 WHERE
-    (@terms = '' OR @terms <% "source"."name" OR make_name_search(@terms) <% "name_search")
-    AND @editor { Some { EXISTS (SELECT 1 FROM "source_editors" WHERE "source_id" = "source"."id" AND "person_id" IN @editor) } | None { TRUE } }
+    (@terms = '' OR @terms <% "sources"."name" OR make_name_search(@terms) <% "name_search")
+    AND @editor { Some { EXISTS (SELECT 1 FROM "source_editors" WHERE "source_id" = "sources"."id" AND "person_id" IN @editor) } | None { TRUE } }
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
 -- @get_editors_for
