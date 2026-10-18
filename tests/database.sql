@@ -476,6 +476,16 @@ CREATE TABLE "dancelor"."tunes" (
 
 
 --
+-- Name: user_persons; Type: TABLE; Schema: dancelor; Owner: -
+--
+
+CREATE TABLE "dancelor"."user_persons" (
+    "user_id" character varying(14) NOT NULL,
+    "person_id" character varying(14) NOT NULL
+);
+
+
+--
 -- Name: users; Type: TABLE; Schema: dancelor; Owner: -
 --
 
@@ -486,7 +496,6 @@ CREATE TABLE "dancelor"."users" (
     "password_reset_token_hash" character varying(256),
     "password_reset_token_max_date" timestamp without time zone,
     "omniscience" boolean NOT NULL,
-    "person_id" character varying(14),
     "role" "dancelor"."role" NOT NULL,
     "username_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("username")::"text")) STORED,
     "github_handle" character varying(64),
@@ -780,6 +789,7 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m084_2026_10
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m085_2026_10_group_descriptions', '2026-10-11 18:59:23.867826+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m086_2026_10_fix_primary_key_constraint_names', '2026-10-18 15:27:16.544137+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m087_2026_10_rename_tables_to_plural', '2026-10-18 15:35:01.752365+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m088_2026_10_break_dependency_from_user_to_person', '2026-10-19 06:28:18.322751+00');
 
 
 --
@@ -876,12 +886,19 @@ INSERT INTO "dancelor"."tunes" ("id", "name", "remark", "scddb_id", "date", "kin
 
 
 --
+-- Data for Name: user_persons; Type: TABLE DATA; Schema: dancelor; Owner: -
+--
+
+INSERT INTO "dancelor"."user_persons" ("user_id", "person_id") VALUES ('lt3h-edgt-ac97', 'uwoe-u6ij-ikgp');
+
+
+--
 -- Data for Name: users; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."users" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'uwoe-u6ij-ikgp', 'Administrator', 'Niols', 'placeholder-4423700875@example.com', false, NULL);
-INSERT INTO "dancelor"."users" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, NULL, 'Normal_user', NULL, 'placeholder-9704806487@example.com', false, NULL);
-INSERT INTO "dancelor"."users" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "person_id", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('hfj6-cybi-twwr', 'TestouilleAgain', NULL, '$argon2id$v=19$m=65536,t=2,p=1$V3nYxXwSkOgrKKeWyRPnVQ$bogCIMZGoRHCePUDf0ahKkGUw8tlpfGra5+jD26mSmM', '2026-10-11 09:46:37', false, NULL, 'Normal_user', NULL, 'testouille.again@example.com', false, NULL);
+INSERT INTO "dancelor"."users" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('lt3h-edgt-ac97', 'Niols', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, true, 'Administrator', 'Niols', 'placeholder-4423700875@example.com', false, NULL);
+INSERT INTO "dancelor"."users" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('8x83-e8ky-bhea', 'Testouille', '$argon2id$v=19$m=65536,t=2,p=1$mm4GoaR1lz2r6jJf2OomVA$VwSQPpYI6Clwh8xdoOBcwX2BFH8VCv3B++Tx1G5B11w', NULL, NULL, false, 'Normal_user', NULL, 'placeholder-9704806487@example.com', false, NULL);
+INSERT INTO "dancelor"."users" ("id", "username", "password", "password_reset_token_hash", "password_reset_token_max_date", "omniscience", "role", "github_handle", "email", "email_verified", "full_name") VALUES ('hfj6-cybi-twwr', 'TestouilleAgain', NULL, '$argon2id$v=19$m=65536,t=2,p=1$V3nYxXwSkOgrKKeWyRPnVQ$bogCIMZGoRHCePUDf0ahKkGUw8tlpfGra5+jD26mSmM', '2026-10-11 09:46:37', false, 'Normal_user', NULL, 'testouille.again@example.com', false, NULL);
 
 
 --
@@ -1235,6 +1252,22 @@ ALTER TABLE ONLY "dancelor"."tune_composers"
 
 
 --
+-- Name: user_persons uq_user_persons_person_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."user_persons"
+    ADD CONSTRAINT "uq_user_persons_person_id" UNIQUE ("person_id");
+
+
+--
+-- Name: user_persons uq_user_persons_user_id; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."user_persons"
+    ADD CONSTRAINT "uq_user_persons_user_id" UNIQUE ("user_id");
+
+
+--
 -- Name: users uq_users_email; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
@@ -1507,10 +1540,17 @@ CREATE INDEX "idx_tunes_name_search" ON "dancelor"."tunes" USING "gin" ("name_se
 
 
 --
--- Name: idx_users_person_id; Type: INDEX; Schema: dancelor; Owner: -
+-- Name: idx_user_persons_person_id; Type: INDEX; Schema: dancelor; Owner: -
 --
 
-CREATE INDEX "idx_users_person_id" ON "dancelor"."users" USING "btree" ("person_id");
+CREATE INDEX "idx_user_persons_person_id" ON "dancelor"."user_persons" USING "btree" ("person_id");
+
+
+--
+-- Name: idx_user_persons_user_id; Type: INDEX; Schema: dancelor; Owner: -
+--
+
+CREATE INDEX "idx_user_persons_user_id" ON "dancelor"."user_persons" USING "btree" ("user_id");
 
 
 --
@@ -1829,19 +1869,27 @@ ALTER TABLE ONLY "dancelor"."tunes"
 
 
 --
+-- Name: user_persons fk_user_persons_person_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."user_persons"
+    ADD CONSTRAINT "fk_user_persons_person_id" FOREIGN KEY ("person_id") REFERENCES "dancelor"."persons"("id");
+
+
+--
+-- Name: user_persons fk_user_persons_user_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."user_persons"
+    ADD CONSTRAINT "fk_user_persons_user_id" FOREIGN KEY ("user_id") REFERENCES "dancelor"."users"("id");
+
+
+--
 -- Name: users fk_users_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
 --
 
 ALTER TABLE ONLY "dancelor"."users"
     ADD CONSTRAINT "fk_users_id" FOREIGN KEY ("id") REFERENCES "dancelor"."entities"("id") ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: users fk_users_person_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."users"
-    ADD CONSTRAINT "fk_users_person_id" FOREIGN KEY ("person_id") REFERENCES "dancelor"."persons"("id");
 
 
 --

@@ -1207,6 +1207,14 @@ let migrations : migration list = [
     Migrations_sql.m087_2026_10_rename_tables_to_plural__groups_pkey;
     Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_group_id;
   ];
+  make_ddls "m088_2026_10_break_dependency_from_user_to_person" [
+    Migrations_sql.m088_2026_10_break_dependency_from_user_to_person__add_user_persons_table;
+    Migrations_sql.m088_2026_10_break_dependency_from_user_to_person__index_user_id;
+    Migrations_sql.m088_2026_10_break_dependency_from_user_to_person__index_person_id;
+    Migrations_sql.m088_2026_10_break_dependency_from_user_to_person__insert_select_from_users;
+    bypass {|DROP INDEX "idx_users_person_id";|};
+    Migrations_sql.m088_2026_10_break_dependency_from_user_to_person__drop_column_person_id;
+  ];
 ]
 
 exception Migration_failed of string * exn

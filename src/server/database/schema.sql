@@ -38,8 +38,6 @@ CREATE TABLE "users" (
     "password_reset_token_hash" VARCHAR(256),
     "password_reset_token_max_date" TIMESTAMP,
     "omniscience" BOOLEAN NOT NULL,
-    -- [sqlgg] module=Sql_types.Person_id_conv
-    "person_id" VARCHAR(14) NULL,
     -- [sqlgg] module=Sql_types.Role_conv
     "role" "role" NOT NULL,
     "username_search" TEXT GENERATED ALWAYS AS (make_name_search("username")) STORED,
@@ -51,13 +49,25 @@ CREATE TABLE "users" (
     CONSTRAINT "pk_users" PRIMARY KEY ("id"),
     CONSTRAINT "uq_users_username" UNIQUE ("username"),
     CONSTRAINT "uq_users_email" UNIQUE ("email"),
-    CONSTRAINT "fk_users_id" FOREIGN KEY ("id") REFERENCES "entities" ("id"),
-    CONSTRAINT "fk_users_person_id" FOREIGN KEY ("person_id") REFERENCES "persons" ("id")
+    CONSTRAINT "fk_users_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
-CREATE INDEX "idx_users_person_id" ON "users" ("person_id");
 CREATE INDEX "idx_users_username" ON "users" USING GIN ("username" "public"."gin_trgm_ops");
 CREATE INDEX "idx_users_username_search" ON "users" USING GIN ("username_search" "public"."gin_trgm_ops");
+
+CREATE TABLE "user_persons" (
+    -- [sqlgg] module=Sql_types.User_id_conv
+    "user_id" VARCHAR(14) NOT NULL,
+    -- [sqlgg] module=Sql_types.Person_id_conv
+    "person_id" VARCHAR(14) NOT NULL,
+    CONSTRAINT "uq_user_persons_user_id" UNIQUE ("user_id"),
+    CONSTRAINT "uq_user_persons_person_id" UNIQUE ("person_id"),
+    CONSTRAINT "fk_user_persons_user_id" FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
+    CONSTRAINT "fk_user_persons_person_id" FOREIGN KEY ("person_id") REFERENCES "persons" ("id")
+);
+
+CREATE INDEX "idx_user_persons_user_id" ON "user_persons" ("user_id");
+CREATE INDEX "idx_user_persons_person_id" ON "user_persons" ("person_id");
 
 CREATE TABLE "groups" (
     -- [sqlgg] module=Sql_types.Group_id_conv
