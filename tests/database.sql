@@ -778,6 +778,7 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m082_2026_10
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m083_2026_10_person_copyright_names', '2026-10-11 15:01:50.168826+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m084_2026_10_user_full_names', '2026-10-11 15:01:50.172174+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m085_2026_10_group_descriptions', '2026-10-11 18:59:23.867826+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m086_2026_10_fix_primary_key_constraint_names', '2026-10-18 15:27:16.544137+00');
 
 
 --
@@ -1025,6 +1026,22 @@ INSERT INTO "dancelor"."version_sources" ("version_id", "source_id", "structure"
 
 
 --
+-- Name: book book_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."book"
+    ADD CONSTRAINT "book_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: dance dance_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."dance"
+    ADD CONSTRAINT "dance_pkey" PRIMARY KEY ("id");
+
+
+--
 -- Name: groups groups_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
@@ -1033,75 +1050,19 @@ ALTER TABLE ONLY "dancelor"."groups"
 
 
 --
--- Name: book idx_16409_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."book"
-    ADD CONSTRAINT "idx_16409_primary" PRIMARY KEY ("id");
-
-
---
--- Name: dance idx_16414_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."dance"
-    ADD CONSTRAINT "idx_16414_primary" PRIMARY KEY ("id");
-
-
---
--- Name: migrations idx_16422_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
 ALTER TABLE ONLY "dancelor"."migrations"
-    ADD CONSTRAINT "idx_16422_primary" PRIMARY KEY ("name");
+    ADD CONSTRAINT "migrations_pkey" PRIMARY KEY ("name");
 
 
 --
--- Name: person idx_16426_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
+-- Name: person person_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
 ALTER TABLE ONLY "dancelor"."person"
-    ADD CONSTRAINT "idx_16426_primary" PRIMARY KEY ("id");
-
-
---
--- Name: set idx_16431_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."set"
-    ADD CONSTRAINT "idx_16431_primary" PRIMARY KEY ("id");
-
-
---
--- Name: source idx_16436_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."source"
-    ADD CONSTRAINT "idx_16436_primary" PRIMARY KEY ("id");
-
-
---
--- Name: tune idx_16441_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."tune"
-    ADD CONSTRAINT "idx_16441_primary" PRIMARY KEY ("id");
-
-
---
--- Name: user idx_16446_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."user"
-    ADD CONSTRAINT "idx_16446_primary" PRIMARY KEY ("id");
-
-
---
--- Name: version idx_16451_primary; Type: CONSTRAINT; Schema: dancelor; Owner: -
---
-
-ALTER TABLE ONLY "dancelor"."version"
-    ADD CONSTRAINT "idx_16451_primary" PRIMARY KEY ("id");
+    ADD CONSTRAINT "person_pkey" PRIMARY KEY ("id");
 
 
 --
@@ -1110,6 +1071,30 @@ ALTER TABLE ONLY "dancelor"."version"
 
 ALTER TABLE ONLY "dancelor"."entities"
     ADD CONSTRAINT "pk_entities" PRIMARY KEY ("id");
+
+
+--
+-- Name: set set_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."set"
+    ADD CONSTRAINT "set_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: source source_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."source"
+    ADD CONSTRAINT "source_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: tune tune_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."tune"
+    ADD CONSTRAINT "tune_pkey" PRIMARY KEY ("id");
 
 
 --
@@ -1273,11 +1258,27 @@ ALTER TABLE ONLY "dancelor"."version_sources"
 
 
 --
+-- Name: user user_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."user"
+    ADD CONSTRAINT "user_pkey" PRIMARY KEY ("id");
+
+
+--
 -- Name: user user_username_key; Type: CONSTRAINT; Schema: dancelor; Owner: -
 --
 
 ALTER TABLE ONLY "dancelor"."user"
     ADD CONSTRAINT "user_username_key" UNIQUE ("username");
+
+
+--
+-- Name: version version_pkey; Type: CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."version"
+    ADD CONSTRAINT "version_pkey" PRIMARY KEY ("id");
 
 
 --

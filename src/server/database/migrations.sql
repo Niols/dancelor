@@ -1876,3 +1876,21 @@ ALTER TABLE "user" ADD COLUMN "full_name" VARCHAR(256);
 
 -- @m085_2026_10_group_descriptions
 ALTER TABLE "groups" ADD COLUMN "description" TEXT;
+
+-- -- @m086_2026_10_fix_primary_key_constraint_names
+-- DO $$
+-- DECLARE r record;
+-- BEGIN
+--   FOR r IN
+--     SELECT c.conrelid::regclass AS tbl, c.conname, cl.relname AS table_name
+--     FROM pg_constraint c
+--     JOIN pg_class cl ON cl.oid = c.conrelid
+--     JOIN pg_namespace n ON n.oid = cl.relnamespace
+--     WHERE c.contype = 'p'
+--       AND n.nspname = 'dancelor'
+--       AND c.conname NOT IN (cl.relname || '_pkey', 'pk_' || cl.relname)
+--   LOOP
+--     EXECUTE format('ALTER TABLE %s RENAME CONSTRAINT %I TO %I',
+--                   r.tbl, r.conname, r.table_name || '_pkey');
+--   END LOOP;
+-- END $$;
