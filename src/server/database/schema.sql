@@ -22,6 +22,9 @@ CREATE TABLE "person" (
     CONSTRAINT "fk_person_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
+CREATE INDEX "idx_person_name" ON "person" USING GIN ("name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_person_name_search" ON "person" USING GIN ("name_search" "public"."gin_trgm_ops");
+
 CREATE TYPE "role" AS ENUM ('Normal_user', 'Maintainer', 'Administrator');
 
 CREATE TABLE "user" (
@@ -49,6 +52,10 @@ CREATE TABLE "user" (
     CONSTRAINT "uq_user_email" UNIQUE ("email")
 );
 
+CREATE INDEX "idx_user_person_id" ON "user" ("person_id");
+CREATE INDEX "idx_user_username" ON "user" USING GIN ("username" "public"."gin_trgm_ops");
+CREATE INDEX "idx_user_username_search" ON "user" USING GIN ("username_search" "public"."gin_trgm_ops");
+
 CREATE TABLE "groups" (
     -- [sqlgg] module=Sql_types.Group_id_conv
     "id" VARCHAR(14) NOT NULL PRIMARY KEY,
@@ -71,6 +78,8 @@ CREATE TABLE "group_members" (
     CONSTRAINT "uq_group_members_group_id_member_id" UNIQUE ("group_id", "member_id")
 );
 
+CREATE INDEX "idx_group_members_member_id" ON "group_members" ("member_id");
+
 -- NOTE: The order matters, and stronger roles should appear before weaker ones
 -- such that `<` can be used to compare them.
 CREATE TYPE "actor_role" AS ENUM ('Owner', 'Viewer');
@@ -89,6 +98,9 @@ CREATE TABLE "entity_actors" (
     CONSTRAINT "uq_entity_actors_entity_id_user_id_group_id" UNIQUE ("entity_id", "user_id", "group_id")
     -- INVARIANT: user_id IS NULL <=> group_id IS NOT NULL
 );
+
+CREATE INDEX "idx_entity_actors_user_id" ON "entity_actors" ("user_id");
+CREATE INDEX "idx_entity_actors_group_id" ON "entity_actors" ("group_id");
 
 CREATE TABLE "remember_me_tokens" (
     -- [sqlgg] module=Sql_types.User_id_conv
@@ -115,6 +127,9 @@ CREATE TABLE "source" (
     CONSTRAINT "fk_source_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
+CREATE INDEX "idx_source_name" ON "source" USING GIN ("name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_source_name_search" ON "source" USING GIN ("name_search" "public"."gin_trgm_ops");
+
 CREATE TABLE "source_editors" (
     -- [sqlgg] module=Sql_types.Source_id_conv
     "source_id" VARCHAR(14) NOT NULL,
@@ -124,6 +139,8 @@ CREATE TABLE "source_editors" (
     CONSTRAINT "fk_source_editors_person_id" FOREIGN KEY ("person_id") REFERENCES "person" ("id"),
     CONSTRAINT "uq_source_editors_source_id_person_id" UNIQUE ("source_id", "person_id")
 );
+
+CREATE INDEX "idx_source_editors_person_id" ON "source_editors" ("person_id");
 
 CREATE TYPE "two_chords" AS ENUM ('Dont_know', 'One_chord', 'Two_chords');
 
@@ -141,6 +158,9 @@ CREATE TABLE "dance" (
     CONSTRAINT "fk_dance_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
+CREATE INDEX "idx_dance_name" ON "dance" USING GIN ("name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_dance_name_search" ON "dance" USING GIN ("name_search" "public"."gin_trgm_ops");
+
 CREATE TABLE "dance_devisers" (
     -- [sqlgg] module=Sql_types.Dance_id_conv
     "dance_id" VARCHAR(14) NOT NULL,
@@ -153,6 +173,8 @@ CREATE TABLE "dance_devisers" (
     CONSTRAINT "uq_dance_devisers_dance_id_index_deviser_id" UNIQUE ("dance_id", "index", "deviser_id")
 );
 
+CREATE INDEX "idx_dance_devisers_deviser_id" ON "dance_devisers" ("deviser_id");
+
 CREATE TABLE "dance_extra_names" (
     -- [sqlgg] module=Sql_types.Dance_id_conv
     "dance_id" VARCHAR(14) NOT NULL,
@@ -160,6 +182,10 @@ CREATE TABLE "dance_extra_names" (
     "extra_name_search" TEXT GENERATED ALWAYS AS (make_name_search("extra_name")) STORED,
     CONSTRAINT "fk_dance_extra_names_dance_id" FOREIGN KEY ("dance_id") REFERENCES "dance" ("id")
 );
+
+CREATE INDEX "idx_dance_extra_names_dance_id" ON "dance_extra_names" ("dance_id");
+CREATE INDEX "idx_dance_extra_names_extra_name" ON "dance_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_dance_extra_names_extra_name_search" ON "dance_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops");
 
 CREATE TYPE "kind" AS ENUM (
     'Jig',
@@ -191,6 +217,9 @@ CREATE TABLE "tune" (
     CONSTRAINT "fk_tune_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
+CREATE INDEX "idx_tune_name" ON "tune" USING GIN ("name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_tune_name_search" ON "tune" USING GIN ("name_search" "public"."gin_trgm_ops");
+
 CREATE TABLE "tune_extra_names" (
     -- [sqlgg] module=Sql_types.Tune_id_conv
     "tune_id" VARCHAR(14) NOT NULL,
@@ -198,6 +227,10 @@ CREATE TABLE "tune_extra_names" (
     "extra_name_search" TEXT GENERATED ALWAYS AS (make_name_search("extra_name")) STORED,
     CONSTRAINT "fk_tune_extra_names_tune_id" FOREIGN KEY ("tune_id") REFERENCES "tune" ("id")
 );
+
+CREATE INDEX "idx_tune_extra_names_tune_id" ON "tune_extra_names" ("tune_id");
+CREATE INDEX "idx_tune_extra_names_extra_name" ON "tune_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "tune_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops");
 
 CREATE TABLE "tune_composers" (
     -- [sqlgg] module=Sql_types.Tune_id_conv
@@ -212,6 +245,8 @@ CREATE TABLE "tune_composers" (
     CONSTRAINT "uq_tune_composers_tune_id_index_composer_id" UNIQUE ("tune_id", "index", "composer_id")
 );
 
+CREATE INDEX "idx_tune_composers_composer_id" ON "tune_composers" ("composer_id");
+
 CREATE TABLE "recommended_tunes" (
     -- [sqlgg] module=Sql_types.Dance_id_conv
     "dance_id" VARCHAR(14) NOT NULL,
@@ -221,6 +256,8 @@ CREATE TABLE "recommended_tunes" (
     CONSTRAINT "fk_recommended_tunes_tune_id" FOREIGN KEY ("tune_id") REFERENCES "tune" ("id"),
     CONSTRAINT "uq_recommended_tunes_dance_id_tune_id" UNIQUE ("dance_id", "tune_id")
 );
+
+CREATE INDEX "idx_recommended_tunes_tune_id" ON "recommended_tunes" ("tune_id");
 
 CREATE TABLE "version" (
     -- [sqlgg] module=Sql_types.Version_id_conv
@@ -238,6 +275,8 @@ CREATE TABLE "version" (
     CONSTRAINT "fk_version_tune_id" FOREIGN KEY ("tune_id") REFERENCES "tune" ("id")
 );
 
+CREATE INDEX "idx_version_tune_id" ON "version" ("tune_id");
+
 CREATE TABLE "version_arrangers" (
     -- [sqlgg] module=Sql_types.Version_id_conv
     "version_id" VARCHAR(14) NOT NULL,
@@ -247,6 +286,8 @@ CREATE TABLE "version_arrangers" (
     CONSTRAINT "fk_version_arrangers_arranger_id" FOREIGN KEY ("arranger_id") REFERENCES "person" ("id"),
     CONSTRAINT "uq_version_arrangers_version_id_arranger_id" UNIQUE ("version_id", "arranger_id")
 );
+
+CREATE INDEX "idx_version_arrangers_arranger_id" ON "version_arrangers" ("arranger_id");
 
 CREATE TABLE "version_sources" (
     -- [sqlgg] module=Sql_types.Version_id_conv
@@ -259,6 +300,9 @@ CREATE TABLE "version_sources" (
     CONSTRAINT "fk_version_sources_source_id" FOREIGN KEY ("source_id") REFERENCES "source" ("id"),
     CONSTRAINT "uq_version_sources_version_id_source_id_structure" UNIQUE ("version_id", "source_id" ,"structure")
 );
+
+CREATE INDEX "idx_version_sources_source_id" ON "version_sources" ("source_id");
+
 
 CREATE TABLE "version_destructured_parts" (
     -- [sqlgg] module=Sql_types.Version_id_conv
@@ -292,6 +336,9 @@ CREATE TABLE "set" (
     CONSTRAINT "fk_set_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
+CREATE INDEX "idx_set_name" ON "set" USING GIN ("name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_set_name_search" ON "set" USING GIN ("name_search" "public"."gin_trgm_ops");
+
 CREATE TABLE "set_conceptors" (
     -- [sqlgg] module=Sql_types.Set_id_conv
     "set_id" VARCHAR(14) NOT NULL,
@@ -301,6 +348,8 @@ CREATE TABLE "set_conceptors" (
     CONSTRAINT "fk_set_conceptors_conceptor_id" FOREIGN KEY ("conceptor_id") REFERENCES "person" ("id"),
     CONSTRAINT "uq_set_conceptors_set_id_conceptor_id" UNIQUE ("set_id", "conceptor_id")
 );
+
+CREATE INDEX "idx_set_conceptors_conceptor_id" ON "set_conceptors" ("conceptor_id");
 
 CREATE TABLE "set_content" (
     -- [sqlgg] module=Sql_types.Set_id_conv
@@ -320,6 +369,8 @@ CREATE TABLE "set_content" (
     CONSTRAINT "uq_set_content_set_id_index" UNIQUE ("set_id", "index")
 );
 
+CREATE INDEX "idx_set_content_version_id" ON "set_content" ("version_id");
+
 CREATE TABLE "book" (
     -- [sqlgg] module=Sql_types.Book_id_conv
     "id" VARCHAR(14) NOT NULL PRIMARY KEY,
@@ -331,6 +382,9 @@ CREATE TABLE "book" (
     CONSTRAINT "fk_book_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
+CREATE INDEX "idx_book_name" ON "book" USING GIN ("name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_book_name_search" ON "book" USING GIN ("name_search" "public"."gin_trgm_ops");
+
 CREATE TABLE "book_authors" (
     -- [sqlgg] module=Sql_types.Book_id_conv
     "book_id" VARCHAR(14) NOT NULL,
@@ -341,6 +395,8 @@ CREATE TABLE "book_authors" (
     CONSTRAINT "uq_book_authors_book_id_author_id" UNIQUE ("book_id", "author_id")
 );
 
+CREATE INDEX "idx_book_authors_author_id" ON "book_authors" ("author_id");
+
 CREATE TABLE "book_sources" (
     -- [sqlgg] module=Sql_types.Book_id_conv
     "book_id" VARCHAR(14) NOT NULL,
@@ -350,6 +406,8 @@ CREATE TABLE "book_sources" (
     CONSTRAINT "fk_book_sources_source_id" FOREIGN KEY ("source_id") REFERENCES "source" ("id"),
     CONSTRAINT "uq_book_sources_book_id_source_id" UNIQUE ("book_id", "source_id")
 );
+
+CREATE INDEX "idx_book_sources_source_id" ON "book_sources" ("source_id");
 
 CREATE TYPE "page_type" AS ENUM ('Part', 'Dance_only', 'Dance_versions', 'Dance_set', 'Versions', 'Set');
 
@@ -379,6 +437,9 @@ CREATE TABLE "book_content" (
     CONSTRAINT "uq_book_content_book_id_index" UNIQUE ("book_id", "index")
 );
 
+CREATE INDEX "idx_book_content_dance_id" ON "book_content" ("dance_id");
+CREATE INDEX "idx_book_content_set_id" ON "book_content" ("set_id");
+
 CREATE TABLE "book_content_versions" ( -- standalone or within dance
     -- [sqlgg] module=Sql_types.Book_id_conv
     "book_id" VARCHAR(14) NOT NULL,
@@ -398,45 +459,4 @@ CREATE TABLE "book_content_versions" ( -- standalone or within dance
     CONSTRAINT "uq_book_content_versions_book_id_content_index_index" UNIQUE ("book_id", "content_index", "index")
 );
 
-CREATE INDEX "idx_person_name" ON "person" USING GIN ("name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_person_name_search" ON "person" USING GIN ("name_search" "public"."gin_trgm_ops");
-CREATE INDEX "idx_dance_name" ON "dance" USING GIN ("name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_dance_name_search" ON "dance" USING GIN ("name_search" "public"."gin_trgm_ops");
-CREATE INDEX "idx_source_name" ON "source" USING GIN ("name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_source_name_search" ON "source" USING GIN ("name_search" "public"."gin_trgm_ops");
-CREATE INDEX "idx_tune_name" ON "tune" USING GIN ("name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_tune_name_search" ON "tune" USING GIN ("name_search" "public"."gin_trgm_ops");
-CREATE INDEX "idx_set_name" ON "set" USING GIN ("name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_set_name_search" ON "set" USING GIN ("name_search" "public"."gin_trgm_ops");
-CREATE INDEX "idx_book_name" ON "book" USING GIN ("name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_book_name_search" ON "book" USING GIN ("name_search" "public"."gin_trgm_ops");
-CREATE INDEX "idx_user_username" ON "user" USING GIN ("username" "public"."gin_trgm_ops");
-CREATE INDEX "idx_user_username_search" ON "user" USING GIN ("username_search" "public"."gin_trgm_ops");
-CREATE INDEX "idx_dance_extra_names_extra_name" ON "dance_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_dance_extra_names_extra_name_search" ON "dance_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops");
-CREATE INDEX "idx_tune_extra_names_extra_name" ON "tune_extra_names" USING GIN ("extra_name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_tune_extra_names_extra_name_search" ON "tune_extra_names" USING GIN ("extra_name_search" "public"."gin_trgm_ops");
-
--- NOTE: Foreign keys are not indexed automatically and a composite UNIQUE only
--- serves lookups on its leading column, so these cover other columns that we
--- use to look things up.
-CREATE INDEX "idx_entity_actors_user_id" ON "entity_actors" ("user_id");
-CREATE INDEX "idx_entity_actors_group_id" ON "entity_actors" ("group_id");
-CREATE INDEX "idx_group_members_member_id" ON "group_members" ("member_id");
-CREATE INDEX "idx_version_tune_id" ON "version" ("tune_id");
-CREATE INDEX "idx_set_content_version_id" ON "set_content" ("version_id");
 CREATE INDEX "idx_book_content_versions_version_id" ON "book_content_versions" ("version_id");
-CREATE INDEX "idx_tune_composers_composer_id" ON "tune_composers" ("composer_id");
-CREATE INDEX "idx_version_sources_source_id" ON "version_sources" ("source_id");
-CREATE INDEX "idx_version_arrangers_arranger_id" ON "version_arrangers" ("arranger_id");
-CREATE INDEX "idx_dance_devisers_deviser_id" ON "dance_devisers" ("deviser_id");
-CREATE INDEX "idx_source_editors_person_id" ON "source_editors" ("person_id");
-CREATE INDEX "idx_recommended_tunes_tune_id" ON "recommended_tunes" ("tune_id");
-CREATE INDEX "idx_set_conceptors_conceptor_id" ON "set_conceptors" ("conceptor_id");
-CREATE INDEX "idx_book_sources_source_id" ON "book_sources" ("source_id");
-CREATE INDEX "idx_book_authors_author_id" ON "book_authors" ("author_id");
-CREATE INDEX "idx_book_content_dance_id" ON "book_content" ("dance_id");
-CREATE INDEX "idx_book_content_set_id" ON "book_content" ("set_id");
-CREATE INDEX "idx_dance_extra_names_dance_id" ON "dance_extra_names" ("dance_id");
-CREATE INDEX "idx_tune_extra_names_tune_id" ON "tune_extra_names" ("tune_id");
-CREATE INDEX "idx_user_person_id" ON "user" ("person_id");
