@@ -1,5 +1,5 @@
 -- @create
-INSERT INTO "dance" (
+INSERT INTO "dances" (
     "id",
     "name",
     "kind",
@@ -18,7 +18,7 @@ INSERT INTO "dance" (
 );
 
 -- @update
-UPDATE "dance"
+UPDATE "dances"
 SET
     "name" = @name,
     "kind" = @kind,
@@ -29,7 +29,7 @@ SET
 WHERE "id" = @id;
 
 -- @delete
-DELETE FROM "dance"
+DELETE FROM "dances"
 WHERE "id" = @id;
 
 -- @delete_all_extra_names
@@ -88,7 +88,7 @@ SELECT
     "disambiguation",
     "date",
     "two_chords"
-FROM "dance"
+FROM "dances"
 WHERE "id" = @id;
 
 -- @get_form
@@ -100,7 +100,7 @@ SELECT
     "disambiguation",
     "date",
     "two_chords"
-FROM "dance"
+FROM "dances"
 WHERE "id" = @id;
 
 -- @search
@@ -108,14 +108,14 @@ WITH "dance_rows" AS &dance_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
-	ELSE GREATEST(word_similarity(@terms, "dance"."name"), word_similarity(make_name_search(@terms), "name_search"))
+	ELSE GREATEST(word_similarity(@terms, "dances"."name"), word_similarity(make_name_search(@terms), "name_search"))
     END AS "score",
     "dance_rows".*
-FROM "dance"
-JOIN "dance_rows" ON "dance"."id" = "dance_rows"."id"
+FROM "dances"
+JOIN "dance_rows" ON "dances"."id" = "dance_rows"."id"
 WHERE
-    (@terms = '' OR @terms <% "dance"."name" OR make_name_search(@terms) <% "name_search")
-    AND @deviser { Some { EXISTS (SELECT 1 FROM "dance_devisers" WHERE "dance_id" = "dance"."id" AND "deviser_id" IN @deviser) } | None { TRUE } }
+    (@terms = '' OR @terms <% "dances"."name" OR make_name_search(@terms) <% "name_search")
+    AND @deviser { Some { EXISTS (SELECT 1 FROM "dance_devisers" WHERE "dance_id" = "dances"."id" AND "deviser_id" IN @deviser) } | None { TRUE } }
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
 -- @get_extra_names_for
@@ -143,13 +143,16 @@ SELECT
     "name",
     "kind"
 FROM "recommended_tunes"
-JOIN "tune" ON "recommended_tunes"."tune_id" = "tune"."id"
+JOIN "tunes" ON "recommended_tunes"."tune_id" = "tunes"."id"
 WHERE @dance_ids { One_of { "recommended_tunes"."dance_id" IN @dance_ids } | All { TRUE } };
 
 -- @get_composers_for_tunes_for
 WITH "tunes" AS &tune_ids_for_dances
-SELECT "tune_id", "person"."id", "person"."name"
+SELECT
+    "tune_id",
+    "persons"."id",
+    "persons"."name"
 FROM "tune_composers"
-JOIN "person" ON "tune_composers"."composer_id" = "person"."id"
+JOIN "persons" ON "tune_composers"."composer_id" = "persons"."id"
 JOIN "tunes" USING ("tune_id")
 ORDER BY "index";

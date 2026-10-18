@@ -3,9 +3,9 @@ WITH
     -- grab the information of whether the actor is an omniscient administrator
     "actor" AS (
         SELECT COALESCE((
-            SELECT "user"."role" = 'Administrator' AND "user"."omniscience"
-            FROM "user"
-            WHERE "user"."id" = (@actor_id :: TEXT NULL)
+            SELECT "users"."role" = 'Administrator' AND "users"."omniscience"
+            FROM "users"
+            WHERE "users"."id" = (@actor_id :: TEXT NULL)
         ), FALSE) AS "actor_is_omniscient_administrator"
     ),
 
@@ -85,27 +85,27 @@ WHERE
 SELECT
     "id",
     "name"
-FROM "person";
+FROM "persons";
 
 -- @source_rows | include: reuse
 SELECT
     "id",
     "name",
     "date"
-FROM "source";
+FROM "sources";
 
 -- @source_names | include: reuse
 SELECT
     "id",
     "name"
-FROM "source";
+FROM "sources";
 
 -- @source_short_names | include: reuse
 SELECT
     "id",
     "name",
     "short_name"
-FROM "source";
+FROM "sources";
 
 -- @dance_rows | include: reuse
 SELECT
@@ -113,14 +113,14 @@ SELECT
     "name",
     "kind",
     "disambiguation"
-FROM "dance";
+FROM "dances";
 
 -- @user_rows | include: reuse
 SELECT
     "id",
     "username",
     "full_name"
-FROM "user";
+FROM "users";
 
 -- @group_rows | include: reuse
 SELECT "id", "name"
@@ -138,11 +138,11 @@ SELECT
     "disambiguation",
     "monolithic_bars",
     "monolithic_or_default_structure"
-FROM "version";
+FROM "versions";
 
 -- @version_names | include: reuse
 SELECT
-    "version"."id",
-    "tune"."name"
-FROM "version"
-JOIN "tune" ON "tune"."id" = "version"."tune_id";
+    "versions"."id",
+    "tunes"."name"
+FROM "versions"
+JOIN "tunes" ON "tunes"."id" = "versions"."tune_id";

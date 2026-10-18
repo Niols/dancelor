@@ -1,5 +1,5 @@
 -- @create
-INSERT INTO "tune" (
+INSERT INTO "tunes" (
     "id",
     "name",
     "kind",
@@ -16,7 +16,7 @@ INSERT INTO "tune" (
 );
 
 -- @update
-UPDATE "tune"
+UPDATE "tunes"
 SET
     "name" = @name,
     "kind" = @kind,
@@ -26,7 +26,7 @@ SET
 WHERE "id" = @id;
 
 -- @delete
-DELETE FROM "tune"
+DELETE FROM "tunes"
 WHERE "id" = @id;
 
 -- @get_extra_names
@@ -119,7 +119,7 @@ SELECT
     "id",
     "name",
     "kind"
-FROM "tune";
+FROM "tunes";
 
 -- @get_rows
 WITH "tunes" AS &tune_rows
@@ -135,7 +135,7 @@ SELECT
     "remark",
     "scddb_id",
     "date"
-FROM "tune"
+FROM "tunes"
 WHERE "id" = @id;
 
 -- @get_form
@@ -146,7 +146,7 @@ SELECT
     "remark",
     "scddb_id",
     "date"
-FROM "tune"
+FROM "tunes"
 WHERE "id" = @id;
 
 -- @search
@@ -154,15 +154,15 @@ WITH "tune_rows" AS &tune_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
-	ELSE GREATEST(word_similarity(@terms, "tune"."name"), word_similarity(make_name_search(@terms), "name_search"))
+	ELSE GREATEST(word_similarity(@terms, "tunes"."name"), word_similarity(make_name_search(@terms), "name_search"))
     END AS "score",
     "tune_rows".*
-FROM "tune"
-JOIN "tune_rows" ON "tune"."id" = "tune_rows"."id"
+FROM "tunes"
+JOIN "tune_rows" ON "tunes"."id" = "tune_rows"."id"
 WHERE
-    (@terms = '' OR @terms <% "tune"."name" OR make_name_search(@terms) <% "name_search")
-    AND { "tune"."kind" IN @kind }?
-    AND @composer { Some { EXISTS (SELECT 1 FROM "tune_composers" WHERE "tune_id" = "tune"."id" AND "composer_id" IN @composer) } | None { TRUE } }
+    (@terms = '' OR @terms <% "tunes"."name" OR make_name_search(@terms) <% "name_search")
+    AND { "tunes"."kind" IN @kind }?
+    AND @composer { Some { EXISTS (SELECT 1 FROM "tune_composers" WHERE "tune_id" = "tunes"."id" AND "composer_id" IN @composer) } | None { TRUE } }
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
 -- @get_extra_names_for
@@ -230,17 +230,17 @@ WHERE @tune_ids { One_of { "tune_id" IN @tune_ids } | All { TRUE } };
 WITH "sources" AS &source_short_names
 SELECT "version_id", "sources".*
 FROM "version_sources"
-JOIN "version" ON "version_sources"."version_id" = "version"."id"
+JOIN "versions" ON "version_sources"."version_id" = "versions"."id"
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id"
-WHERE @tune_ids { One_of { "version"."tune_id" IN @tune_ids } | All { TRUE } };
+WHERE @tune_ids { One_of { "versions"."tune_id" IN @tune_ids } | All { TRUE } };
 
 -- @get_arrangers_for_versions_of
 WITH "persons" AS &person_rows
 SELECT "version_id", "persons".*
 FROM "version_arrangers"
-JOIN "version" ON "version_arrangers"."version_id" = "version"."id"
+JOIN "versions" ON "version_arrangers"."version_id" = "versions"."id"
 JOIN "persons" ON "version_arrangers"."arranger_id" = "persons"."id"
-WHERE @tune_ids { One_of { "version"."tune_id" IN @tune_ids } | All { TRUE } };
+WHERE @tune_ids { One_of { "versions"."tune_id" IN @tune_ids } | All { TRUE } };
 
 -- @get_rows_for_dance
 WITH "tunes" AS &tune_rows

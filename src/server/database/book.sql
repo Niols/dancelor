@@ -1,5 +1,5 @@
 -- @create
-INSERT INTO "book" (
+INSERT INTO "books" (
     "id",
     "name",
     "date",
@@ -14,7 +14,7 @@ INSERT INTO "book" (
 );
 
 -- @update
-UPDATE "book"
+UPDATE "books"
 SET
     "name" = @name,
     "date" = @date,
@@ -23,7 +23,7 @@ SET
 WHERE "id" = @id;
 
 -- @delete
-DELETE FROM "book"
+DELETE FROM "books"
 WHERE "id" = @id;
 
 -- @get_authors
@@ -91,7 +91,7 @@ SELECT
     "set_parameter_version_parameter_trivia",
     "set_parameter_version_parameter_display_name",
     "set_parameter_version_parameter_display_composer"
-FROM "book_content"
+FROM "book_content_pages"
 WHERE "book_id" = @book_id
 ORDER BY "index";
 
@@ -113,15 +113,15 @@ SELECT
     "set_parameter_version_parameter_trivia",
     "set_parameter_version_parameter_display_name",
     "set_parameter_version_parameter_display_composer"
-FROM "book_content"
+FROM "book_content_pages"
 ORDER BY "book_id", "index";
 
 -- @delete_all_contents
-DELETE FROM "book_content"
+DELETE FROM "book_content_pages"
 WHERE "book_id" = @book_id;
 
 -- @add_one_content_item
-INSERT INTO "book_content" (
+INSERT INTO "book_content_pages" (
     "book_id",
     "index",
     "page_type",
@@ -168,7 +168,7 @@ SELECT
     "version_parameter_trivia",
     "version_parameter_display_name",
     "version_parameter_display_composer"
-FROM "book_content_versions"
+FROM "book_content_page_versions"
 WHERE "book_id" = @book_id
 ORDER BY "content_index", "index";
 
@@ -184,15 +184,15 @@ SELECT
     "version_parameter_trivia",
     "version_parameter_display_name",
     "version_parameter_display_composer"
-FROM "book_content_versions"
+FROM "book_content_page_versions"
 ORDER BY "book_id", "content_index", "index";
 
 -- @delete_all_content_versions
-DELETE FROM "book_content_versions"
+DELETE FROM "book_content_page_versions"
 WHERE "book_id" = @book_id;
 
 -- @add_one_content_version
-INSERT INTO "book_content_versions" (
+INSERT INTO "book_content_page_versions" (
     "book_id",
     "content_index",
     "index",
@@ -224,7 +224,7 @@ SELECT
     "entities".*,
     "name",
     "date"
-FROM "book"
+FROM "books"
 JOIN "entities" USING ("id");
 
 -- @get_rows
@@ -241,7 +241,7 @@ SELECT
     "date",
     "remark",
     "scddb_id"
-FROM "book"
+FROM "books"
 JOIN "entities" USING ("id")
 WHERE "id" = @id
 LIMIT 1;
@@ -254,7 +254,7 @@ SELECT
     "date",
     "remark",
     "scddb_id"
-FROM "book"
+FROM "books"
 JOIN "entities" USING ("id")
 WHERE "id" = @id
 LIMIT 1;
@@ -264,23 +264,23 @@ WITH "book_rows" AS &book_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
-	ELSE GREATEST(word_similarity(@terms, "book"."name"), word_similarity(make_name_search(@terms), "name_search"))
+	ELSE GREATEST(word_similarity(@terms, "books"."name"), word_similarity(make_name_search(@terms), "name_search"))
     END AS "score",
     "book_rows".*
-FROM "book"
-JOIN "book_rows" ON "book"."id" = "book_rows"."id"
+FROM "books"
+JOIN "book_rows" ON "books"."id" = "book_rows"."id"
 WHERE
-    (@terms = '' OR @terms <% "book"."name" OR make_name_search(@terms) <% "name_search")
-    AND @author { Some { EXISTS (SELECT 1 FROM "book_authors" WHERE "book_id" = "book"."id" AND "author_id" IN @author) } | None { TRUE } }
+    (@terms = '' OR @terms <% "books"."name" OR make_name_search(@terms) <% "name_search")
+    AND @author { Some { EXISTS (SELECT 1 FROM "book_authors" WHERE "book_id" = "books"."id" AND "author_id" IN @author) } | None { TRUE } }
     AND @contains_version { Some {
-	    EXISTS (SELECT 1 FROM "book_content" JOIN "set_content" USING ("set_id") WHERE "book_content"."book_id" = "book"."id" AND "set_content"."version_id" IN @contains_version )
-	    OR EXISTS (SELECT 1 FROM "book_content_versions" WHERE "book_id" = "book"."id" AND "version_id" IN @contains_version)
+	    EXISTS (SELECT 1 FROM "book_content_pages" JOIN "set_content_items" USING ("set_id") WHERE "book_content_pages"."book_id" = "books"."id" AND "set_content_items"."version_id" IN @contains_version )
+	    OR EXISTS (SELECT 1 FROM "book_content_page_versions" WHERE "book_id" = "books"."id" AND "version_id" IN @contains_version)
 	} | None { TRUE } }
     AND @contains_tune { Some {
-	    EXISTS (SELECT 1 FROM "book_content" JOIN "set_content" USING ("set_id") JOIN "version" ON "set_content"."version_id" = "version"."id" WHERE "book_content"."book_id" = "book"."id" AND "version"."tune_id" IN @contains_tune )
-	    OR EXISTS (SELECT 1 FROM "book_content_versions" JOIN "version" ON "book_content_versions"."version_id" = "version"."id" WHERE "book_content_versions"."book_id" = "book"."id" AND "version"."tune_id" IN @contains_tune)
+	    EXISTS (SELECT 1 FROM "book_content_pages" JOIN "set_content_items" USING ("set_id") JOIN "versions" ON "set_content_items"."version_id" = "versions"."id" WHERE "book_content_pages"."book_id" = "books"."id" AND "versions"."tune_id" IN @contains_tune )
+	    OR EXISTS (SELECT 1 FROM "book_content_page_versions" JOIN "versions" ON "book_content_page_versions"."version_id" = "versions"."id" WHERE "book_content_page_versions"."book_id" = "books"."id" AND "versions"."tune_id" IN @contains_tune)
 	} | None { TRUE } }
-    AND @contains_set { Some { EXISTS (SELECT 1 FROM "book_content" WHERE "book_id" = "book"."id" AND "set_id" IN @contains_set ) } | None { TRUE } }
+    AND @contains_set { Some { EXISTS (SELECT 1 FROM "book_content_pages" WHERE "book_id" = "books"."id" AND "set_id" IN @contains_set ) } | None { TRUE } }
 ORDER BY
     "score" DESC,
     "book_rows"."date" DESC NULLS LAST,
@@ -333,13 +333,13 @@ SELECT
     "part_title",
     -- dance
     "dance_id",
-    "dance"."name" AS "dance_name",
-    "dance"."kind" AS "dance_kind",
-    "dance"."disambiguation" AS "dance_disambiguation",
+    "dances"."name" AS "dance_name",
+    "dances"."kind" AS "dance_kind",
+    "dances"."disambiguation" AS "dance_disambiguation",
     -- set
     "set_id",
-    "set"."name" AS "set_name",
-    "set"."kind" AS "set_kind",
+    "sets"."name" AS "set_name",
+    "sets"."kind" AS "set_kind",
     "set_permissions"."entity_is_public" AS "set_entity_is_public",
     "set_permissions"."actor_role" AS "set_actor_role",
     "set_permissions"."actor_group_id" AS "set_actor_group_id",
@@ -356,10 +356,10 @@ SELECT
     "set_parameter_version_parameter_trivia",
     "set_parameter_version_parameter_display_name",
     "set_parameter_version_parameter_display_composer"
-FROM "book_content"
-LEFT JOIN "dance" ON "book_content"."dance_id" = "dance"."id"
-LEFT JOIN "set" ON "book_content"."set_id" = "set"."id"
-LEFT JOIN "set_permissions" ON "set"."id" = "set_permissions"."id"
+FROM "book_content_pages"
+LEFT JOIN "dances" ON "book_content_pages"."dance_id" = "dances"."id"
+LEFT JOIN "sets" ON "book_content_pages"."set_id" = "sets"."id"
+LEFT JOIN "set_permissions" ON "sets"."id" = "set_permissions"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } }
 ORDER BY "index";
 
@@ -370,11 +370,11 @@ SELECT
     -- version
     "version_id",
     "tune_id",
-    "version"."disambiguation" AS "version_disambiguation",
-    "version"."monolithic_bars" AS "version_monolithic_bars",
-    "version"."monolithic_or_default_structure" AS "version_monolithic_or_default_structure",
-    "tune"."name" AS "tune_name",
-    "tune"."kind" AS "tune_kind",
+    "versions"."disambiguation" AS "version_disambiguation",
+    "versions"."monolithic_bars" AS "version_monolithic_bars",
+    "versions"."monolithic_or_default_structure" AS "version_monolithic_or_default_structure",
+    "tunes"."name" AS "tune_name",
+    "tunes"."kind" AS "tune_kind",
     -- version parameters
     "version_parameter_transposition_semitones",
     "version_parameter_first_bar",
@@ -383,31 +383,31 @@ SELECT
     "version_parameter_trivia",
     "version_parameter_display_name",
     "version_parameter_display_composer"
-FROM "book_content_versions"
-JOIN "version" ON "book_content_versions"."version_id" = "version"."id"
-JOIN "tune" ON "version"."tune_id" = "tune"."id"
+FROM "book_content_page_versions"
+JOIN "versions" ON "book_content_page_versions"."version_id" = "versions"."id"
+JOIN "tunes" ON "versions"."tune_id" = "tunes"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } }
 ORDER BY "index";
 
 -- @version_ids_in_book | include: reuse
 SELECT DISTINCT "version_id"
-FROM "book_content_versions"
+FROM "book_content_page_versions"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @tune_ids_in_book | include: reuse
 SELECT DISTINCT "tune_id"
-FROM "book_content_versions"
-JOIN "version" ON "book_content_versions"."version_id" = "version"."id"
+FROM "book_content_page_versions"
+JOIN "versions" ON "book_content_page_versions"."version_id" = "versions"."id"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @set_ids_in_book | include: reuse
 SELECT DISTINCT "set_id"
-FROM "book_content"
+FROM "book_content_pages"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @dance_ids_in_book | include: reuse
 SELECT DISTINCT "dance_id"
-FROM "book_content"
+FROM "book_content_pages"
 WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 
 -- @get_tune_composers_for
@@ -447,10 +447,10 @@ JOIN "sets" USING ("set_id");
 WITH "sets" AS &set_ids_in_book,
      "versions" AS &version_names
 SELECT "set_id", "versions".*
-FROM "set_content"
+FROM "set_content_items"
 JOIN "sets" USING ("set_id")
-JOIN "versions" ON "set_content"."version_id" = "versions"."id"
-ORDER BY "set_content"."index";
+JOIN "versions" ON "set_content_items"."version_id" = "versions"."id"
+ORDER BY "set_content_items"."index";
 
 -- @get_dance_devisers_for
 WITH "dances" AS &dance_ids_in_book,

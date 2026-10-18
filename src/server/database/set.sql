@@ -1,5 +1,5 @@
 -- @create
-INSERT INTO "set" (
+INSERT INTO "sets" (
     "id",
     "name",
     "kind",
@@ -12,7 +12,7 @@ INSERT INTO "set" (
 );
 
 -- @update
-UPDATE "set"
+UPDATE "sets"
 SET
     "name" = @name,
     "kind" = @kind,
@@ -20,7 +20,7 @@ SET
 WHERE "id" = @id;
 
 -- @delete
-DELETE FROM "set"
+DELETE FROM "sets"
 WHERE "id" = @id;
 
 -- @get_conceptors
@@ -57,7 +57,7 @@ SELECT
     "version_parameter_trivia",
     "version_parameter_display_name",
     "version_parameter_display_composer"
-FROM "set_content"
+FROM "set_content_items"
 WHERE "set_id" = @set_id
 ORDER BY "index";
 
@@ -72,15 +72,15 @@ SELECT
     "version_parameter_trivia",
     "version_parameter_display_name",
     "version_parameter_display_composer"
-FROM "set_content"
+FROM "set_content_items"
 ORDER BY "set_id", "index";
 
 -- @delete_all_content
-DELETE FROM "set_content"
+DELETE FROM "set_content_items"
 WHERE "set_id" = @set_id;
 
 -- @add_one_content_item
-INSERT INTO "set_content" (
+INSERT INTO "set_content_items" (
     "set_id",
     "index",
     "version_id",
@@ -107,7 +107,7 @@ INSERT INTO "set_content" (
 -- @set_rows | include: reuse
 WITH "entities" AS &viewable_entities
 SELECT "entities".*, "name", "kind"
-FROM "set" JOIN "entities" USING ("id");
+FROM "sets" JOIN "entities" USING ("id");
 
 -- @get_rows
 WITH "sets" AS &set_rows
@@ -123,9 +123,9 @@ SELECT
     "kind",
     "order",
     "remark"
-FROM "set"
+FROM "sets"
 JOIN "entities" USING ("id")
-WHERE "set"."id" = @id
+WHERE "sets"."id" = @id
 LIMIT 1;
 
 -- @get_form
@@ -135,9 +135,9 @@ SELECT
     "name",
     "kind",
     "order"
-FROM "set"
+FROM "sets"
 JOIN "entities" USING ("id")
-WHERE "set"."id" = @id
+WHERE "sets"."id" = @id
 LIMIT 1;
 
 -- @search
@@ -145,16 +145,16 @@ WITH "set_rows" AS &set_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
-	ELSE GREATEST(word_similarity(@terms, "set"."name"), word_similarity(make_name_search(@terms), "name_search"))
+	ELSE GREATEST(word_similarity(@terms, "sets"."name"), word_similarity(make_name_search(@terms), "name_search"))
     END AS "score",
     "set_rows".*
-FROM "set"
-JOIN "set_rows" ON "set"."id" = "set_rows"."id"
+FROM "sets"
+JOIN "set_rows" ON "sets"."id" = "set_rows"."id"
 WHERE
-    (@terms = '' OR @terms <% "set"."name" OR make_name_search(@terms) <% "name_search")
-    AND @conceptor { Some { EXISTS (SELECT 1 FROM "set_conceptors" WHERE "set_id" = "set"."id" AND "conceptor_id" IN @conceptor) } | None { TRUE } }
-    AND @contains_version { Some { EXISTS (SELECT 1 FROM "set_content" WHERE "set_id" = "set"."id" AND "version_id" IN @contains_version ) } | None { TRUE } }
-    AND @contains_tune { Some { EXISTS (SELECT 1 FROM "set_content" JOIN "version" ON "set_content"."version_id" = "version"."id" WHERE "set_content"."set_id" = "set"."id" AND "version"."tune_id" IN @contains_tune ) } | None { TRUE } }
+    (@terms = '' OR @terms <% "sets"."name" OR make_name_search(@terms) <% "name_search")
+    AND @conceptor { Some { EXISTS (SELECT 1 FROM "set_conceptors" WHERE "set_id" = "sets"."id" AND "conceptor_id" IN @conceptor) } | None { TRUE } }
+    AND @contains_version { Some { EXISTS (SELECT 1 FROM "set_content_items" WHERE "set_id" = "sets"."id" AND "version_id" IN @contains_version ) } | None { TRUE } }
+    AND @contains_tune { Some { EXISTS (SELECT 1 FROM "set_content_items" JOIN "versions" ON "set_content_items"."version_id" = "versions"."id" WHERE "set_content_items"."set_id" = "sets"."id" AND "versions"."tune_id" IN @contains_tune ) } | None { TRUE } }
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
 -- @get_conceptors_for
@@ -171,8 +171,8 @@ WITH "versions" AS &version_names
 SELECT
     "set_id",
     "versions".*
-FROM "set_content"
-JOIN "versions" ON "set_content"."version_id" = "versions"."id"
+FROM "set_content_items"
+JOIN "versions" ON "set_content_items"."version_id" = "versions"."id"
 WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } }
 ORDER BY "index";
 
@@ -183,9 +183,9 @@ SELECT
     "version_id",
     "tune_id",
     -- version
-    "version"."disambiguation" AS "version_disambiguation",
-    "version"."monolithic_bars" AS "version_monolithic_bars",
-    "version"."monolithic_or_default_structure" AS "version_monolithic_or_default_structure",
+    "versions"."disambiguation" AS "version_disambiguation",
+    "versions"."monolithic_bars" AS "version_monolithic_bars",
+    "versions"."monolithic_or_default_structure" AS "version_monolithic_or_default_structure",
     -- tune
     "name" AS "tune_name",
     "kind" AS "tune_kind",
@@ -197,21 +197,21 @@ SELECT
     "version_parameter_trivia",
     "version_parameter_display_name",
     "version_parameter_display_composer"
-FROM "set_content"
-JOIN "version" ON "set_content"."version_id" = "version"."id"
-JOIN "tune" ON "version"."tune_id" = "tune"."id"
+FROM "set_content_items"
+JOIN "versions" ON "set_content_items"."version_id" = "versions"."id"
+JOIN "tunes" ON "versions"."tune_id" = "tunes"."id"
 WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } }
 ORDER BY "index";
 
 -- @version_ids_in_set | include: reuse
 SELECT DISTINCT "version_id"
-FROM "set_content"
+FROM "set_content_items"
 WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } };
 
 -- @tune_ids_in_set | include: reuse
 SELECT DISTINCT "tune_id"
-FROM "set_content"
-JOIN "version" ON "set_content"."version_id" = "version"."id"
+FROM "set_content_items"
+JOIN "versions" ON "set_content_items"."version_id" = "versions"."id"
 WHERE @set_ids { One_of { "set_id" IN @set_ids } | All { TRUE } };
 
 -- @get_tune_composers_for

@@ -1,5 +1,5 @@
 -- @create
-INSERT INTO "version" (
+INSERT INTO "versions" (
     "id",
     "tune_id",
     "key",
@@ -22,7 +22,7 @@ INSERT INTO "version" (
 );
 
 -- @update
-UPDATE "version"
+UPDATE "versions"
 SET
     "tune_id" = @tune_id,
     "key" = @key,
@@ -35,7 +35,7 @@ SET
 WHERE "id" = @id;
 
 -- @delete
-DELETE FROM "version"
+DELETE FROM "versions"
 WHERE "id" = @id;
 
 -- @get_arrangers
@@ -156,10 +156,10 @@ INSERT INTO "version_destructured_transitions" (
 WITH "versions" AS &version_rows
 SELECT
     "versions".*,
-    "tune"."name" AS "tune_name",
-    "tune"."kind" AS "tune_kind"
+    "tunes"."name" AS "tune_name",
+    "tunes"."kind" AS "tune_kind"
 FROM "versions"
-JOIN "tune" ON "versions"."tune_id" = "tune"."id";
+JOIN "tunes" ON "versions"."tune_id" = "tunes"."id";
 
 -- @get_rows
 WITH "versions" AS &version_and_tune_rows
@@ -170,22 +170,22 @@ WHERE "id" IN @ids;
 -- @version_views | include: reuse
 SELECT
     -- ids
-    "version"."id",
-    "tune"."id" AS "tune_id",
+    "versions"."id",
+    "tunes"."id" AS "tune_id",
     -- version
-    "version"."disambiguation",
-    "version"."key",
-    "version"."remark",
-    "version"."monolithic_bars",
-    "version"."monolithic_or_default_structure",
+    "versions"."disambiguation",
+    "versions"."key",
+    "versions"."remark",
+    "versions"."monolithic_bars",
+    "versions"."monolithic_or_default_structure",
     -- tune
-    "tune"."name" AS "tune_name",
-    "tune"."kind" AS "tune_kind",
-    "tune"."remark" AS "tune_remark",
-    "tune"."scddb_id" AS "tune_scddb_id",
-    "tune"."date" AS "tune_date"
-FROM "version"
-JOIN "tune" ON "version"."tune_id" = "tune"."id";
+    "tunes"."name" AS "tune_name",
+    "tunes"."kind" AS "tune_kind",
+    "tunes"."remark" AS "tune_remark",
+    "tunes"."scddb_id" AS "tune_scddb_id",
+    "tunes"."date" AS "tune_date"
+FROM "versions"
+JOIN "tunes" ON "versions"."tune_id" = "tunes"."id";
 
 -- @get_view
 WITH "versions" AS &version_views
@@ -203,21 +203,21 @@ WHERE "versions"."tune_id" IN (@tune_id); -- NOTE: with = @tune_id, sqlgg thinks
 -- @version_forms | include: reuse
 SELECT
     -- ids
-    "version"."id",
-    "tune"."id" AS "tune_id",
+    "versions"."id",
+    "tunes"."id" AS "tune_id",
     -- version
-    "version"."disambiguation",
-    "version"."key",
-    "version"."remark",
-    "version"."monolithic_bars",
-    "version"."monolithic_or_default_structure",
-    "version"."monolithic_lilypond",
-    "version"."destructured_as_2_4",
+    "versions"."disambiguation",
+    "versions"."key",
+    "versions"."remark",
+    "versions"."monolithic_bars",
+    "versions"."monolithic_or_default_structure",
+    "versions"."monolithic_lilypond",
+    "versions"."destructured_as_2_4",
     -- tune
-    "tune"."name" AS "tune_name",
-    "tune"."kind" AS "tune_kind"
-FROM "version"
-JOIN "tune" ON "version"."tune_id" = "tune"."id";
+    "tunes"."name" AS "tune_name",
+    "tunes"."kind" AS "tune_kind"
+FROM "versions"
+JOIN "tunes" ON "versions"."tune_id" = "tunes"."id";
 
 -- @get_form
 WITH "versions" AS &version_forms
@@ -247,23 +247,23 @@ WITH "version_rows" AS &version_and_tune_rows
 SELECT
     CASE
         WHEN @terms = '' THEN 1.0
-	ELSE GREATEST(word_similarity(@terms, "tune"."name"), word_similarity(make_name_search(@terms), "tune"."name_search"))
+	ELSE GREATEST(word_similarity(@terms, "tunes"."name"), word_similarity(make_name_search(@terms), "tunes"."name_search"))
     END AS "score",
     "version_rows".*
 FROM "version_rows"
-JOIN "version" ON "version_rows"."id" = "version"."id"
-JOIN "tune" ON "version"."tune_id" = "tune"."id"
+JOIN "versions" ON "version_rows"."id" = "versions"."id"
+JOIN "tunes" ON "versions"."tune_id" = "tunes"."id"
 WHERE
-    (@terms = '' OR @terms <% "tune"."name" OR make_name_search(@terms) <% "name_search")
+    (@terms = '' OR @terms <% "tunes"."name" OR make_name_search(@terms) <% "name_search")
     AND { "key" IN @key }?
-    AND @source { Some { EXISTS (SELECT 1 FROM "version_sources" WHERE "version_id" = "version"."id" AND "source_id" IN @source) } | None { TRUE } }
+    AND @source { Some { EXISTS (SELECT 1 FROM "version_sources" WHERE "version_id" = "versions"."id" AND "source_id" IN @source) } | None { TRUE } }
     AND { "tune_kind" IN @tune_kind }?
-    AND @tune_composer { Some { EXISTS (SELECT 1 FROM "tune_composers" WHERE "tune_id" = "version"."tune_id" AND "composer_id" IN @tune_composer) } | None { TRUE } }
+    AND @tune_composer { Some { EXISTS (SELECT 1 FROM "tune_composers" WHERE "tune_id" = "versions"."tune_id" AND "composer_id" IN @tune_composer) } | None { TRUE } }
 ORDER BY "score" DESC, "name_search" ASC, "name" ASC, "id" ASC;
 
 -- @tune_ids_for_versions | include: reuse
 SELECT DISTINCT "tune_id"
-FROM "version"
+FROM "versions"
 WHERE @version_ids { One_of { "id" IN @version_ids } | All { TRUE } };
 
 -- @get_tune_composers_for
@@ -362,13 +362,13 @@ SELECT
     "version_id",
     "sources".*
 FROM "version_sources"
-JOIN "version" ON "version_sources"."version_id" = "version"."id"
+JOIN "versions" ON "version_sources"."version_id" = "versions"."id"
 JOIN "sources" ON "version_sources"."source_id" = "sources"."id"
 WHERE EXISTS (
     SELECT 1
-    FROM "version" AS "this_version"
+    FROM "versions" AS "this_version"
     WHERE
-	"this_version"."tune_id" = "version"."tune_id"
+	"this_version"."tune_id" = "versions"."tune_id"
 	AND @version_ids { One_of { "this_version"."id" IN @version_ids } | All { TRUE } }
 );
 
@@ -378,12 +378,12 @@ SELECT
     "version_id",
     "persons".*
 FROM "version_arrangers"
-JOIN "version" ON "version_arrangers"."version_id" = "version"."id"
+JOIN "versions" ON "version_arrangers"."version_id" = "versions"."id"
 JOIN "persons" ON "version_arrangers"."arranger_id" = "persons"."id"
 WHERE EXISTS (
     SELECT 1
-    FROM "version" AS "this_version"
+    FROM "versions" AS "this_version"
     WHERE
-	"this_version"."tune_id" = "version"."tune_id"
+	"this_version"."tune_id" = "versions"."tune_id"
 	AND @version_ids { One_of { "this_version"."id" IN @version_ids } | All { TRUE } }
 );

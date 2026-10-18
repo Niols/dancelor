@@ -1120,6 +1120,93 @@ let migrations : migration list = [
   make_ddl "m083_2026_10_person_copyright_names" Migrations_sql.m083_2026_10_person_copyright_names;
   make_ddl "m084_2026_10_user_full_names" Migrations_sql.m084_2026_10_user_full_names;
   make_ddl "m085_2026_10_group_descriptions" Migrations_sql.m085_2026_10_group_descriptions;
+  make_ddl "m086_2026_10_fix_primary_key_constraint_names" (
+    bypass
+      {|
+        DO $$
+        DECLARE r record;
+        BEGIN
+          FOR r IN
+            SELECT c.conrelid::regclass AS tbl, c.conname, cl.relname AS table_name
+            FROM pg_constraint c
+            JOIN pg_class cl ON cl.oid = c.conrelid
+            JOIN pg_namespace n ON n.oid = cl.relnamespace
+            WHERE c.contype = 'p'
+              AND n.nspname = 'dancelor'
+              AND c.conname NOT IN (cl.relname || '_pkey', 'pk_' || cl.relname)
+          LOOP
+            EXECUTE format('ALTER TABLE %s RENAME CONSTRAINT %I TO %I',
+                          r.tbl, r.conname, r.table_name || '_pkey');
+          END LOOP;
+        END $$;
+      |}
+  );
+  make_ddls "m087_2026_10_rename_tables_to_plural" [
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__person;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__person_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_person_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_person_name;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_person_name_search;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__user;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__user_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__user_username_key;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__uq_user_email;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_user_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_user_person_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_users_person_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_users_username;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_users_username_search;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__dance;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__dance_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_dance_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_dance_name;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_dance_name_search;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__source;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__source_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_source_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_source_name;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_source_name_search;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__tune;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__tune_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_tune_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_tune_name;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_tune_name_search;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__version;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__version_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_version_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_version_tune_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_version_tune_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__set;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__set_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_set_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_set_name;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_set_name_search;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__set_content;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__uq_set_content_set_id_index;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_set_content_set_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_set_content_version_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_set_content_version_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__book;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__book_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_book_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_book_name;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_book_name_search;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__book_content;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__uq_book_content_book_id_index;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_book_content_book_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_book_content_dance_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_book_content_set_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_book_content_dance_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_book_content_set_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__book_content_versions;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__uq_book_content_versions_book_id_content_index_index;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_book_content_versions_book_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_book_content_versions_version_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__idx_book_content_versions_version_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__remember_me_tokens_fk_user_id;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__groups_pkey;
+    Migrations_sql.m087_2026_10_rename_tables_to_plural__fk_group_id;
+  ];
 ]
 
 exception Migration_failed of string * exn

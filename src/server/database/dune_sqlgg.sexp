@@ -51,12 +51,6 @@
   (with-stdout-to %{target}
    (run sqlgg -gen caml_io -dialect postgresql %{deps}))))
 
-;; schema-extra-after.sql
-;; supporting file: no Dune rule
-
-;; schema-extra-before.sql
-;; supporting file: no Dune rule
-
 ;; schema.sql
 ;; supporting file: no Dune rule
 

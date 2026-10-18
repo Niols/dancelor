@@ -25,7 +25,7 @@ class TestActions():
     self.driver.find_element(By.XPATH, "//*[contains(text(), 'Show LilyPond')]").click()
     expected = subprocess.run(
       ["psql", "--username=dancelor", "--dbname=dancelor", "--tuples-only", "--no-align",
-       "--command", "SELECT monolithic_lilypond FROM version WHERE id = 'xzzb-wasm-babe';"],
+       "--command", "SELECT monolithic_lilypond FROM versions WHERE id = 'xzzb-wasm-babe';"],
       capture_output=True, text=True, check=True,
     ).stdout
     shown = self.driver.find_element(By.XPATH, "//pre[contains(text(), 'clef')]").get_attribute("innerHTML")
