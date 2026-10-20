@@ -49,7 +49,7 @@ let initialise_async_exception_hook =
   in
   fun ~early ->
     Lwt.async_exception_hook :=
-      if not early && (Config.get ()).die_on_exn then
+      if not early && (Config.get ()).test.die_on_exn then
           (fun exn -> log_async_exn exn; make_log_die "configuration flag `die_on_exn` is set" ())
       else
         log_async_exn
@@ -62,7 +62,7 @@ let callback _ request body =
   catchall
     ~place: "the callback"
     ~die: (
-      if (Config.get ()).die_on_exn then
+      if (Config.get ()).test.die_on_exn then
         make_log_die "configuration flag `die_on_exn` is set"
       else
         Madge_server.respond_internal_server_error
@@ -136,7 +136,7 @@ let callback _ request body =
     Database.apply_migrations ()
 
   let check_init_only () =
-    if (Config.get ()).init_only then
+    if (Config.get ()).test.init_only then
       (
         Log.info (fun m -> m "Init only mode. Stopping now.");
         exit 0

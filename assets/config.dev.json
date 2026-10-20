@@ -15,7 +15,5 @@
   "nixpkgs": "",
   "routine_threads": 2,
   "pid_file": "",
-  "init_only": false,
-  "die_on_exn": false,
   "loglevel": { "cases": [], "default": "info" }
 }

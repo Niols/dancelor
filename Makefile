@@ -21,7 +21,7 @@ postgres-dump:
 postgres-reset-run-dump:
 	scripts/postgres-reset
 	scripts/postgres-start
-	dune exec dancelor -- <(jq '.init_only |= true' assets/config.dev.json)
+	dune exec dancelor -- <(jq '.test.init_only |= true' assets/config.dev.json)
 	scripts/postgres-dump
 
 clean: postgres-reset
