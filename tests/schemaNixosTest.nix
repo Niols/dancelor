@@ -11,10 +11,6 @@
 
       services.dancelor = {
         enable = true;
-        listeningPort = 8080;
-        githubTokenFile = "${pkgs.writeText "github-token" "dummy github token"}";
-        githubRepository = "github.com/niols/dancelor";
-        githubDatabaseRepository = "github.com/niols/dancelor-database";
         testMode = true;
       };
 

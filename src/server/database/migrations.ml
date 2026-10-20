@@ -1219,7 +1219,11 @@ let migrations : migration list = [
 
 exception Migration_failed of string * exn
 
-let apply_migrations () =
+let log_remaining_migrations ~first_migration_name ~number_of_other_migrations =
+  Log.debug (fun m -> m "First remaining migration: %S" first_migration_name);
+  Log.debug (fun m -> m "Applying %d remaining migrations" (1 + number_of_other_migrations))
+
+let apply_migrations ?(on_remaining_migrations = log_remaining_migrations) () =
   Connection.with_ ~transaction: false @@ fun db ->
   let rec skip_already_applied_migrations = function
     | [] -> lwt_nil
@@ -1237,9 +1241,10 @@ let apply_migrations () =
   | [] ->
     Log.debug (fun m -> m "There are no remaining migrations");
     lwt_unit
-  | first_migration :: _ ->
-    Log.debug (fun m -> m "First remaining migration: %S" first_migration.name);
-    Log.debug (fun m -> m "Applying %d remaining migrations" (List.length migrations));
+  | first_migration :: other_migrations ->
+    on_remaining_migrations
+      ~first_migration_name: first_migration.name
+      ~number_of_other_migrations: (List.length other_migrations);
     Lwt_list.iter_s
       (fun migration ->
         Log.debug (fun m -> m "Applying migration %S" migration.name);

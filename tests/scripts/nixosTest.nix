@@ -1,11 +1,3 @@
-{ lib, ... }:
-
-let
-  inherit (lib)
-    mkForce
-    ;
-
-in
 {
   nodes.machine =
     { pkgs, ... }:
@@ -17,11 +9,11 @@ in
 
       services.dancelor = {
         enable = true;
-        listeningPort = 8080;
-        githubTokenFile = "${pkgs.writeText "github-token" "dummy github token"}";
-        githubRepository = "github.com/niols/dancelor";
-        githubDatabaseRepository = "github.com/niols/dancelor-database";
         testMode = true;
+        settings = {
+          port = 8080; # assumed by pytest tests
+          test.forbid_migrations = true;
+        };
       };
 
       services.postgresql.package = pkgs.postgresql_15;
@@ -50,7 +42,6 @@ in
       systemd.services.dancelor = {
         after = [ "inject-test-database.service" ];
         requires = [ "inject-test-database.service" ];
-        serviceConfig.Restart = mkForce "no"; # only try starting once
       };
     };
 

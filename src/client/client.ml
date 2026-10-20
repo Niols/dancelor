@@ -136,7 +136,7 @@ let () =
 let () =
   Logger.full_initialisation
     ~reporter: (Logs_browser.console_reporter ())
-    {cases = []; default = Some Logs.Info}
+    (Logger.make_loglevel_map ())
 
 let () =
   Dom_html.window##.onload :=

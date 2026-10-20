@@ -2,19 +2,8 @@
   "port": 8080,
   "database": {
     "driver": "postgresql",
-    "endpoint": ["Socket", ".postgres/run"],
-    "database": "dancelor",
-    "user": "dancelor",
-    "password": null
+    "endpoint": ["Socket", ".postgres/run"]
   },
   "share": "_build/install/default/share/dancelor",
-  "github_token": "",
-  "github_token_file": "",
-  "github_repository": "niols/test-dancelor",
-  "github_database_repository": "niols/test-dancelor-database",
-  "nixpkgs": "",
-  "routine_threads": 2,
-  "pid_file": "",
-  "init_only": false,
-  "loglevel": { "cases": [], "default": "info" }
+  "nixpkgs": ""
 }

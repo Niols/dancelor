@@ -30,25 +30,33 @@ let driver_of_yojson = function
 type database = {
   driver: driver;
   endpoint: endpoint;
-  database: string;
-  user: string;
-  password: string option;
+  database: string; [@default "dancelor"]
+  user: string; [@default "dancelor"]
+  password: string option; [@default None]
 }
 [@@deriving show {with_path = false}, yojson]
 
+(** Test-related options. They should not be set in a production environment. *)
+type test = {
+  config_only: bool; [@default false] (** exit immediately after reading the configuration *)
+  init_only: bool; [@default false] (** exit immediately after initialising the server *)
+  die_on_exn: bool; [@default false] (** die on the first uncaught exception encountered *)
+  forbid_migrations: bool; [@default false] (** die if any migration must run during initialisation *)
+}
+[@@deriving make, show {with_path = false}, yojson]
+
 type t = {
+  port: int; [@default 6872]
   database: database;
-  init_only: bool;
-  loglevel: Dancelor_common.Logger.loglevel_map;
-  pid_file: string;
-  port: int;
-  share: string;
-  github_token: string;
-  github_token_file: string;
-  github_repository: string;
-  github_database_repository: string;
   nixpkgs: string;
-  routine_threads: int;
+  share: string;
+  github_token: string; [@default ""]
+  github_token_file: string; [@default ""]
+  github_repository: string; [@default "niols/dancelor"]
+  github_database_repository: string; [@default "niols/dancelor-database"]
+  routine_threads: int; [@default 2]
+  loglevel: Dancelor_common.Logger.loglevel_map; [@default Dancelor_common.Logger.make_loglevel_map ()]
+  test: test; [@default make_test ()]
 }
 [@@deriving show {with_path = false}, yojson]
 

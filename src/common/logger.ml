@@ -27,10 +27,10 @@ let loglevel_of_yojson = function
   | _ -> Error "Expected a JSON string for log level"
 
 type loglevel_map = {
-  cases: (string * loglevel option) list;
-  default: loglevel option;
+  cases: (string * loglevel) list; [@default []]
+  default: loglevel; [@default Info]
 }
-[@@deriving show {with_path = false}, yojson]
+[@@deriving make, show {with_path = false}, yojson]
 
 let matches_loglevel_pattern ~pattern name =
   let pattern = String.split_on_char '.' pattern in
@@ -66,35 +66,30 @@ let setup_reporter reporter =
 let initialise loglevel =
   (
     match loglevel.default with
-    | None -> ()
-    | Some default_loglevel ->
-      match default_loglevel with
-      | Logs.Error | Warning ->
-        Log.info (fun m -> m "Default log level will be %a from now on; this is the last Info message." pp_loglevel default_loglevel);
-      | Info | Debug -> ()
-      | App -> assert false
+    | Logs.Error | Warning ->
+      Log.info (fun m -> m "Default log level will be %a from now on; this is the last Info message." pp_loglevel loglevel.default);
+    | Info | Debug -> ()
+    | App -> assert false
   );
   (* Crawl through all defined sources, but handle the one for this module
      before all others, since it itself logs debug messages. *)
   List.iter
     (fun src ->
       let name = Logs.Src.name src in
-      let level = find_level loglevel name in
+      let level = Some (find_level loglevel name) in
       Logs.Src.set_level src level;
       Log.debug (fun m -> m "Set %S to %S" name (Logs.level_to_string level))
     )
     (log_src :: Logs.Src.list ());
   (* Initialise future loglevels to the default. *)
-  Logs.set_level ~all: false loglevel.default
-
-let early_loglevel = {cases = []; default = Some Info}
+  Logs.set_level ~all: false (Some loglevel.default)
 
 (** Early initialisation. This has to be called before anything else, so that
     even if early things break, we get some logging. *)
 let early_initialisation ~reporter =
   Log.debug (fun m -> m "Starting early initialisation of logging...");
   setup_reporter reporter;
-  initialise early_loglevel;
+  initialise (make_loglevel_map ());
   Log.info (fun m -> m "Early initialisation of logging done")
 
 (** Late initialisation. This is meant to be called after eg. configuration has

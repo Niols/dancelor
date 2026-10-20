@@ -34,6 +34,26 @@ let catchall ~place ~die fun_ =
       log_exn ~msg: ("Uncaught exception in " ^ place) exn;
       die ()
 
+let make_log_die reason () =
+  Log.info (fun m -> m "Dying because %s" reason);
+  exit 1
+
+(** Initialise the Lwt async exception hook. The [~early] argument is to be used
+    before configuration has been loaded, for a good default. *)
+let initialise_async_exception_hook =
+  let log_async_exn = function
+    | Unix.Unix_error (Unix.EPIPE, _, _) ->
+      Log.warn (fun m -> m "Connection closed by the client")
+    | exn ->
+      log_exn ~msg: "Uncaught asynchronous exception" exn
+  in
+  fun ~early ->
+    Lwt.async_exception_hook :=
+      if not early && (Config.get ()).test.die_on_exn then
+          (fun exn -> log_async_exn exn; make_log_die "configuration flag `die_on_exn` is set" ())
+      else
+        log_async_exn
+
 (** Callback handling one client request. It is in charge of trying to find what
     will answer to the request: a static file, or a Madge API point, or the
     standard main JS file. *)
@@ -41,7 +61,12 @@ let callback _ request body =
   Metrics.increment_http_requests_total ();
   catchall
     ~place: "the callback"
-    ~die: Madge_server.respond_internal_server_error
+    ~die: (
+      if (Config.get ()).test.die_on_exn then
+        make_log_die "configuration flag `die_on_exn` is set"
+      else
+        Madge_server.respond_internal_server_error
+    )
     @@ fun () ->
     match Madge.Request.cohttp_code_meth_to_meth @@ Request.meth request with
     | Error meth ->
@@ -62,18 +87,11 @@ let callback _ request body =
       else
         Static.serve env path (Uri.query uri)
 
-  let () =
-    Lwt.async_exception_hook :=
-      (function
-        | Unix.Unix_error (Unix.EPIPE, _, _) ->
-          Log.warn (fun m -> m "Connection closed by the client")
-        | exn ->
-          log_exn ~msg: "Uncaught asynchronous exception" exn
-      )
-
   let read_configuration () =
     Logger.bracket_lwt (module Log) "reading configuration" @@ fun () ->
     Config.parse_cmd_line ()
+
+  let () = initialise_async_exception_hook ~early: true
 
   let () =
     Prometheus_unix.Logging.init ();
@@ -103,22 +121,33 @@ let callback _ request body =
   let initialise_logs () =
     Logger.late_initialisation (Config.get ()).loglevel
 
-  let write_pid () =
-    let pid = Unix.getpid () in
-    if (Config.get ()).pid_file <> "" then
-      Lwt_io.(
-        with_file ~mode: output (Config.get ()).pid_file @@ fun ochan ->
-        fprintlf ochan "%d" pid
-      )
-    else
-      lwt_unit
-
   let run_migrations () =
     Logger.bracket_lwt (module Log) "applying migrations" @@ fun () ->
-    Database.apply_migrations ()
+    let on_remaining_migrations =
+      if (Config.get ()).test.forbid_migrations then
+        Some (fun ~first_migration_name ~number_of_other_migrations ->
+          Log.err (fun m ->
+            m
+              "Migrations are forbidden but there remains %S and %d others to apply"
+              first_migration_name
+              number_of_other_migrations
+          );
+          exit 1
+        )
+      else
+        None
+    in
+    Database.apply_migrations ?on_remaining_migrations ()
+
+  let check_config_only () =
+    if (Config.get ()).test.config_only then
+      (
+        Log.info (fun m -> m "Config only mode. Stopping now.");
+        exit 0
+      )
 
   let check_init_only () =
-    if (Config.get ()).init_only then
+    if (Config.get ()).test.init_only then
       (
         Log.info (fun m -> m "Init only mode. Stopping now.");
         exit 0
@@ -127,10 +156,6 @@ let callback _ request body =
   let start_routines () =
     Logger.bracket (module Log) "starting routines" @@ fun () ->
     Routine.initialise ()
-
-  let log_die () =
-    Log.info (fun m -> m "Dying");
-    exit 1
 
   let notify_systemd_ready () =
     Sys.getenv_opt "NOTIFY_SOCKET"
@@ -147,7 +172,7 @@ let callback _ request body =
     Log.debug (fun m -> m "Starting server");
     catchall
       ~place: "the server"
-      ~die: log_die
+      ~die: (make_log_die "the server itself crashed")
       @@ fun () ->
       let wait_for_server =
         Server.create
@@ -164,11 +189,12 @@ let callback _ request body =
   let main : unit Lwt.t =
     catchall
       ~place: "main"
-      ~die: log_die
+      ~die: (make_log_die "the initialisation loop itself crashed")
       @@ fun () ->
       read_configuration ();%lwt
+      check_config_only ();
       initialise_logs ();
-      write_pid ();%lwt
+      initialise_async_exception_hook ~early: false;
       run_migrations ();%lwt
       check_init_only ();
       start_routines ();
