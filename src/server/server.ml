@@ -121,16 +121,6 @@ let callback _ request body =
   let initialise_logs () =
     Logger.late_initialisation (Config.get ()).loglevel
 
-  let write_pid () =
-    let pid = Unix.getpid () in
-    if (Config.get ()).pid_file <> "" then
-      Lwt_io.(
-        with_file ~mode: output (Config.get ()).pid_file @@ fun ochan ->
-        fprintlf ochan "%d" pid
-      )
-    else
-      lwt_unit
-
   let run_migrations () =
     Logger.bracket_lwt (module Log) "applying migrations" @@ fun () ->
     let on_remaining_migrations =
@@ -197,7 +187,6 @@ let callback _ request body =
       read_configuration ();%lwt
       initialise_logs ();
       initialise_async_exception_hook ~early: false;
-      write_pid ();%lwt
       run_migrations ();%lwt
       check_init_only ();
       start_routines ();

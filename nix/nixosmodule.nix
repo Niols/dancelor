@@ -9,122 +9,71 @@
       ...
     }:
     let
-      inherit (lib) mkIf;
+      inherit (lib)
+        mkIf
+        mkEnableOption
+        mkOption
+        types
+        ;
+      inherit (pkgs) writeShellApplication formats;
+      inherit (pkgs.stdenv.hostPlatform) system;
+
       cfg = config.services.dancelor;
+      settingsFormat = formats.json { };
+      ## FIXME: validate settings file at eval time
+      settingsFile = settingsFormat.generate "dancelor-settings.json" cfg.settings;
     in
     {
       options.services.dancelor = {
-        enable = lib.mkEnableOption "Enable the Dancelor service";
+        enable = mkEnableOption "Enable the Dancelor service";
 
-        listeningPort = lib.mkOption {
-          type = lib.types.int;
-          default = 6872;
-          description = "Port on which Dancelor will listen.";
-        };
-
-        githubTokenFile = lib.mkOption {
-          type = lib.types.str;
+        testMode = mkOption {
+          type = types.bool;
           description = ''
-            Path to a file that contains the GitHub API token.
-
-            This is used by the issue report mechanism and must therefore be allowed to open issues on the repositories.
-          '';
-        };
-
-        githubRepository = lib.mkOption {
-          type = lib.types.str;
-          description = ''
-            Dancelor's GitHub repository
-
-            This is used by the issue report mechanism. It must contain the host, owner, and repository.
-          '';
-          example = "github.com/niols/dancelor";
-        };
-
-        githubDatabaseRepository = lib.mkOption {
-          type = lib.types.str;
-          description = ''
-            Dancelor's database's GitHub repository - used by the error reporting mechanism.
-
-            This is used by the issue report mechanism. It must contain the host, owner, and repository.
-          '';
-          example = "github.com/niols/dancelor-database";
-        };
-
-        routineThreads = lib.mkOption {
-          type = lib.types.int;
-          description = ''
-            Number of threads used by routines.
-          '';
-          default = 2;
-          example = 8;
-        };
-
-        testMode = lib.mkOption {
-          type = lib.types.bool;
-          description = ''
-            Whether to set up Dancelor for testing. Do not use in production.
+            Whether to set up Dancelor for testing. In particular, this enables
+            [settings.test.die_on_exn] and lowers default loglevel to [info].
           '';
           default = false;
         };
 
-        testForbidMigrations = lib.mkOption {
-          type = lib.types.bool;
+        settings = mkOption {
+          type = types.submodule {
+            freeformType = settingsFormat.type;
+          };
+          default = { };
           description = ''
-            Whether to forbid Dancelor from running migrations. Do not use in production.
+            Configuration for Dancelor, see
+            <link xlink:href="https://github.com/Niols/dancelor/blob/main/src/server/config.ml"/>
+            for supported values.
           '';
-          default = false;
         };
       };
 
-      config = lib.mkIf cfg.enable (
+      config = mkIf cfg.enable (
         let
-          inherit (lib) toJSON;
-          inherit (pkgs) writeText writeShellApplication;
-          inherit (pkgs.stdenv.hostPlatform) system;
-
           socketPath = "/run/postgresql";
 
           run-dancelor = writeShellApplication {
             name = "dancelor";
-            text = ''
-              exec ${self.apps.${system}.dancelor.program} ${
-                writeText "dancelor-config" (toJSON {
-                  port = cfg.listeningPort;
-                  database = {
-                    driver = "postgresql";
-                    endpoint = [
-                      "Socket"
-                      socketPath
-                    ];
-                    database = "dancelor";
-                    user = "dancelor";
-                    password = null;
-                  };
-                  share = "${self.packages.${system}.dancelor}/share/dancelor";
-                  github_token = "";
-                  github_token_file = cfg.githubTokenFile;
-                  github_repository = cfg.githubRepository;
-                  github_database_repository = cfg.githubDatabaseRepository;
-                  nixpkgs = inputs.nixpkgs;
-                  routine_threads = cfg.routineThreads;
-                  pid_file = "";
-                  loglevel = {
-                    cases = [ ];
-                    default = if cfg.testMode then "info" else "warning";
-                  };
-                  test = {
-                    init_only = false;
-                    die_on_exn = cfg.testMode;
-                    forbid_migrations = cfg.testForbidMigrations;
-                  };
-                })
-              }
-            '';
+            text = "exec ${self.apps.${system}.dancelor.program} ${settingsFile}";
           };
 
         in
         {
+          services.dancelor.settings = {
+            database = {
+              driver = "postgresql";
+              endpoint = [
+                "Socket"
+                socketPath
+              ];
+            };
+            nixpkgs = inputs.nixpkgs;
+            share = "${self.packages.${system}.dancelor}/share/dancelor";
+            test.die_on_exn = cfg.testMode;
+            loglevel.default = if cfg.testMode then "info" else "debug";
+          };
+
           ## User and group `dancelor:dancelor`.
           users.users.dancelor = {
             isSystemUser = true;

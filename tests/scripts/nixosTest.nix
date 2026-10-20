@@ -9,12 +9,11 @@
 
       services.dancelor = {
         enable = true;
-        listeningPort = 8080;
-        githubTokenFile = "${pkgs.writeText "github-token" "dummy github token"}";
-        githubRepository = "github.com/niols/dancelor";
-        githubDatabaseRepository = "github.com/niols/dancelor-database";
         testMode = true;
-        testForbidMigrations = true;
+        settings = {
+          port = 8080; # assumed by pytest tests
+          test.forbid_migrations = true;
+        };
       };
 
       services.postgresql.package = pkgs.postgresql_15;
