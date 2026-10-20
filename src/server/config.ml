@@ -39,6 +39,7 @@ type database = {
 type t = {
   database: database;
   init_only: bool;
+  die_on_exn: bool;
   loglevel: Dancelor_common.Logger.loglevel_map;
   pid_file: string;
   port: int;

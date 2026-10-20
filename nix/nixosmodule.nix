@@ -102,6 +102,7 @@
                   routine_threads = cfg.routineThreads;
                   pid_file = "";
                   init_only = false;
+                  die_on_exn = false;
                   loglevel = {
                     cases = [ ];
                     default = if cfg.testMode then "info" else "warning";

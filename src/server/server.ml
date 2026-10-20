@@ -34,6 +34,26 @@ let catchall ~place ~die fun_ =
       log_exn ~msg: ("Uncaught exception in " ^ place) exn;
       die ()
 
+let make_log_die reason () =
+  Log.info (fun m -> m "Dying because %s" reason);
+  exit 1
+
+(** Initialise the Lwt async exception hook. The [~early] argument is to be used
+    before configuration has been loaded, for a good default. *)
+let initialise_async_exception_hook =
+  let log_async_exn = function
+    | Unix.Unix_error (Unix.EPIPE, _, _) ->
+      Log.warn (fun m -> m "Connection closed by the client")
+    | exn ->
+      log_exn ~msg: "Uncaught asynchronous exception" exn
+  in
+  fun ~early ->
+    Lwt.async_exception_hook :=
+      if not early && (Config.get ()).die_on_exn then
+          (fun exn -> log_async_exn exn; make_log_die "configuration flag `die_on_exn` is set" ())
+      else
+        log_async_exn
+
 (** Callback handling one client request. It is in charge of trying to find what
     will answer to the request: a static file, or a Madge API point, or the
     standard main JS file. *)
@@ -41,7 +61,12 @@ let callback _ request body =
   Metrics.increment_http_requests_total ();
   catchall
     ~place: "the callback"
-    ~die: Madge_server.respond_internal_server_error
+    ~die: (
+      if (Config.get ()).die_on_exn then
+        make_log_die "configuration flag `die_on_exn` is set"
+      else
+        Madge_server.respond_internal_server_error
+    )
     @@ fun () ->
     match Madge.Request.cohttp_code_meth_to_meth @@ Request.meth request with
     | Error meth ->
@@ -62,18 +87,11 @@ let callback _ request body =
       else
         Static.serve env path (Uri.query uri)
 
-  let () =
-    Lwt.async_exception_hook :=
-      (function
-        | Unix.Unix_error (Unix.EPIPE, _, _) ->
-          Log.warn (fun m -> m "Connection closed by the client")
-        | exn ->
-          log_exn ~msg: "Uncaught asynchronous exception" exn
-      )
-
   let read_configuration () =
     Logger.bracket_lwt (module Log) "reading configuration" @@ fun () ->
     Config.parse_cmd_line ()
+
+  let () = initialise_async_exception_hook ~early: true
 
   let () =
     Prometheus_unix.Logging.init ();
@@ -128,10 +146,6 @@ let callback _ request body =
     Logger.bracket (module Log) "starting routines" @@ fun () ->
     Routine.initialise ()
 
-  let log_die () =
-    Log.info (fun m -> m "Dying");
-    exit 1
-
   let notify_systemd_ready () =
     Sys.getenv_opt "NOTIFY_SOCKET"
     |> Option.iter @@ fun path ->
@@ -147,7 +161,7 @@ let callback _ request body =
     Log.debug (fun m -> m "Starting server");
     catchall
       ~place: "the server"
-      ~die: log_die
+      ~die: (make_log_die "the server itself crashed")
       @@ fun () ->
       let wait_for_server =
         Server.create
@@ -164,10 +178,11 @@ let callback _ request body =
   let main : unit Lwt.t =
     catchall
       ~place: "main"
-      ~die: log_die
+      ~die: (make_log_die "the initialisation loop itself crashed")
       @@ fun () ->
       read_configuration ();%lwt
       initialise_logs ();
+      initialise_async_exception_hook ~early: false;
       write_pid ();%lwt
       run_migrations ();%lwt
       check_init_only ();
