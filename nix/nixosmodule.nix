@@ -67,6 +67,14 @@
           '';
           default = false;
         };
+
+        testForbidMigrations = lib.mkOption {
+          type = lib.types.bool;
+          description = ''
+            Whether to forbid Dancelor from running migrations. Do not use in production.
+          '';
+          default = false;
+        };
       };
 
       config = lib.mkIf cfg.enable (
@@ -108,7 +116,7 @@
                   test = {
                     init_only = false;
                     die_on_exn = cfg.testMode;
-                    forbid_migrations = false;
+                    forbid_migrations = cfg.testForbidMigrations;
                   };
                 })
               }

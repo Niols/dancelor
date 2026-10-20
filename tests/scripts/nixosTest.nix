@@ -14,6 +14,7 @@
         githubRepository = "github.com/niols/dancelor";
         githubDatabaseRepository = "github.com/niols/dancelor-database";
         testMode = true;
+        testForbidMigrations = true;
       };
 
       services.postgresql.package = pkgs.postgresql_15;
