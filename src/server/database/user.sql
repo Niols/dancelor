@@ -142,7 +142,8 @@ SELECT
     "person_id",
     "persons"."name" AS "person_name"
 FROM "users"
-LEFT JOIN "persons" ON "users"."person_id" = "persons"."id";
+LEFT JOIN "user_persons" ON "user_persons"."user_id" = "users"."id"
+LEFT JOIN "persons" ON "persons"."id" = "user_persons"."person_id";
 
 -- @get_actor
 WITH "actors" AS &actors

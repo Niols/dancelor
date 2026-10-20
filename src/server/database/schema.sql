@@ -1,3 +1,7 @@
+-- Dancelor's PostgreSQL database schema
+
+-- ---------- [ Entities ] ---------- --
+
 CREATE TYPE "type" AS ENUM ('Person', 'User', 'Dance', 'Source', 'Tune', 'Version', 'Set', 'Book', 'Group');
 
 CREATE TABLE "entities" (
@@ -10,21 +14,7 @@ CREATE TABLE "entities" (
     CONSTRAINT "pk_entities" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "persons" (
-    -- [sqlgg] module=Sql_types.Person_id_conv
-    "id" VARCHAR(14) NOT NULL,
-    "name" VARCHAR(256) NOT NULL,
-    "scddb_id" INT,
-    "composed_tunes_are_public" BOOLEAN NOT NULL,
-    "published_tunes_are_public" BOOLEAN NOT NULL,
-    "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
-    "copyright_name" VARCHAR(256),
-    CONSTRAINT "pk_persons" PRIMARY KEY ("id"),
-    CONSTRAINT "fk_persons_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
-);
-
-CREATE INDEX "idx_persons_name" ON "persons" USING GIN ("name" "public"."gin_trgm_ops");
-CREATE INDEX "idx_persons_name_search" ON "persons" USING GIN ("name_search" "public"."gin_trgm_ops");
+-- ---------- [ Principals ] ---------- --
 
 CREATE TYPE "role" AS ENUM ('Normal_user', 'Maintainer', 'Administrator');
 
@@ -38,8 +28,6 @@ CREATE TABLE "users" (
     "password_reset_token_hash" VARCHAR(256),
     "password_reset_token_max_date" TIMESTAMP,
     "omniscience" BOOLEAN NOT NULL,
-    -- [sqlgg] module=Sql_types.Person_id_conv
-    "person_id" VARCHAR(14) NULL,
     -- [sqlgg] module=Sql_types.Role_conv
     "role" "role" NOT NULL,
     "username_search" TEXT GENERATED ALWAYS AS (make_name_search("username")) STORED,
@@ -51,11 +39,9 @@ CREATE TABLE "users" (
     CONSTRAINT "pk_users" PRIMARY KEY ("id"),
     CONSTRAINT "uq_users_username" UNIQUE ("username"),
     CONSTRAINT "uq_users_email" UNIQUE ("email"),
-    CONSTRAINT "fk_users_id" FOREIGN KEY ("id") REFERENCES "entities" ("id"),
-    CONSTRAINT "fk_users_person_id" FOREIGN KEY ("person_id") REFERENCES "persons" ("id")
+    CONSTRAINT "fk_users_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
-CREATE INDEX "idx_users_person_id" ON "users" ("person_id");
 CREATE INDEX "idx_users_username" ON "users" USING GIN ("username" "public"."gin_trgm_ops");
 CREATE INDEX "idx_users_username_search" ON "users" USING GIN ("username_search" "public"."gin_trgm_ops");
 
@@ -105,6 +91,38 @@ CREATE TABLE "entity_actors" (
 
 CREATE INDEX "idx_entity_actors_user_id" ON "entity_actors" ("user_id");
 CREATE INDEX "idx_entity_actors_group_id" ON "entity_actors" ("group_id");
+
+-- ---------- [ Resources ] ---------- --
+
+CREATE TABLE "persons" (
+    -- [sqlgg] module=Sql_types.Person_id_conv
+    "id" VARCHAR(14) NOT NULL,
+    "name" VARCHAR(256) NOT NULL,
+    "scddb_id" INT,
+    "composed_tunes_are_public" BOOLEAN NOT NULL,
+    "published_tunes_are_public" BOOLEAN NOT NULL,
+    "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
+    "copyright_name" VARCHAR(256),
+    CONSTRAINT "pk_persons" PRIMARY KEY ("id"),
+    CONSTRAINT "fk_persons_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
+);
+
+CREATE INDEX "idx_persons_name" ON "persons" USING GIN ("name" "public"."gin_trgm_ops");
+CREATE INDEX "idx_persons_name_search" ON "persons" USING GIN ("name_search" "public"."gin_trgm_ops");
+
+CREATE TABLE "user_persons" (
+    -- [sqlgg] module=Sql_types.User_id_conv
+    "user_id" VARCHAR(14) NOT NULL,
+    -- [sqlgg] module=Sql_types.Person_id_conv
+    "person_id" VARCHAR(14) NOT NULL,
+    CONSTRAINT "uq_user_persons_user_id" UNIQUE ("user_id"),
+    CONSTRAINT "uq_user_persons_person_id" UNIQUE ("person_id"),
+    CONSTRAINT "fk_user_persons_user_id" FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
+    CONSTRAINT "fk_user_persons_person_id" FOREIGN KEY ("person_id") REFERENCES "persons" ("id")
+);
+
+CREATE INDEX "idx_user_persons_user_id" ON "user_persons" ("user_id");
+CREATE INDEX "idx_user_persons_person_id" ON "user_persons" ("person_id");
 
 CREATE TABLE "remember_me_tokens" (
     -- [sqlgg] module=Sql_types.User_id_conv

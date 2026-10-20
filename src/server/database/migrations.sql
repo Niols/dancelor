@@ -2086,3 +2086,33 @@ ALTER TABLE "groups" RENAME CONSTRAINT "groups_pkey" TO "pk_groups";
 
 -- @m087_2026_10_rename_tables_to_plural__fk_group_id
 ALTER TABLE "groups" RENAME CONSTRAINT "fk_group_id" TO "fk_groups_id";
+
+-- @m088_2026_10_break_dependency_from_user_to_person__add_user_persons_table
+CREATE TABLE "user_persons" (
+    "user_id" VARCHAR(14) NOT NULL,
+    "person_id" VARCHAR(14) NOT NULL,
+    CONSTRAINT "fk_user_persons_user_id" FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
+    CONSTRAINT "fk_user_persons_person_id" FOREIGN KEY ("person_id") REFERENCES "persons" ("id"),
+    CONSTRAINT "uq_user_persons_user_id" UNIQUE ("user_id"),
+    CONSTRAINT "uq_user_persons_person_id" UNIQUE ("person_id")
+);
+
+-- @m088_2026_10_break_dependency_from_user_to_person__index_user_id
+CREATE INDEX "idx_user_persons_user_id" ON "user_persons" ("user_id");
+
+-- @m088_2026_10_break_dependency_from_user_to_person__index_person_id
+CREATE INDEX "idx_user_persons_person_id" ON "user_persons" ("person_id");
+
+-- @m088_2026_10_break_dependency_from_user_to_person__insert_select_from_users
+INSERT INTO "user_persons" ("user_id", "person_id")
+SELECT
+    "id" AS "user_id",
+    "person_id"
+FROM "users"
+WHERE "person_id" IS NOT NULL;
+
+-- -- @m088_2026_10_break_dependency_from_user_to_person__drop_index_person_id
+-- DROP INDEX "idx_users_person_id";
+
+-- @m088_2026_10_break_dependency_from_user_to_person__drop_column_person_id
+ALTER TABLE "users" DROP COLUMN "person_id";
