@@ -133,7 +133,21 @@ let callback _ request body =
 
   let run_migrations () =
     Logger.bracket_lwt (module Log) "applying migrations" @@ fun () ->
-    Database.apply_migrations ()
+    let on_remaining_migrations =
+      if (Config.get ()).test.forbid_migrations then
+        Some (fun ~first_migration_name ~number_of_other_migrations ->
+          Log.err (fun m ->
+            m
+              "Migrations are forbidden but there remains %S and %d others to apply"
+              first_migration_name
+              number_of_other_migrations
+          );
+          exit 1
+        )
+      else
+        None
+    in
+    Database.apply_migrations ?on_remaining_migrations ()
 
   let check_init_only () =
     if (Config.get ()).test.init_only then

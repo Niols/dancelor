@@ -108,6 +108,7 @@
                   test = {
                     init_only = false;
                     die_on_exn = cfg.testMode;
+                    forbid_migrations = false;
                   };
                 })
               }

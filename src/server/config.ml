@@ -40,6 +40,7 @@ type database = {
 type test = {
   init_only: bool; [@default false]
   die_on_exn: bool; [@default false]
+  forbid_migrations: bool; [@default false]
 }
 [@@deriving make, show {with_path = false}, yojson]
 
