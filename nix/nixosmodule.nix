@@ -102,7 +102,7 @@
                   routine_threads = cfg.routineThreads;
                   pid_file = "";
                   init_only = false;
-                  die_on_exn = false;
+                  die_on_exn = cfg.testMode;
                   loglevel = {
                     cases = [ ];
                     default = if cfg.testMode then "info" else "warning";
@@ -134,7 +134,7 @@
               Type = "notify";
               NotifyAccess = "all";
               ExecStart = "${run-dancelor}/bin/dancelor";
-              Restart = "always";
+              Restart = if cfg.testMode then "no" else "always";
               User = "dancelor";
               Group = "dancelor";
               LimitNOFILE = 8092; # default soft max is 1024, which can easily be exhausted

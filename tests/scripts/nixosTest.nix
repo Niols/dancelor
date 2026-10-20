@@ -1,11 +1,3 @@
-{ lib, ... }:
-
-let
-  inherit (lib)
-    mkForce
-    ;
-
-in
 {
   nodes.machine =
     { pkgs, ... }:
@@ -50,7 +42,6 @@ in
       systemd.services.dancelor = {
         after = [ "inject-test-database.service" ];
         requires = [ "inject-test-database.service" ];
-        serviceConfig.Restart = mkForce "no"; # only try starting once
       };
     };
 
