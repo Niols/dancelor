@@ -14,14 +14,34 @@
         mkEnableOption
         mkOption
         types
+        recursiveUpdate
         ;
-      inherit (pkgs) writeShellApplication formats;
-      inherit (pkgs.stdenv.hostPlatform) system;
+      inherit (pkgs)
+        writeShellApplication
+        formats
+        runCommand
+        ;
+      inherit (pkgs.stdenv.hostPlatform)
+        system
+        ;
 
+      runDancelor =
+        settingsFile:
+        "${
+          writeShellApplication {
+            name = "dancelor";
+            text = "exec ${self.apps.${system}.dancelor.program} ${settingsFile}";
+          }
+        }/bin/dancelor";
+
+      socketPath = "/run/postgresql";
       cfg = config.services.dancelor;
       settingsFormat = formats.json { };
-      ## FIXME: validate settings file at eval time
-      settingsFile = settingsFormat.generate "dancelor-settings.json" cfg.settings;
+      makeSettingsFile = settingsFormat.generate "dancelor-settings.unchecked.json";
+      settingsFile = runCommand "dancelor-settings.json" { } ''
+        ${runDancelor (makeSettingsFile (recursiveUpdate cfg.settings { test.config_only = true; }))}
+        cp ${makeSettingsFile cfg.settings} $out
+      '';
     in
     {
       options.services.dancelor = {
@@ -49,87 +69,76 @@
         };
       };
 
-      config = mkIf cfg.enable (
-        let
-          socketPath = "/run/postgresql";
-
-          run-dancelor = writeShellApplication {
-            name = "dancelor";
-            text = "exec ${self.apps.${system}.dancelor.program} ${settingsFile}";
-          };
-
-        in
-        {
-          services.dancelor.settings = {
-            database = {
-              driver = "postgresql";
-              endpoint = [
-                "Socket"
-                socketPath
-              ];
-            };
-            nixpkgs = inputs.nixpkgs;
-            share = "${self.packages.${system}.dancelor}/share/dancelor";
-            test.die_on_exn = cfg.testMode;
-            loglevel.default = if cfg.testMode then "info" else "debug";
-          };
-
-          ## User and group `dancelor:dancelor`.
-          users.users.dancelor = {
-            isSystemUser = true;
-            group = "dancelor";
-          };
-          users.groups.dancelor = { };
-
-          ## Systemd service running Dancelor and restarting it constantly.
-          ##
-          systemd.services.dancelor = {
-            after = [
-              "network.target"
-              "postgresql.target"
+      config = mkIf cfg.enable ({
+        services.dancelor.settings = {
+          database = {
+            driver = "postgresql";
+            endpoint = [
+              "Socket"
+              socketPath
             ];
-            requires = [ "postgresql.target" ];
-            wantedBy = [ "multi-user.target" ];
-            serviceConfig = {
-              Type = "notify";
-              NotifyAccess = "all";
-              ExecStart = "${run-dancelor}/bin/dancelor";
-              Restart = if cfg.testMode then "no" else "always";
-              User = "dancelor";
-              Group = "dancelor";
-              LimitNOFILE = 8092; # default soft max is 1024, which can easily be exhausted
-            };
           };
+          nixpkgs = inputs.nixpkgs;
+          share = "${self.packages.${system}.dancelor}/share/dancelor";
+          test.die_on_exn = cfg.testMode;
+          loglevel.default = if cfg.testMode then "info" else "debug";
+        };
 
-          ## PostgreSQL with a `dancelor` database and user
-          ##
-          ## NOTE: We might want to leave some of this configuration to the
-          ## client code, but since it's mostly us we can keep it for now.
-          ## Better over-specify and have Nix catch our mistakes later.
-          ##
-          ## NOTE: We expect a specific major version of PostgreSQL, but we
-          ## leave it to the host to set it; the assertion catches any
-          ## desynchronisation.
-          ##
-          assertions = [
+        ## User and group `dancelor:dancelor`.
+        users.users.dancelor = {
+          isSystemUser = true;
+          group = "dancelor";
+        };
+        users.groups.dancelor = { };
+
+        ## Systemd service running Dancelor and restarting it constantly.
+        ##
+        systemd.services.dancelor = {
+          after = [
+            "network.target"
+            "postgresql.target"
+          ];
+          requires = [ "postgresql.target" ];
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            Type = "notify";
+            NotifyAccess = "all";
+            ExecStart = runDancelor settingsFile;
+            Restart = if cfg.testMode then "no" else "always";
+            User = "dancelor";
+            Group = "dancelor";
+            LimitNOFILE = 8092; # default soft max is 1024, which can easily be exhausted
+          };
+        };
+
+        ## PostgreSQL with a `dancelor` database and user
+        ##
+        ## NOTE: We might want to leave some of this configuration to the
+        ## client code, but since it's mostly us we can keep it for now.
+        ## Better over-specify and have Nix catch our mistakes later.
+        ##
+        ## NOTE: We expect a specific major version of PostgreSQL, but we
+        ## leave it to the host to set it; the assertion catches any
+        ## desynchronisation.
+        ##
+        assertions = [
+          {
+            assertion = config.services.postgresql.package.psqlSchema == "15";
+            message = "Dancelor expects PostgreSQL 15, but services.postgresql.package is ${config.services.postgresql.package.name}.";
+          }
+        ];
+        services.postgresql = {
+          enable = true;
+          ensureDatabases = [ "dancelor" ];
+          ensureUsers = [
             {
-              assertion = config.services.postgresql.package.psqlSchema == "15";
-              message = "Dancelor expects PostgreSQL 15, but services.postgresql.package is ${config.services.postgresql.package.name}.";
+              name = "dancelor";
+              ensureDBOwnership = true;
             }
           ];
-          services.postgresql = {
-            enable = true;
-            ensureDatabases = [ "dancelor" ];
-            ensureUsers = [
-              {
-                name = "dancelor";
-                ensureDBOwnership = true;
-              }
-            ];
-            settings.unix_socket_directories = socketPath;
-            authentication = mkIf cfg.testMode "local all all trust";
-          };
-        }
-      );
+          settings.unix_socket_directories = socketPath;
+          authentication = mkIf cfg.testMode "local all all trust";
+        };
+      });
     };
 }

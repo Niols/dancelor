@@ -139,6 +139,13 @@ let callback _ request body =
     in
     Database.apply_migrations ?on_remaining_migrations ()
 
+  let check_config_only () =
+    if (Config.get ()).test.config_only then
+      (
+        Log.info (fun m -> m "Config only mode. Stopping now.");
+        exit 0
+      )
+
   let check_init_only () =
     if (Config.get ()).test.init_only then
       (
@@ -185,6 +192,7 @@ let callback _ request body =
       ~die: (make_log_die "the initialisation loop itself crashed")
       @@ fun () ->
       read_configuration ();%lwt
+      check_config_only ();
       initialise_logs ();
       initialise_async_exception_hook ~early: false;
       run_migrations ();%lwt

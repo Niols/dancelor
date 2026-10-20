@@ -38,9 +38,10 @@ type database = {
 
 (** Test-related options. They should not be set in a production environment. *)
 type test = {
-  init_only: bool; [@default false]
-  die_on_exn: bool; [@default false]
-  forbid_migrations: bool; [@default false]
+  config_only: bool; [@default false] (** exit immediately after reading the configuration *)
+  init_only: bool; [@default false] (** exit immediately after initialising the server *)
+  die_on_exn: bool; [@default false] (** die on the first uncaught exception encountered *)
+  forbid_migrations: bool; [@default false] (** die if any migration must run during initialisation *)
 }
 [@@deriving make, show {with_path = false}, yojson]
 
