@@ -19,7 +19,7 @@ let add_version_to_contents env id version_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt version_row = Version.get_row env version_id in
-  update env id {form with contents = form.contents @ [Versions (NEList.singleton (version_row, Version_parameters.none))]}
+  update env id {form with contents = form.contents @ [Regular (Book_form.make_dance_and_versions_or_set_exn None (Some (Versions (NEList.singleton (version_row, Version_parameters.none)))))]}
 
 let add_set_to_contents env id set_id =
   (* FIXME: make all the database endpoints take the database such that
@@ -29,7 +29,7 @@ let add_set_to_contents env id set_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt set_row = Set.get_row env set_id in
-  update env id {form with contents = form.contents @ [Set (set_row, Set_parameters.none)]}
+  update env id {form with contents = form.contents @ [Regular (Book_form.make_dance_and_versions_or_set_exn None (Some (Set (set_row, Set_parameters.none))))]}
 
 let add_dance_to_contents env id dance_id =
   (* FIXME: make all the database endpoints take the database such that
@@ -39,7 +39,7 @@ let add_dance_to_contents env id dance_id =
      updating the database doesn't happen this often. *)
   let%lwt form = get_form env id in
   let%lwt dance_row = Dance.get_row env dance_id in
-  update env id {form with contents = form.contents @ [Dance (dance_row, Dance_only)]}
+  update env id {form with contents = form.contents @ [Regular (Book_form.make_dance_and_versions_or_set_exn (Some dance_row) None)]}
 
 (* Bit of a hack *)
 
@@ -55,7 +55,7 @@ module Warnings = struct
   let tunes_from_content (book : Book_view.t) : Tune_name.t list =
     List.concat_map
       (function
-        | Book_view.Versions versions_and_params -> List.map (Tune_row.to_name % Version_row.tune % fst) versions_and_params
+        | Book_view.Regular (_, Some Versions versions_and_params) -> List.map (Tune_row.to_name % Version_row.tune % fst) versions_and_params
         | _ -> []
       )
       book.contents
@@ -64,8 +64,8 @@ module Warnings = struct
     let set_rows : Set_row.t list =
       List.filter_map
         (function
-          | Book_view.Dance (_, Dance_set (Allowed set, _)) | Set (Allowed set, _) -> Some set
-          | Part _ | Dance (_, Dance_only) | Dance (_, Dance_versions _) | Dance (_, Dance_set (Forbidden, _)) | Versions _ | Set (Forbidden, _) -> None
+          | Book_view.Regular (_, Some Set (Allowed set, _)) -> Some set
+          | _ -> None
         )
         book.contents
     in
@@ -139,11 +139,8 @@ module Warnings = struct
   let set_dance_kind_mismatch (book : Book_view.t) =
     List.filter_map
       (function
-        | Book_view.Dance (dance, Dance_set (Allowed set, _)) ->
-          if dance.kind <> set.kind then
-            Some (Book_view.Set_dance_kind_mismatch (Set_row.to_name set, Dance_row.to_name dance))
-          else
-            None
+        | Book_view.Regular (Some dance, Some Set (Allowed set, _)) when dance.kind <> set.kind ->
+          Some (Book_view.Set_dance_kind_mismatch (Set_row.to_name set, Dance_row.to_name dance))
         | _ -> None
       )
       book.contents
