@@ -436,8 +436,6 @@ CREATE TABLE "book_sources" (
 
 CREATE INDEX "idx_book_sources_source_id" ON "book_sources" ("source_id");
 
-CREATE TYPE "page_type" AS ENUM ('Part', 'Dance_only', 'Dance_versions', 'Dance_set', 'Versions', 'Set');
-
 CREATE TABLE "book_content_pages" (
     -- [sqlgg] module=Sql_types.Book_id_conv
     "book_id" VARCHAR(14) NOT NULL,
@@ -457,7 +455,6 @@ CREATE TABLE "book_content_pages" (
     "set_parameter_version_parameter_trivia" VARCHAR,
     "set_parameter_version_parameter_display_name" VARCHAR,
     "set_parameter_version_parameter_display_composer" VARCHAR,
-    "page_type" "page_type" NOT NULL,
     CONSTRAINT "uq_book_content_pages_book_id_index" UNIQUE ("book_id", "index"),
     CONSTRAINT "fk_book_content_pages_book_id" FOREIGN KEY ("book_id") REFERENCES "books" ("id"),
     CONSTRAINT "fk_book_content_pages_dance_id" FOREIGN KEY ("dance_id") REFERENCES "dances" ("id"),

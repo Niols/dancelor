@@ -170,17 +170,32 @@ module Set_form = struct
 end
 
 module Book_form = struct
-  type dance_page =
-    | Dance_only
-    | Dance_versions of (Version_row.t * Version_parameters.t) NEList.t
-    | Dance_set of Set_row.t * Set_parameters.t
+  type versions_or_set =
+    | Versions of (Version_row.t * Version_parameters.t) NEList.t
+    | Set of Set_row.t * Set_parameters.t
   [@@deriving eq, yojson]
+
+  type dance_and_versions_or_set =
+    | Dance of Dance_row.t
+    | Versions_or_set of versions_or_set
+    | Dance_and_versions_or_set of Dance_row.t * versions_or_set
+  [@@deriving eq, yojson]
+
+  let make_dance_and_versions_or_set_exn dance versions_or_set =
+    match dance, versions_or_set with
+    | Some dance, None -> Dance dance
+    | None, Some versions_or_set -> Versions_or_set versions_or_set
+    | Some dance, Some versions_or_set -> Dance_and_versions_or_set (dance, versions_or_set)
+    | None, None -> failwith "make_dance_and_versions_or_set"
+
+  let dance_and_versions_or_set_to_pair = function
+    | Dance dance -> (Some dance, None)
+    | Versions_or_set versions_or_set -> (None, Some versions_or_set)
+    | Dance_and_versions_or_set (dance, versions_or_set) -> (Some dance, Some versions_or_set)
 
   type page =
     | Part of NEString.t
-    | Dance of Dance_row.t * dance_page
-    | Versions of (Version_row.t * Version_parameters.t) NEList.t
-    | Set of Set_row.t * Set_parameters.t
+    | Regular of dance_and_versions_or_set
   [@@deriving eq, yojson]
 
   type t = {

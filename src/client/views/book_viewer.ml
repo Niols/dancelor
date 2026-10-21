@@ -68,35 +68,36 @@ let table_contents ~this_id content =
                   ~prefix: [td [txt "Part"]]
                   ~suffix
                   title
-              | Book_view.Dance (dance, Dance_only) ->
+              | Book_view.Regular (Some dance, None) ->
                 Tables.dance_row
                   ~prefix: [td [txt "Dance"]]
                   ~suffix
                   dance
-              | Book_view.Dance (dance, Dance_versions versions_and_params) ->
+              | Book_view.Regular (Some dance, Some (Versions versions_and_params)) ->
                 Tables.dance_plus_versions_row
                   ~prefix: [td [txt "Dance"; Tables.block_details [txt (if List.is_singleton versions_and_params then "+Tune" else "+Tunes")]]]
                   ~suffix
                   dance
                   versions_and_params
-              | Book_view.Dance (dance, Dance_set (set, params)) ->
+              | Book_view.Regular (Some dance, Some (Set (set, params))) ->
                 Tables.dance_plus_set_row
                   ~prefix: [td [txt "Dance"; Tables.block_details [txt "+Set"]]]
                   ~suffix
                   dance
                   set
                   ~set_params: params
-              | Book_view.Versions versions_and_params ->
+              | Book_view.Regular (None, Some Versions versions_and_params) ->
                 Tables.versions_row
                   ~prefix: [td [txt @@ if List.is_singleton versions_and_params then "Tune" else "Tunes"]]
                   ~suffix
                   versions_and_params
-              | Book_view.Set (set, params) ->
+              | Book_view.Regular (None, Some Set (set, params)) ->
                 Tables.set_or_forbidden_row
                   ~prefix: [td [txt "Set"]]
                   ~suffix
                   ~params
                   set
+              | Book_view.Regular (None, None) -> assert false
             )
             content
         )
@@ -159,46 +160,47 @@ let view in_search id =
 
 let parent_title_and_title = function
   | Book_view.Part name -> ("Part", name)
-  | Dance (dance, Dance_only) -> ("Dance", dance.name)
-  | Dance (dance, Dance_versions [_]) -> ("Dance+Version", dance.name)
-  | Dance (dance, Dance_versions _) -> ("Dance+Versions", dance.name)
-  | Dance (dance, Dance_set _) -> ("Dance+Set", dance.name)
-  | Versions [] -> assert false
-  | Versions [(version, _)] -> ("Version", version.tune.name)
-  | Versions ((first_version, _) :: _) -> ("Versions", spf "%s etc." first_version.tune.name)
-  | Set (Allowed set, _) -> ("Set", set.name)
-  | Set (Forbidden, _) -> ("Set", "<forbidden>")
+  | Regular (Some dance, None) -> ("Dance", dance.name)
+  | Regular (Some dance, Some Versions [_]) -> ("Dance+Version", dance.name)
+  | Regular (Some dance, Some Versions _) -> ("Dance+Versions", dance.name)
+  | Regular (Some dance, Some Set _) -> ("Dance+Set", dance.name)
+  | Regular (None, Some Versions [(version, _)]) -> ("Version", version.tune.name)
+  | Regular (None, Some Versions ((first_version, _) :: _)) -> ("Versions", spf "%s etc." first_version.tune.name)
+  | Regular (None, Some Set (Allowed set, _)) -> ("Set", set.name)
+  | Regular (None, Some Set (Forbidden, _)) -> ("Set", "<forbidden>")
+  | Regular (None, None) | Regular (None, Some Versions []) -> assert false
 
 let subtitles = function
   | Book_view.Part _ -> lwt_nil
-  | Dance (dance, dance_page) ->
+  | Regular (Some dance, dance_page) ->
     let%lwt dance = Api.call_exn (Dance Get_view) dance.Dance_row.id in
     let%lwt more_subtitles =
       match dance_page with
-      | Dance_only -> lwt_nil
-      | Dance_versions [(version, _)] ->
+      | None -> lwt_nil
+      | Some Versions [(version, _)] ->
         let%lwt version = Api.call_exn (Version Get_view) version.Version_row.id in
         lwt @@ Version_viewer.subtitles version.tune
-      | Dance_versions _ -> lwt_nil
-      | Dance_set (Allowed set, _params) ->
+      | Some Versions _ -> lwt_nil
+      | Some Set (Allowed set, _params) ->
         let%lwt set = Api.call_exn (Set Get_view) set.Set_row.id in
         lwt @@ Set_viewer.subtitles set
-      | Dance_set (Forbidden, _) -> lwt_nil
+      | Some Set (Forbidden, _) -> lwt_nil
     in
     lwt @@ Dance_viewer.subtitles dance @ more_subtitles
-  | Versions [] -> assert false
-  | Versions [(version, _)] ->
+  | Regular (None, Some Versions []) -> assert false
+  | Regular (None, Some Versions [(version, _)]) ->
     let%lwt version = Api.call_exn (Version Get_view) version.Version_row.id in
     lwt @@ Version_viewer.subtitles version.tune
-  | Versions versions_and_params ->
+  | Regular (None, Some Versions versions_and_params) ->
     let versions = List.map fst versions_and_params in
     let%lwt versions = Lwt_list.map_s (fun version -> Api.call_exn (Version Get_view) version.Version_row.id) versions in
     lwt @@ List.concat_map (fun version -> Version_viewer.subtitles version.Version_view.tune) versions
-  | Set (Allowed set, _) ->
+  | Regular (None, Some Set (Allowed set, _)) ->
     let%lwt set = Api.call_exn (Set Get_view) set.Set_row.id in
     lwt @@ Set_viewer.subtitles set
-  | Set (Forbidden, _) ->
+  | Regular (None, Some Set (Forbidden, _)) ->
     lwt_nil
+  | Regular (None, None) -> assert false
 
 let body_dance (dance : Dance_row.t) =
   let%lwt dance = Api.call_exn (Dance Get_view) dance.id in
@@ -217,13 +219,11 @@ let body_set (set : Set_row.t) =
 
 let body = function
   | Book_view.Part _ -> lwt [txt "This is a part; nothing to see here."]
-  | Dance (dance, Dance_only) -> body_dance dance
-  | Dance (_dance, Dance_versions versions) -> body_versions versions
-  | Dance (_dance, Dance_set (Allowed set, _params)) -> body_set set
-  | Dance (_dance, Dance_set (Forbidden, _params)) -> lwt [txt "You do not have access to this set; nothing to see here."]
-  | Versions versions -> body_versions versions
-  | Set (Allowed set, _) -> body_set set
-  | Set (Forbidden, _params) -> lwt [txt "You do not have access to this set; nothing to see here."]
+  | Regular (Some dance, None) -> body_dance dance
+  | Regular (_, Some Versions versions) -> body_versions versions
+  | Regular (_, Some Set (Allowed set, _params)) -> body_set set
+  | Regular (_, Some Set (Forbidden, _params)) -> lwt [txt "You do not have access to this set; nothing to see here."]
+  | Regular (None, None) -> assert false
 
 let preview id pageno =
   Main_page.madge_call_or_404 (Book Get_view) id @@ fun book ->

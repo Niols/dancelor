@@ -166,10 +166,13 @@ let confirmation_dialog ~this_version_id ~other_version_id =
           let contents =
             List.map
               (function
-                | Book_form.Dance (dance, Dance_versions versions_and_params) ->
-                  Book_form.Dance (dance, Dance_versions (NEList.map (Pair.map_fst replace_version) versions_and_params))
-                | Book_form.Versions versions_and_params ->
-                  Book_form.Versions (NEList.map (Pair.map_fst replace_version) versions_and_params)
+                | Book_form.Regular page ->
+                  Book_form.Regular (
+                    match page with
+                    | Versions_or_set Versions versions_and_params -> Versions_or_set (Versions (NEList.map (Pair.map_fst replace_version) versions_and_params))
+                    | Dance_and_versions_or_set (dance, Versions versions_and_params) -> Dance_and_versions_or_set (dance, Versions (NEList.map (Pair.map_fst replace_version) versions_and_params))
+                    | _ -> page
+                  )
                 | page -> page
               )
               book.Book_form.contents

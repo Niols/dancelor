@@ -108,7 +108,6 @@ let get_contents_for ~actor_id db book_ids =
     (fun
         k
         ~book_id
-        ~page_type
         ~index
         ~part_title
         ~dance_id
@@ -190,13 +189,19 @@ let get_contents_for ~actor_id db book_ids =
           set_id
       in
       let page =
-        match page_type with
-        | `Part -> Book_view.Part (Option.get part_title)
-        | `Dance_only -> Dance (Option.get dance, Dance_only)
-        | `Dance_versions -> Dance (Option.get dance, Dance_versions (content_versions_for (book_id, index)))
-        | `Dance_set -> Dance (Option.get dance, Dance_set (Option.get set, set_params))
-        | `Versions -> Versions (content_versions_for (book_id, index))
-        | `Set -> Set (Option.get set, set_params)
+        let versions = content_versions_for (book_id, index) in
+        match part_title, dance, versions, set with
+        | Some part_title, None, [], None -> Book_view.Part part_title
+        | Some _, _, _, _ -> assert false
+        | _ ->
+          let versions_or_set =
+            match versions, set with
+            | version :: versions, None -> Some (Book_view.Versions (version :: versions))
+            | [], Some set -> Some (Book_view.Set (set, set_params))
+            | [], None -> None
+            | _ -> assert false
+          in
+          Book_view.Regular (dance, versions_or_set)
       in
       k book_id page
     )
@@ -211,7 +216,6 @@ let get_form_contents_for ~actor_id db book_ids =
     (fun
         k
         ~book_id
-        ~page_type
         ~index
         ~part_title
         ~dance_id
@@ -293,13 +297,19 @@ let get_form_contents_for ~actor_id db book_ids =
           set_id
       in
       let page =
-        match page_type with
-        | `Part -> Book_form.Part (NEString.of_string_exn @@ Option.get part_title)
-        | `Dance_only -> Dance (Option.get dance, Dance_only)
-        | `Dance_versions -> Dance (Option.get dance, Dance_versions (NEList.of_list_exn @@ content_versions_for (book_id, index)))
-        | `Dance_set -> Dance (Option.get dance, Dance_set (get_allowed @@ Option.get set, set_params))
-        | `Versions -> Versions (NEList.of_list_exn @@ content_versions_for (book_id, index))
-        | `Set -> Set (get_allowed @@ Option.get set, set_params)
+        let versions = content_versions_for (book_id, index) in
+        match part_title, dance, versions, set with
+        | Some part_title, None, [], None -> Book_form.Part (NEString.of_string_exn part_title)
+        | Some _, _, _, _ -> assert false
+        | _ ->
+          let versions_or_set =
+            match versions, set with
+            | version :: versions, None -> Some (Book_form.Versions (version :: versions))
+            | [], Some set -> Some (Book_form.Set (get_allowed set, set_params))
+            | [], None -> None
+            | _ -> assert false
+          in
+          Book_form.Regular (Book_form.make_dance_and_versions_or_set_exn dance versions_or_set)
       in
       k book_id page
     )
@@ -384,14 +394,18 @@ let update_other_tables db ~book_id ~authors ~sources ~contents =
   ignore <$> Book_sql.delete_all_content_versions db ~book_id;%lwt
   Lwt_list.iteri_s
     (fun content_index page ->
-      let (page_type, part_title, dance, set, set_params, versions_and_params) =
+      let (part_title, dance, versions_and_params, set, set_params) =
         match (page : Book_form.page) with
-        | Part title -> (`Part, Some title, None, None, Set_parameters.none, [])
-        | Dance (dance, Dance_only) -> (`Dance_only, None, Some dance, None, Set_parameters.none, [])
-        | Dance (dance, Dance_versions versions_and_params) -> (`Dance_versions, None, Some dance, None, Set_parameters.none, NEList.to_list versions_and_params)
-        | Dance (dance, Dance_set (set, set_params)) -> (`Dance_set, None, Some dance, Some set, set_params, [])
-        | Versions versions_and_params -> (`Versions, None, None, None, Set_parameters.none, NEList.to_list versions_and_params)
-        | Set (set, set_params) -> (`Set, None, None, Some set, set_params, [])
+        | Part title -> (Some title, None, [], None, Set_parameters.none)
+        | Regular page ->
+          let (dance, versions_or_set) = Book_form.dance_and_versions_or_set_to_pair page in
+          let (versions_and_params, set, set_params) =
+            match versions_or_set with
+            | None -> ([], None, Set_parameters.none)
+            | Some Set (set, set_params) -> ([], Some set, set_params)
+            | Some Versions versions_and_params -> (NEList.to_list versions_and_params, None, Set_parameters.none)
+          in
+            (None, dance, versions_and_params, set, set_params)
       in
       let set_version_params = Set_parameters.every_version set_params in
       ignore
@@ -399,7 +413,6 @@ let update_other_tables db ~book_id ~authors ~sources ~contents =
           db
           ~book_id
           ~index: (Int64.of_int content_index)
-          ~page_type
           ~part_title: (Option.map NEString.to_string part_title)
           ~dance_id: (Option.map Dance_row.id dance)
           ~set_id: (Option.map Set_row.id set)

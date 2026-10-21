@@ -176,17 +176,14 @@ module Book_view = struct
     does not have the same kind *)
   [@@deriving yojson]
 
-  type dance_page =
-    | Dance_only
-    | Dance_versions of (Version_row.t * Version_parameters.t) list
-    | Dance_set of Set_row.t or_forbidden * Set_parameters.t
+  type versions_or_set =
+    | Versions of (Version_row.t * Version_parameters.t) list
+    | Set of Set_row.t or_forbidden * Set_parameters.t
   [@@deriving eq, yojson]
 
   type page =
     | Part of string
-    | Dance of Dance_row.t * dance_page
-    | Versions of (Version_row.t * Version_parameters.t) list
-    | Set of Set_row.t or_forbidden * Set_parameters.t
+    | Regular of Dance_row.t option * versions_or_set option
   [@@deriving eq, yojson]
 
   type t = {
