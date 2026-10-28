@@ -26,7 +26,6 @@
    ppx_fields_conv
    ppx_monad
    ppx_monad_olwt
-   ppx_monad_rlwt
    ppx_variants_conv)))
 
 (install

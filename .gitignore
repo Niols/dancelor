@@ -16,7 +16,6 @@
 *.merlin
 
 ## Specific
-/bin
 /cache
 /assets/config.json
 /database

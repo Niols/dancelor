@@ -47,7 +47,6 @@
           monadise-lwt
           omd
           postgresql
-          ppx_blob
           ppx_deriving_qcheck
           ppx_deriving_yojson
           ppx_fields_conv

@@ -1,8 +1,8 @@
 (include_subdirs qualified)
 
-(executable
- (name server)
- (public_name dancelor)
+(library
+ (name dancelor_server)
+ (public_name dancelor.server)
  (libraries
   cohttp-lwt-unix
   dancelor.nes.unix
@@ -21,16 +21,10 @@
  (preprocess
   (pps
    lwt_ppx
-   ppx_blob
    ppx_deriving.std
    ppx_deriving_yojson
    ppx_fields_conv
-   ppx_variants_conv
-   ppx_monad
-   ppx_monad_olwt
-   ppx_monad_rlwt))
- (preprocessor_deps
-  (source_tree controller/template)))
+   ppx_variants_conv)))
 
 (install
  (section share)
