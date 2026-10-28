@@ -91,9 +91,7 @@ let callback _ request body =
     Logger.bracket_lwt (module Log) "reading configuration" @@ fun () ->
     Config.parse_cmd_line ()
 
-  let () = initialise_async_exception_hook ~early: true
-
-  let () =
+  let initialise_logs_early () =
     Prometheus_unix.Logging.init ();
     (* Tweak the default {!Logs.format_reporter} to print the level our way. *)
     let reporter =
@@ -118,8 +116,11 @@ let callback _ request body =
     in
     Logger.early_initialisation ~reporter
 
-  let initialise_logs () =
-    Logger.late_initialisation (Config.get ()).loglevel
+  let initialise_logs ~early =
+    if early then
+      initialise_logs_early ()
+    else
+      Logger.late_initialisation (Config.get ()).loglevel
 
   let run_migrations () =
     Logger.bracket_lwt (module Log) "applying migrations" @@ fun () ->
@@ -183,21 +184,31 @@ let callback _ request body =
       notify_systemd_ready ();
       wait_for_server
 
-  let () = Random.self_init ()
-  let () = Printexc.record_backtrace true
+  let initialise_early () =
+    Printexc.record_backtrace true;
+    Random.self_init ();
+    initialise_logs ~early: true;
+    initialise_async_exception_hook ~early: true;
+    ()
 
-  let main : unit Lwt.t =
+  let initialise_late () =
+    read_configuration ();%lwt
+    check_config_only ();
+    initialise_logs ~early: false;
+    initialise_async_exception_hook ~early: false;
+    run_migrations ();%lwt
+    check_init_only ();
+    lwt_unit
+
+  let run_lwt () : unit Lwt.t =
     catchall
       ~place: "main"
       ~die: (make_log_die "the initialisation loop itself crashed")
       @@ fun () ->
-      read_configuration ();%lwt
-      check_config_only ();
-      initialise_logs ();
-      initialise_async_exception_hook ~early: false;
-      run_migrations ();%lwt
-      check_init_only ();
+      initialise_late ();%lwt
       start_routines ();
       run_server ()
 
-  let () = Lwt_main.run main
+  let run () =
+    initialise_early ();
+    Lwt_main.run @@ run_lwt ()

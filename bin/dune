@@ -1,0 +1,7 @@
+(executable
+ (name server)
+ (public_name dancelor)
+ (modules server)
+ (libraries dancelor_server)
+ (preprocess
+  (pps lwt_ppx)))
