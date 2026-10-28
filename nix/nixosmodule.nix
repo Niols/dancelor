@@ -14,7 +14,6 @@
         mkEnableOption
         mkOption
         types
-        recursiveUpdate
         ;
       inherit (pkgs)
         writeShellApplication
@@ -36,12 +35,14 @@
 
       socketPath = "/run/postgresql";
       cfg = config.services.dancelor;
+
       settingsFormat = formats.json { };
-      makeSettingsFile = settingsFormat.generate "dancelor-settings.unchecked.json";
+      uncheckedSettingsFile = settingsFormat.generate "dancelor-settings.unchecked.json" cfg.settings;
       settingsFile = runCommand "dancelor-settings.json" { } ''
-        ${runDancelor (makeSettingsFile (recursiveUpdate cfg.settings { test.config_only = true; }))}
-        cp ${makeSettingsFile cfg.settings} $out
+        ${self.packages.${system}.dancelor}/bin/dancelor-check-config ${uncheckedSettingsFile}
+        cp ${uncheckedSettingsFile} $out
       '';
+
     in
     {
       options.services.dancelor = {

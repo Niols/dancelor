@@ -38,7 +38,6 @@ type database = {
 
 (** Test-related options. They should not be set in a production environment. *)
 type test = {
-  config_only: bool; [@default false] (** exit immediately after reading the configuration *)
   init_only: bool; [@default false] (** exit immediately after initialising the server *)
   die_on_exn: bool; [@default false] (** die on the first uncaught exception encountered *)
   forbid_migrations: bool; [@default false] (** die if any migration must run during initialisation *)
@@ -67,11 +66,15 @@ let set, unsafe_set, get =
   let set config = match !v with Some _ -> failwith "Cannot set configuration twice" | None -> v := Some config in
   set, unsafe_set, get
 
-let load_from_file filename =
+let read_from_file filename =
   Log.debug (fun m -> m "Reading configuration from file %s" filename);
   let%lwt content = Lwt_io.with_file ~flags: [O_RDONLY] ~mode: Lwt_io.input filename Lwt_io.read in
   let content = Yojson.Safe.from_string content in
-  let config = match of_yojson content with Ok config -> config | Error msg -> failwithf "Could not parse config file `%s`: %s" filename msg in
+  match of_yojson content with
+  | Ok config -> lwt config
+  | Error msg -> failwithf "Could not parse config file `%s`: %s" filename msg
+
+let load config =
   let%lwt config =
     match config.github_token, config.github_token_file with
     | "", "" ->
@@ -92,6 +95,6 @@ let load_from_file filename =
 
 let parse_cmd_line () =
   match Sys.argv with
-  | [|_; fname|] -> load_from_file fname
+  | [|_; fname|] -> read_from_file fname >>= load
   | [|_|] -> failwith "No config file specified. Please provide a config file as a command-line argument."
   | _ -> failwith "Too many command-line arguments. Expected exactly one: the config file."

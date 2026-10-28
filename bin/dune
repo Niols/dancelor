@@ -5,3 +5,11 @@
  (libraries dancelor_server)
  (preprocess
   (pps lwt_ppx)))
+
+(executable
+ (name check_config)
+ (public_name dancelor-check-config)
+ (modules check_config)
+ (libraries dancelor_server)
+ (preprocess
+  (pps lwt_ppx)))
