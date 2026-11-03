@@ -82,15 +82,15 @@ let dance_and_dance_page =
       plus
         ~label: "Dance page"
         ~cast: (function
-          | Zero() -> Book_form.Dance_only
-          | Succ Zero versions_and_params -> Book_form.Dance_versions versions_and_params
-          | Succ Succ Zero (set, params) -> Book_form.Dance_set (set, params)
+          | Zero() -> None
+          | Succ Zero versions_and_params -> Some (Book_form.Versions versions_and_params)
+          | Succ Succ Zero (set, params) -> Some (Book_form.Set (set, params))
           | _ -> assert false (* types guarantee this is not reachable *)
         )
         ~uncast: (function
-          | Book_form.Dance_only -> Zero ()
-          | Book_form.Dance_versions versions_and_params -> one versions_and_params
-          | Book_form.Dance_set (set, params) -> two (set, params)
+          | None -> Zero ()
+          | Some Book_form.Versions versions_and_params -> one versions_and_params
+          | Some Book_form.Set (set, params) -> two (set, params)
         )
         ~selected_when_empty: 0
         (
@@ -155,16 +155,17 @@ let editor =
             ~label: "Page"
             ~cast: (function
               | Zero title -> Book_form.Part title
-              | Succ Zero (dance, dance_page) -> Book_form.Dance (dance, dance_page)
-              | Succ Succ Zero versions_and_params -> Book_form.Versions versions_and_params
-              | Succ Succ Succ Zero (set, params) -> Book_form.Set (set, params)
+              | Succ Zero (dance, dance_page) -> Book_form.Regular (Book_form.make_dance_and_versions_or_set_exn (Some dance) dance_page)
+              | Succ Succ Zero versions_and_params -> Book_form.Regular (Book_form.Versions_or_set (Versions versions_and_params))
+              | Succ Succ Succ Zero (set, params) -> Book_form.Regular (Book_form.Versions_or_set (Set (set, params)))
               | _ -> assert false (* types guarantee this is not reachable *)
             )
             ~uncast: (function
               | Book_form.Part title -> Zero title
-              | Book_form.Dance (dance, dance_page) -> one (dance, dance_page)
-              | Book_form.Versions versions_and_params -> two versions_and_params
-              | Book_form.Set (set, params) -> three (set, params)
+              | Book_form.Regular (Dance dance) -> one (dance, None)
+              | Book_form.Regular (Dance_and_versions_or_set (dance, versions_or_set)) -> one (dance, Some versions_or_set)
+              | Book_form.Regular (Versions_or_set (Versions versions_and_params)) -> two versions_and_params
+              | Book_form.Regular (Versions_or_set (Set (set, params))) -> three (set, params)
             )
             (
               Input.prepare_non_empty

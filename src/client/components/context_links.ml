@@ -282,14 +282,11 @@ let for_book (book : Book_view.t) pageno =
   let this_page =
     match List.nth book.contents pageno with
     | Book_view.Part _ -> None
-    | Dance (_, Dance_set _) -> None (* because it's unclear which it would lead to *)
-    | Dance (dance, _) -> Some (Endpoints.Page.(href @@ Dance View) None dance.id)
-    | Versions [(version, _)] -> Some (Endpoints.Page.(href @@ Version View) None None version.id)
-    | Versions _ -> None
-    | Set (Allowed set, _) -> Some (Endpoints.Page.(href @@ Set View) None set.id)
-    | Set (Forbidden, _) -> None
-  in
-  let total = List.length book.contents in
+    | Regular (Some dance, None) -> Some (Endpoints.Page.(href @@ Dance View) None dance.id)
+    | Regular (None, Some Versions [(version, _)]) -> Some (Endpoints.Page.(href @@ Version View) None None version.id)
+    | Regular (None, Some Set (Allowed set, _)) -> Some (Endpoints.Page.(href @@ Set View) None set.id)
+    | _ -> None (* because it is unclear which it would lead to *)
+  in let total = List.length book.contents in
   let index_total_category_name_lwt =
     lwt (Some pageno, Some total, "book", Some book.name)
   in
@@ -302,17 +299,11 @@ let for_book (book : Book_view.t) pageno =
   let page_descr index = spf "page %d" index in
   let versions_in_page page =
     match List.nth book.contents page with
-    | Part _ | Dance (_, Dance_only) -> lwt_nil
-    | Set (set, _) | Dance (_, Dance_set (set, _)) ->
-      (
-        match set with
-        | Allowed set ->
-          let%lwt set = Api.call_exn (Set Get_view) set.id in
-          lwt @@ List.map (Pair.map_fst Version_row.id) set.content
-        | Forbidden -> lwt_nil
-      )
-    | Versions versions | Dance (_, Dance_versions versions) ->
-      lwt @@ List.map (Pair.map_fst Version_row.id) versions
+    | Part _ | Regular (_, None) | Regular (_, Some Set (Forbidden, _)) -> lwt_nil
+    | Regular (_, Some Versions versions) -> lwt @@ List.map (Pair.map_fst Version_row.id) versions
+    | Regular (_, Some Set (Allowed set, _)) ->
+      let%lwt set = Api.call_exn (Set Get_view) set.id in
+      lwt @@ List.map (Pair.map_fst Version_row.id) set.content
   in
   make_and_render_gen
     ~parent_page
