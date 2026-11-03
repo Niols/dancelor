@@ -31,7 +31,8 @@ let serve_index =
   let favicon_16x16_png_href = Lazy.from_fun @@ fun () -> href_with_hash "favicon-16x16.png" in
   let favicon_32x32_png_href = Lazy.from_fun @@ fun () -> href_with_hash "favicon-32x32.png" in
   let site_webmanifest_href = Lazy.from_fun @@ fun () -> href_with_hash "site.webmanifest" in
-  let client_js_href = Lazy.from_fun @@ fun () -> href_with_hash "client.js" in
+  let client_bc_js_href = Lazy.from_fun @@ fun () -> href_with_hash "client.bc.js" in
+  let client_bc_wasm_js_href = Lazy.from_fun @@ fun () -> href_with_hash "client.bc.wasm.js" in
   let bootstrap_bundle_min_js_href = Lazy.from_fun @@ fun () -> href_with_hash "bootstrap.bundle.min.js" in
   fun path query ->
     let (canonical_url, robots_content) =
@@ -70,7 +71,14 @@ let serve_index =
               meta ~a: [a_name "ahrefs-site-verification"; a_content "4c418f04303adf3925d1c6bdef51b71cab26cd179ab478ecd1996cf71ce52ba4"] ();
               script ~a: [a_src "https://analytics.ahrefs.com/analytics.js"; a_user_data "key" "HmcihempNgdCWYAHGvIYsg"; a_async ()] (txt "");
               (* Dancelor *)
-              script ~a: [a_script_type `Javascript; a_src (Lazy.force client_js_href)] (txt "");
+              script ~a: [a_script_type `Javascript] (
+                Unsafe.data @@
+                  spf {|
+                    const scriptElement = document.createElement("script");
+                    scriptElement.src = window?.WebAssembly?.JSTag ? %S : %S;
+                    document.head.append(scriptElement);
+                  |} (Lazy.force client_bc_wasm_js_href) (Lazy.force client_bc_js_href)
+              );
             ]
           )
           (

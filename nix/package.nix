@@ -14,9 +14,13 @@
         ]
         ++ (with pkgs.ocamlPackages; [
           menhir
-          js_of_ocaml
+          js_of_ocaml-compiler
+          wasm_of_ocaml-compiler
         ])
-        ++ (with pkgs; [ sassc ]);
+        ++ (with pkgs; [
+          binaryen # provides wasm-opt
+          sassc
+        ]);
 
         propagatedBuildInputs = with pkgs.ocamlPackages; [
           dates_calc
