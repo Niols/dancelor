@@ -2,7 +2,7 @@
 
 (executables
  (names client)
- (modes js)
+ (modes js wasm)
  (js_of_ocaml
   (flags --effects=cps))
  (libraries
@@ -30,5 +30,5 @@
 
 (install
  (section share)
- (files
-  (client.bc.js as client.js)))
+ (files client.bc.js client.bc.wasm.js)
+ (dirs client.bc.wasm.assets))
