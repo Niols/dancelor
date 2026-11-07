@@ -71,6 +71,9 @@ let serve_index =
               script ~a: [a_src "https://analytics.ahrefs.com/analytics.js"; a_user_data "key" "HmcihempNgdCWYAHGvIYsg"; a_async ()] (txt "");
               (* Dancelor *)
               script ~a: [a_script_type `Javascript; a_src (Lazy.force client_js_href)] (txt "");
+              script ~a: [a_script_type `Javascript] (
+                txt {| window.onload = dancelorClient.run; |}
+              );
             ]
           )
           (
