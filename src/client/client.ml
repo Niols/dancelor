@@ -60,9 +60,7 @@ let dispatch uri =
   | Some page -> page ()
   | None -> Oooops_viewer.create `Not_found
 
-let () = Random.self_init ()
-
-let () =
+let setup_offline_detector () =
   Depart.keep_forever @@
     React.E.map
       (function
@@ -77,7 +75,7 @@ let () =
       )
       (S.changes Environment.server_status)
 
-let () =
+let setup_async_exception_hook () =
   let previous_exn = ref (Failure "this is an exception that is never raised") in
   Lwt.async_exception_hook :=
     (fun exn ->
@@ -133,19 +131,24 @@ let () =
         )
     )
 
-let () =
+let run () =
+  Logger.bracket (module Log) "starting client" @@ fun () ->
+  Random.self_init ();
+  setup_offline_detector ();
+  setup_async_exception_hook ();
   Logger.full_initialisation
     ~reporter: (Logs_browser.console_reporter ())
-    (Logger.make_loglevel_map ())
+    (Logger.make_loglevel_map ());
+  let uri = get_uri () in
+  History.add uri;
+  Main_page.initialise ();
+  Lwt.async (fun () -> Main_page.load @@ dispatch uri)
 
 let () =
-  Dom_html.window##.onload :=
-    Dom_html.handler (fun _ev ->
-      Main_page.initialise ();
-      Lwt.async (Main_page.load % dispatch % get_uri);
-      Js._false
+  Js.export
+    "dancelorClient"
+    (
+      object%js
+        method run = run ()
+      end
     )
-
-let () = History.add @@ get_uri ()
-
-let () = Log.info (fun m -> m "Client is up and running")
