@@ -48,7 +48,7 @@ let canonical_url_and_robots_content uri =
     | None -> default_canonical_url_and_robots_content uri
     | Some canonical_url_and_robots_content -> canonical_url_and_robots_content
 
-let serve_index =
+let make_index_head =
   (* NOTE: We add the hash of static files to their URL to invalidate
      cache (in particular `client.js`). Otherwise, we cache them for
      as long as possible. *)
@@ -61,44 +61,38 @@ let serve_index =
   let bootstrap_bundle_min_js_href = Lazy.from_fun @@ fun () -> href_with_hash "bootstrap.bundle.min.js" in
   fun path query ->
     let {canonical_url; robots_content} = canonical_url_and_robots_content (Uri.make ~path ~query ()) in
-    let index =
-      Format.asprintf "%a" (pp ()) @@
-        html
-          ~a: [a_lang "en"]
-          (
-            head (title (txt "Dancelor")) [
-              meta ~a: [a_charset "utf-8"] ();
-              link ~rel: [`Canonical] ~href: (Uri.to_string canonical_url) ();
-              meta ~a: [a_name "robots"; a_content robots_content] ();
-              (* Style *)
-              meta ~a: [a_name "viewport"; a_content "width=device-width, initial-scale=1, maximum-scale=1"] ();
-              meta ~a: [a_name "description"; a_content "Dancelor — A community-edited database of Scottish country dance music. Search for tunes, assemble sets and books, and export to PDF, ready to print and bring to the dance."] ();
-              link ~rel: [`Stylesheet] ~href: (Lazy.force fonts_css_href) ();
-              link ~rel: [`Stylesheet] ~href: (Lazy.force style_css_href) ();
-              (* Favicon *)
-              link ~rel: [`Icon] ~a: [a_mime_type "image/png"; a_sizes (Some [(32, 32)])] ~href: (Lazy.force favicon_32x32_png_href) ();
-              link ~rel: [`Icon] ~a: [a_mime_type "image/png"; a_sizes (Some [(16, 16)])] ~href: (Lazy.force favicon_16x16_png_href) ();
-              link ~rel: [`Manifest] ~href: (Lazy.force site_webmanifest_href) ();
-              (* Ahrefs ownership proof and analytics *)
-              meta ~a: [a_name "ahrefs-site-verification"; a_content "4c418f04303adf3925d1c6bdef51b71cab26cd179ab478ecd1996cf71ce52ba4"] ();
-              script ~a: [a_src "https://analytics.ahrefs.com/analytics.js"; a_user_data "key" "HmcihempNgdCWYAHGvIYsg"; a_async ()] (txt "");
-              (* Dancelor *)
-              script ~a: [a_script_type `Javascript; a_src (Lazy.force client_js_href)] (txt "");
-              script ~a: [a_script_type `Javascript] (
-                txt {| window.onload = dancelorClient.run; |}
-              );
-            ]
-          )
-          (
-            body
-              ~a: [a_class ["placeholder-glow"]]
-              [
-                script ~a: [a_src (Lazy.force bootstrap_bundle_min_js_href)] (txt "");
-              ]
-          )
-    in
-    let headers = Cohttp.Header.of_list [("Content-Type", "text/html")] in
-    Cohttp_lwt_unix.Server.respond_string ~headers ~status: `OK ~body: index ()
+    [
+      meta ~a: [a_charset "utf-8"] ();
+      link ~rel: [`Canonical] ~href: (Uri.to_string canonical_url) ();
+      meta ~a: [a_name "robots"; a_content robots_content] ();
+      (* Style *)
+      meta ~a: [a_name "viewport"; a_content "width=device-width, initial-scale=1, maximum-scale=1"] ();
+      meta ~a: [a_name "description"; a_content "Dancelor — A community-edited database of Scottish country dance music. Search for tunes, assemble sets and books, and export to PDF, ready to print and bring to the dance."] ();
+      link ~rel: [`Stylesheet] ~href: (Lazy.force fonts_css_href) ();
+      link ~rel: [`Stylesheet] ~href: (Lazy.force style_css_href) ();
+      script ~a: [a_defer (); a_src (Lazy.force bootstrap_bundle_min_js_href)] (txt "");
+      (* Favicon *)
+      link ~rel: [`Icon] ~a: [a_mime_type "image/png"; a_sizes (Some [(32, 32)])] ~href: (Lazy.force favicon_32x32_png_href) ();
+      link ~rel: [`Icon] ~a: [a_mime_type "image/png"; a_sizes (Some [(16, 16)])] ~href: (Lazy.force favicon_16x16_png_href) ();
+      link ~rel: [`Manifest] ~href: (Lazy.force site_webmanifest_href) ();
+      (* Ahrefs ownership proof and analytics *)
+      meta ~a: [a_name "ahrefs-site-verification"; a_content "4c418f04303adf3925d1c6bdef51b71cab26cd179ab478ecd1996cf71ce52ba4"] ();
+      script ~a: [a_src "https://analytics.ahrefs.com/analytics.js"; a_user_data "key" "HmcihempNgdCWYAHGvIYsg"; a_async ()] (txt "");
+      (* Dancelor *)
+      script ~a: [a_defer (); a_src (Lazy.force client_js_href)] (txt "");
+      script (Unsafe.data {| window.addEventListener("DOMContentLoaded", () => dancelorClient.run()); |});
+    ]
+
+let serve_index path query =
+  let index =
+    Format.asprintf "%a" (pp ()) @@
+      html
+        ~a: [a_lang "en"]
+        (head (title (txt "Dancelor")) (make_index_head path query))
+        (body ~a: [a_class ["placeholder-glow"]] [])
+  in
+  let headers = Cohttp.Header.of_list [("Content-Type", "text/html")] in
+  Cohttp_lwt_unix.Server.respond_string ~headers ~status: `OK ~body: index ()
 
 let serve _env path query =
   Metrics.increment_http_requests_count `Main_file;
