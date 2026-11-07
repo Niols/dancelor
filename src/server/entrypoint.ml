@@ -85,7 +85,9 @@ let callback _ request body =
           Pair.cons Environment.Add_session_cookie <$> apply_controller env (Madge.Request.make ~meth ~uri ~body)
         )
       else
-        Static.serve env path (Uri.query uri)
+        match Static.serve env path with
+        | Some response -> response
+        | None -> Main_page.serve env path (Uri.query uri)
 
   let read_configuration () =
     Logger.bracket_lwt (module Log) "reading configuration" @@ fun () ->
