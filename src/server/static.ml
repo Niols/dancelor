@@ -22,6 +22,47 @@ let serve_static_file path =
 let href_with_hash path =
   spf "/%s?%s" path @@ Digest.BLAKE256.(to_hex % file) @@ static_file_path path
 
+type canonical_url_and_robots_content = {
+  canonical_url: Uri.t;
+  robots_content: string;
+}
+
+let no_query_canonical_url uri = Uri.with_path base_url (Uri.path uri)
+let full_canonical_url uri = Uri.with_uri base_url ~path: (Some (Uri.path uri)) ~query: (Some (Uri.query uri))
+
+let default_canonical_url_and_robots_content uri = {
+  canonical_url = no_query_canonical_url uri;
+  robots_content = "index, follow";
+}
+
+(** For all pages but the explorer, we strip the query part from the canonical
+    URL. Those pages should be indexed. For the explorer, all pages are
+    self-canonical, but we distinguish on whether there is a `?q` argument in
+    the query: if there isn't, then the page should be indexed; if there is,
+    then it is a refined query and it shouldn't be indexed. All pages should be
+    followed. *)
+let canonical_url_and_robots_content uri =
+  let dispatch : type a r. (a, canonical_url_and_robots_content option, r) Endpoints.Page.t -> a = function
+    | Explore ->
+      (fun query _page ->
+        Some {
+          canonical_url = full_canonical_url uri;
+          robots_content = if query = "" then "index, follow" else "noindex, follow";
+        }
+      )
+    | page -> Endpoints.Page.consume page ~return: None
+  in
+  let madge_match_apply_all : canonical_url_and_robots_content option Endpoints.Page.wrapped' list -> (unit -> canonical_url_and_robots_content option) option =
+    List.find_map @@ fun (Endpoints.Page.W' endpoint) ->
+    Madge.apply' (Endpoints.Page.route endpoint) (fun () -> dispatch endpoint) (Madge.Request.make ~meth: GET ~uri ~body: "")
+  in
+  match madge_match_apply_all @@ Endpoints.Page.all' () with
+  | None -> default_canonical_url_and_robots_content uri
+  | Some canonical_url_and_robots_content ->
+    match canonical_url_and_robots_content () with
+    | None -> default_canonical_url_and_robots_content uri
+    | Some canonical_url_and_robots_content -> canonical_url_and_robots_content
+
 let serve_index =
   (* NOTE: We add the hash of static files to their URL to invalidate
      cache (in particular `client.js`). Otherwise, we cache them for
@@ -34,20 +75,7 @@ let serve_index =
   let client_js_href = Lazy.from_fun @@ fun () -> href_with_hash "client.js" in
   let bootstrap_bundle_min_js_href = Lazy.from_fun @@ fun () -> href_with_hash "bootstrap.bundle.min.js" in
   fun path query ->
-    let (canonical_url, robots_content) =
-      (* For all pages but the explorer, we strip the query part from the canonical URL. Those pages
-         should be indexed. For the explorer, all pages are self-canonical, but we distinguish on
-         whether there is a `?q` argument in the query: if there isn't, then the page should be
-         indexed; if there is, then it is a refined query and it shouldn't be indexed. All pages
-         should be followed. *)
-      (* FIXME: this matching is brittle *)
-      match path with
-      | "/explore" ->
-        let uri = Uri.with_uri base_url ~path: (Some path) ~query: (Some query) in
-        let robots = if List.mem_assoc "q" query then "noindex, follow" else "index, follow" in
-          (uri, robots)
-      | _ -> (Uri.with_path base_url path, "index, follow")
-    in
+    let {canonical_url; robots_content} = canonical_url_and_robots_content (Uri.make ~path ~query ()) in
     let index =
       Format.asprintf "%a" (pp ()) @@
         html
