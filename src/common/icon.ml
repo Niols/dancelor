@@ -158,12 +158,11 @@ let to_string = function
 
 (** Generate HTML for the given icon. One can optionally pass extra HTML
     [?classes] or a [?tooltip] that is shown when hovering on the icon. *)
-let html ?(classes = []) ?tooltip icon =
-  let open Html in
+let html ~i ~a_class ~a_title ?(classes = []) ?tooltip icon =
   let a =
     List.concat [
       [a_class (["bi"; ("bi-" ^ to_string icon)] @ classes)];
       (Option.fold ~none: [] ~some: (fun t -> [a_title t]) tooltip);
     ]
   in
-  i ~a []
+  i ?a: (Some a) []

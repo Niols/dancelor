@@ -86,7 +86,6 @@ let setup_async_exception_hook () =
           previous_exn := exn;
           match exn with
           | Lwt.Canceled -> () (* the promises are cancelled on purpose *)
-          | Main_page.Replacement_successful -> () (* see comment for {!Main_page.load_sleep_raise} *)
           | Madge_client.(Error (Http {request; status; _})) ->
             Toast.open_
               ~type_: Forever

@@ -51,7 +51,7 @@ let create username token =
           Api.call_exn (User Reset_password) username token (Result.get_ok @@ S.value password);%lwt
           Toast.open_ ~title: "Password reset" [txt "Your password has been reset successfully. You may now try to sign in."];
           Dom_html.window##.history##replaceState "fixme-the-state" (Js.string "") (Js.some (Js.string "/"));
-          Main_page.load_sleep_raise (Index.create ());%lwt
+          Main_page.load (Index.create ());%lwt
           lwt_unit
         )
         ();

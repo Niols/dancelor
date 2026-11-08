@@ -83,18 +83,169 @@ let make_index_head =
       script (Unsafe.data {| window.addEventListener("DOMContentLoaded", () => dancelorClient.run()); |});
     ]
 
-let serve_index path query =
+let nav_item_explore =
+  li
+    ~a: [a_class ["nav-item"; "dropdown"]]
+    [
+      Static_button.make
+        ~label: "Explore"
+        ~classes: ["text-white"; "dropdown-toggle"]
+        ~more_a: [a_user_data "bs-toggle" "dropdown"; a_aria "expanded" ["false"]]
+        ();
+      ul
+        ~a: [a_class ["dropdown-menu"]]
+        (
+          [li [Static_button.make_a ~label: "All" ~href: (Endpoints.Page.(href Explore) "" 1) ~dropdown: true ()];
+          li [hr ~a: [a_class ["dropdown-divider"]] ()];
+          ] @
+            List.map
+              (fun (icon, key, label) ->
+                let href = Endpoints.Page.(href Explore) (spf "type:%s" key) 1 in
+                li [Static_button.make_a ~label ~icon: (Entity icon) ~href ~dropdown: true ()]
+              )
+              [
+                (Icon.Person, "person", "Persons");
+                (Icon.Dance, "dance", "Dances");
+                (Icon.Source, "source", "Sources");
+                (Icon.Tune, "tune", "Tunes");
+                (Icon.Version, "version", "Versions");
+                (Icon.Set, "set", "Sets");
+                (Icon.Book, "book", "Books");
+              ]
+        );
+    ]
+
+let nav_item_create env =
+  match Environment.actor env with
+  | Signed_in _ ->
+    [
+      li
+        ~a: [a_class ["nav-item"; "dropdown"]]
+        [
+          Static_button.make
+            ~label: "Add"
+            ~classes: ["text-white"; "dropdown-toggle"]
+            ~more_a: [a_user_data "bs-toggle" "dropdown"; a_aria "expanded" ["false"]]
+            ();
+          ul
+            ~a: [a_class ["dropdown-menu"]]
+            (
+              let open Endpoints.Page in
+              List.map
+                (fun (icon, href, label) ->
+                  li [Static_button.make_a ~label ~icon: (Entity icon) ~href ~dropdown: true ()]
+                )
+                [
+                  (Icon.Person, href (Person Add), "Person");
+                  (Icon.Dance, href (Dance Add), "Dance");
+                  (Icon.Source, href (Source Add), "Source");
+                  (Icon.Tune, href (Tune Add), "Tune");
+                  (Icon.Version, href (Version Add) None, "Version");
+                  (Icon.Set, href (Set Add), "Set");
+                  (Icon.Book, href (Book Add), "Book");
+                ]
+            );
+        ]
+    ]
+  | _ -> []
+
+let header env =
+  nav
+    ~a: [a_class ["bg-primary"; "navbar"; "navbar-expand-sm"; "navbar-dark"; "mb-2"]]
+    [
+      div
+        ~a: [a_class ["container-md"]]
+        [
+          a
+            ~a: [a_class ["navbar-brand"; "my-n2"; "py-0"; "flex-fill"]; a_href "/"]
+            [
+              img ~a: [a_height 60] ~src: "/logo.svg" ~alt: "Dancelor" ();
+            ];
+          div ~a: [a_id @@ Main_page_ids.quick_search_button_container_id `Mobile] [
+            Static_button.make
+              ~icon: (Action Search)
+              ~classes: ["btn-light"; "me-2"; "d-block"; "d-sm-none"; "disabled"]
+              ();
+          ];
+          button
+            ~a: [a_class ["navbar-toggler"]; a_button_type `Button; a_user_data "bs-toggle" "collapse"; a_user_data "bs-target" "#the-navigation"; a_aria "controls" ["the-navigation"]; a_aria "expanded" ["false"]; a_aria "label" ["Toggle navigation"]]
+            [
+              span ~a: [a_class ["navbar-toggler-icon"]] [];
+            ];
+          div
+            ~a: [a_class ["collapse"; "navbar-collapse"]; a_id "the-navigation"]
+            [
+              ul
+                ~a: [a_class ["navbar-nav"; "ms-auto"]]
+                (
+                  List.flatten [
+                    [nav_item_explore];
+                    nav_item_create env;
+                    [li ~a: [a_id Main_page_ids.actor_header_container_id] []];
+                  ]
+                );
+            ];
+          div ~a: [a_id @@ Main_page_ids.quick_search_button_container_id `Desktop] [
+            Static_button.make
+              ~label: "Search"
+              ~icon: (Action Search)
+              ~badge: "/"
+              ~classes: ["btn-light"; "ms-2"; "d-none"; "d-sm-block"; "disabled"]
+              ();
+          ];
+        ];
+    ]
+
+let footer =
+  nav
+    ~a: [a_class ["bg-primary"; "navbar"; "navbar-expand-sm"; "navbar-dark"; "mt-4"]]
+    [
+      div
+        ~a: [a_class ["container-md"; "d-flex"; "flex-column"; "flex-sm-row"]]
+        [
+          a ~a: [a_class ["text-light"; "my-1"]; a_href "/"] [txt "Dancelor"];
+          a
+            ~a: [
+              a_class ["icon-link"; "text-light"; "my-1"];
+              a_href "https://github.com/niols/dancelor";
+              a_target "_blank";
+            ]
+            [
+              Icon.html ~i ~a_class ~a_title (Other GitHub);
+              txt "niols/dancelor";
+            ];
+          div ~a: [a_id Main_page_ids.issue_report_button_container_id] [
+            Static_button.make
+              ~label: "Report an issue"
+              ~icon: (Other Bug)
+              ~classes: ["btn-light"; "my-1"; "disabled"]
+              ()
+          ];
+        ];
+    ]
+
+let serve_index env path query =
   let index =
     Format.asprintf "%a" (pp ()) @@
       html
         ~a: [a_lang "en"]
         (head (title (txt "Dancelor")) (make_index_head path query))
-        (body ~a: [a_class ["placeholder-glow"]] [])
+        (
+          body ~a: [a_class ["placeholder-glow"]] [
+            header env;
+            div ~a: [a_id Main_page_ids.main_container_id] [
+              div ~a: [a_class ["container-md"]] [
+                txt "Dancelor is loading...";
+              ];
+            ];
+            footer;
+          ]
+        )
   in
   let headers = Cohttp.Header.of_list [("Content-Type", "text/html")] in
   Cohttp_lwt_unix.Server.respond_string ~headers ~status: `OK ~body: index ()
 
-let serve _env path query =
+let serve env path query =
   Metrics.increment_http_requests_count `Main_file;
   Log.debug (fun m -> m "Serving main file.");
-  Pair.cons Environment.Add_session_cookie <$> serve_index path query
+  Pair.cons Environment.Add_session_cookie <$> serve_index env path query

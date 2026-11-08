@@ -78,7 +78,7 @@ let render
         div
           ~a: [a_class ["input-group"; "mb-3"]]
           (
-            [Icon.html ~classes: ["input-group-text"] (Action Search);
+            [Icon.html ~i ~a_class ~a_title ~classes: ["input-group-text"] (Action Search);
             Search_bar.html t.search_bar;
             ] @
               attached_buttons
