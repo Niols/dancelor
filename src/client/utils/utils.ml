@@ -1,4 +1,5 @@
 open Js_of_ocaml
+open Js_of_ocaml_lwt
 open Nes
 open Dancelor_common
 
@@ -11,7 +12,12 @@ module Documentation = Documentation
 module Markdown = Markdown
 module Tables = Tables
 
-let write_to_clipboard = Clipboard.write_to_clipboard
+let write_to_clipboard text =
+  (Clipboard.clipboard ())##writeText (Js.string text)
+  |> Promise.to_lwt
+
+let is_clipboard_supported () =
+  Clipboard.is_supported ()
 
 let rec is_child_of : 'a 'b. ((#Dom.node as 'a) Js.t) -> ((#Dom.node as 'b) Js.t) -> bool = fun c p ->
   ((c :> Dom.node Js.t) = (p :> Dom.node Js.t))
