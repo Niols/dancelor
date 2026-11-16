@@ -24,9 +24,10 @@ let show_lilypond_dialog (version : Version_view.t) =
           ~label: "Copy to clipboard"
           ~icon: (Other Clipboard)
           ~classes: ["btn-primary"]
+          ~disabled: (S.const @@ not @@ is_clipboard_supported ())
           ~onclick: (fun _ ->
             let%lwt content = content_promise in
-            write_to_clipboard content;
+            write_to_clipboard content;%lwt
             Toast.open_ ~title: "Copied to clipboard" [txt "The LilyPond content was copied to your clipboard."];
             return (some ());
             lwt_unit

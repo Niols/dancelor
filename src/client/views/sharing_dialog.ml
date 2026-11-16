@@ -8,8 +8,9 @@ let copy_link_button ?(object_is_public = false) (id : Entity_id.t) =
   Button.make
     ~icon: (Action Share)
     ~classes: ["btn-primary"]
+    ~disabled: (S.const @@ not @@ is_clipboard_supported ())
     ~onclick: (fun _ ->
-      write_to_clipboard @@ href_entity_for_sharing id;
+      write_to_clipboard @@ href_entity_for_sharing id;%lwt
       Toast.open_ ~title: "Copied to clipboard" [
         txt "The link to this page was copied to your clipboard.";
         txt (
@@ -145,10 +146,10 @@ let open_ (id : Entity_id.t) (permissions : Permissions_form.t) : Permissions_fo
         ~label_processing: "Updating..."
         ~icon: (Other Clipboard)
         ~classes: ["btn-primary"]
-        ~disabled
+        ~disabled: (S.l2 (&&) disabled (S.const @@ not @@ is_clipboard_supported ()))
         ~onclick: (fun _ ->
           let%lwt permissions = update () in
-          write_to_clipboard @@ href_entity_for_sharing id;
+          write_to_clipboard @@ href_entity_for_sharing id;%lwt
           Toast.open_ ~title: "Permissions updated" [txt "The permissions have been updated, and a link to this page was copied to your clipboard."];
           return (Some permissions);
           lwt_unit
