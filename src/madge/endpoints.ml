@@ -15,6 +15,12 @@ module type Internal_endpoints = sig
   type 'w wrapped' = W' : ('a, 'w, 'r) t -> 'w wrapped'
   val all' : unit -> 'w wrapped' list
   val name : ('a, 'w, 'r) t -> string
+  type 'w match_args = {
+    route: 'a 'r. ('a, 'w, 'r) t -> ('a, 'w, 'r) Route.t;
+    no_route: unit -> 'w;
+    dispatch: 'a 'r. ('a, 'w, 'r) t -> 'a;
+  }
+  val match_ : 'w match_args -> Request.t -> 'w
 end
 
 module type Endpoints = sig

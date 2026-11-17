@@ -268,8 +268,9 @@ module type Entity_id_to_name = sig
 end
 
 module Make_describe (Entity_id_to_name : Entity_id_to_name) = struct
-  let describe env = fun uri ->
-    let describe : type a r. (a, (string * string) option Lwt.t, r) t -> a = function
+  let describe env uri =
+    let dispatch : type a r. (a, (string * string) option Lwt.t, r) t -> a = fun page ->
+      match page with
       | Entity -> (fun id -> lwt_some ("entity", Id.to_string id))
       | Person View -> (fun _ id -> some % Pair.cons "person" <$> Entity_id_to_name.get_person_name env id)
       | Dance View -> (fun _ id -> some % Pair.cons "dance" <$> Entity_id_to_name.get_dance_name env id)
@@ -282,11 +283,5 @@ module Make_describe (Entity_id_to_name : Entity_id_to_name) = struct
       | Group View -> (fun id -> some % Pair.cons "group" <$> Entity_id_to_name.get_group_name env id)
       | endpoint -> consume endpoint ~return: lwt_none
     in
-    let madge_match_apply_all : (string * string) option Lwt.t wrapped' list -> (unit -> (string * string) option Lwt.t) option =
-      List.find_map @@ fun (W' page) ->
-      Madge.apply' (route page) (fun () -> describe page) (Request.make ~meth: GET ~uri ~body: "")
-    in
-    match madge_match_apply_all @@ all' () with
-    | Some page -> page ()
-    | None -> (* 404 page *) lwt_none
+    match_ {route; no_route = const lwt_none; dispatch} (Request.make ~meth: GET ~uri ~body: "")
 end

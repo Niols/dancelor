@@ -37,16 +37,9 @@ let canonical_url_and_robots_content uri =
       )
     | page -> Endpoints.Page.consume page ~return: None
   in
-  let madge_match_apply_all : canonical_url_and_robots_content option Endpoints.Page.wrapped' list -> (unit -> canonical_url_and_robots_content option) option =
-    List.find_map @@ fun (Endpoints.Page.W' endpoint) ->
-    Madge.apply' (Endpoints.Page.route endpoint) (fun () -> dispatch endpoint) (Madge.Request.make ~meth: GET ~uri ~body: "")
-  in
-  match madge_match_apply_all @@ Endpoints.Page.all' () with
+  match Endpoints.Page.match_ {route = Endpoints.Page.route; no_route = const None; dispatch} (Madge.Request.make ~meth: GET ~uri ~body: "") with
   | None -> default_canonical_url_and_robots_content uri
-  | Some canonical_url_and_robots_content ->
-    match canonical_url_and_robots_content () with
-    | None -> default_canonical_url_and_robots_content uri
-    | Some canonical_url_and_robots_content -> canonical_url_and_robots_content
+  | Some canonical_url_and_robots_content -> canonical_url_and_robots_content
 
 let make_index_head =
   (* NOTE: We add the hash of static files to their URL to invalidate

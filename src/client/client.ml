@@ -15,7 +15,7 @@ let redirect_entity id =
 
 let () = Madge_client.initialise_batch_route Endpoints.Api.(route_full Batch)
 
-let dispatch uri =
+let dispatch =
   let dispatch : type a r. (a, Page.t Lwt.t, r) Endpoints.Page.t -> a = function
     | Index -> Index.create ()
     | Entity -> redirect_entity
@@ -52,13 +52,11 @@ let dispatch uri =
     | Group Edit -> Group_editor.edit
     | Admin Users_and_groups -> Admin_users_and_groups.view ()
   in
-  let madge_match_apply_all : Page.t Lwt.t Endpoints.Page.wrapped' list -> (unit -> Page.t Lwt.t) option =
-    List.find_map @@ fun (Endpoints.Page.W' endpoint) ->
-    Madge.apply' (Endpoints.Page.route endpoint) (fun () -> dispatch endpoint) (Madge.Request.make ~meth: GET ~uri ~body: "")
-  in
-  match madge_match_apply_all @@ Endpoints.Page.all' () with
-  | Some page -> page ()
-  | None -> Oooops_viewer.create `Not_found
+  let route = Endpoints.Page.route in
+  let no_route () = Oooops_viewer.create `Not_found in
+  Endpoints.Page.match_ {route; no_route; dispatch}
+
+let dispatch uri = dispatch (Madge.Request.make ~meth: GET ~uri ~body: "")
 
 let setup_offline_detector () =
   Depart.keep_forever @@
