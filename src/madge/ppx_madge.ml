@@ -1,4 +1,4 @@
-(** {1 Madge's endpoints wrapper}
+(** {1 Madge's endpoints preprocessor}
 
     Madge features GADT-style endpoints that carry extra type information. This
     makes it hard to manipulate lists of endpoints. However, it is frequent to
@@ -24,12 +24,12 @@
     {|
       type ('a, 'w, 'r) sub_endpoint =
         | Foo : ((string -> 'w), 'w, int) sub_endpoint
-      [@@deriving madge_wrapped_endpoints]
+      [@@deriving madge]
 
       type ('a, 'w, 'r) t =
         | Bar : ((float -> 'w), 'w, bool) t
         | Lift : ('a, 'w, 'r) sub_endpont -> ('a, 'w, 'r) t
-      [@@deriving madge_wrapped_endpoints]
+      [@@deriving madge]
     |}
 
     This will generate, among other things:
@@ -283,7 +283,7 @@ let generate_all_names ~quot ~loc name cds =
                     | _ ->
                       Location.raise_errorf
                         ~loc: cd.pcd_loc
-                        "ppx_madge_wrapped_endpoints: constructor with arguments not supported"
+                        "ppx_madge: constructor with arguments not supported"
                   )
                   cds
               )
@@ -370,7 +370,7 @@ let generate_name_function ~loc name cds =
                   | _ ->
                     Location.raise_errorf
                       ~loc: cd.pcd_loc
-                      "ppx_madge_wrapped_endpoints: constructor with arguments not supported"
+                      "ppx_madge: constructor with arguments not supported"
                 )
                 cds
           )
@@ -535,7 +535,7 @@ let generate ~loc name cds = [
 let generate ~loc ~path: _ (rec_flag, tds) =
   (
     match rec_flag with
-    | Nonrecursive -> Location.raise_errorf ~loc "ppx_madge_wrapped_endpoints: nonrec not supported"
+    | Nonrecursive -> Location.raise_errorf ~loc "ppx_madge: nonrec not supported"
     | _ -> ()
   );
   match tds with
@@ -543,8 +543,8 @@ let generate ~loc ~path: _ (rec_flag, tds) =
     (
       match td.ptype_kind with
       | Ptype_variant cds -> generate ~loc td.ptype_name.txt cds
-      | _ -> Location.raise_errorf ~loc "ppx_madge_wrapped_endpoints: kind not supported"
+      | _ -> Location.raise_errorf ~loc "ppx_madge: kind not supported"
     )
-  | _ -> Location.raise_errorf ~loc "ppx_madge_wrapped_endpoints: no or multiple declarations not supported"
+  | _ -> Location.raise_errorf ~loc "ppx_madge: no or multiple declarations not supported"
 
-let _ = Deriving.add "madge_wrapped_endpoints" ~str_type_decl: (Deriving.Generator.make_noarg generate)
+let _ = Deriving.add "madge" ~str_type_decl: (Deriving.Generator.make_noarg generate)

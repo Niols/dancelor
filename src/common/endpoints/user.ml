@@ -16,7 +16,7 @@ type (_, _, _) t =
   | Reset_password : (Username.t -> Password_reset_token_clear.t -> Password_clear.t -> 'w, 'w, unit) t
   | Search : (Slice.t -> User_query.t -> 'w, 'w, User_row.t Search_result.t) t
   | Set_omniscience : (bool -> 'w, 'w, unit) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in

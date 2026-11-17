@@ -12,7 +12,7 @@ type (_, _, _) t =
   | Update : (Source_id.t -> Source_form.t -> 'w, 'w, unit) t
   | Delete : (Source_id.t -> 'w, 'w, unit) t
   | Cover : (Source_id.t -> 'w, 'w, Void.t) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in

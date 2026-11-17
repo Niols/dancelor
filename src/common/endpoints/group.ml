@@ -10,7 +10,7 @@ type (_, _, _) t =
   | Create : (Group_form.t -> 'w, 'w, Group_id.t) t
   | Update : (Group_id.t -> Group_form.t -> 'w, 'w, unit) t
   | Search : (Slice.t -> Group_query.t -> 'w, 'w, Group_row.t Search_result.t) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in

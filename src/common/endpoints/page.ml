@@ -20,44 +20,44 @@ type (_, _, _) person =
   | Add : ('w, 'w, Void.t) person
   | Edit : (Person_id.t -> 'w, 'w, Void.t) person
   | View : (In_search.t option -> Person_id.t -> 'w, 'w, Void.t) person
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) dance =
   | Add : ('w, 'w, Void.t) dance
   | Edit : (Dance_id.t -> 'w, 'w, Void.t) dance
   | View : (In_search.t option -> Dance_id.t -> 'w, 'w, Void.t) dance
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) source =
   | Add : ('w, 'w, Void.t) source
   | Edit : (Source_id.t -> 'w, 'w, Void.t) source
   | View : (In_search.t option -> Source_id.t -> 'w, 'w, Void.t) source
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) tune =
   | Add : ('w, 'w, Void.t) tune
   | Edit : (Tune_id.t -> 'w, 'w, Void.t) tune
   | View : (In_search.t option -> Tune_id.t -> 'w, 'w, Void.t) tune
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) version =
   | Add : (Tune_id.t option -> 'w, 'w, Void.t) version
   | Edit : (Version_id.t -> 'w, 'w, Void.t) version
   | View : (In_search.t option -> In_set.t option -> Version_id.t -> 'w, 'w, Void.t) version
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) set =
   | Add : ('w, 'w, Void.t) set
   | Edit : (Set_id.t -> 'w, 'w, Void.t) set
   | View : (In_search.t option -> Set_id.t -> 'w, 'w, Void.t) set
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) book =
   | Add : ('w, 'w, Void.t) book
   | Edit : (Book_id.t -> 'w, 'w, Void.t) book
   | View : (In_search.t option -> Book_id.t -> 'w, 'w, Void.t) book
   | Preview : (Book_id.t -> int -> 'w, 'w, Void.t) book
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) user =
   | Create : ('w, 'w, Void.t) user
@@ -65,17 +65,17 @@ type (_, _, _) user =
   | View : (User_id.t -> 'w, 'w, Void.t) user
   | Prepare_reset_password : ('w, 'w, Void.t) user
   | Password_reset : (Username.t -> Password_reset_token_clear.t -> 'w, 'w, Void.t) user
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) group =
   | View : (Group_id.t -> 'w, 'w, Void.t) group
   | Create : ('w, 'w, Void.t) group
   | Edit : (Group_id.t -> 'w, 'w, Void.t) group
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) admin =
   | Users_and_groups : ('w, 'w, Void.t) admin
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 type (_, _, _) t =
   | Index : ('w, 'w, Void.t) t
@@ -92,7 +92,7 @@ type (_, _, _) t =
   | User : ('a, 'w, 'r) user -> ('a, 'w, 'r) t
   | Group : ('a, 'w, 'r) group -> ('a, 'w, 'r) t
   | Admin : ('a, 'w, 'r) admin -> ('a, 'w, 'r) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 (** {2 Routes} *)
 

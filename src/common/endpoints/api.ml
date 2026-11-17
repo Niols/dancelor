@@ -18,7 +18,7 @@ module Endpoints = struct
   | Entity : ('a, 'w, 'r) Entity.t -> ('a, 'w, 'r) t
   | Job : ('a, 'w, 'r) Job.t -> ('a, 'w, 'r) t
   | Report_issue : (Issue_report.request -> 'w, 'w, Issue_report.response) t
-  [@@deriving madge_wrapped_endpoints]
+  [@@deriving madge]
 end
 include Endpoints
 
