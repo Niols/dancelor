@@ -6,10 +6,6 @@ open Utils
 
 module Log = (val Logs.src_log @@ Logs.Src.create "client.views.main-page": Logs.LOG)
 
-let set_title title = Dom_html.document##.title := Js.string title
-
-let get_uri () = Uri.of_string (Js.to_string Dom_html.window##.location##.href)
-
 let quick_search_to_explorer value =
   let href = Endpoints.Page.(href Explore) value 1 in
   Dom_html.window##.location##.href := Js.string (Uri.to_string href);

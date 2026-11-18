@@ -7,14 +7,12 @@ open Views
 
 module Log = (val Logs.src_log @@ Logs.Src.create "client": Logs.LOG)
 
-let get_uri () = Uri.of_string (Js.to_string Dom_html.window##.location##.href)
+let () = Madge_client.initialise_batch_route Endpoints.Api.(route_full Batch)
 
 let redirect_entity id =
   (* FIXME: The preloaded API payload here could redirect to the right page. *)
   Main_page.madge_call_or_404 (Entity Resource_type) id @@ fun type_ ->
   Redirection_viewer.create @@ Endpoints.Page.href_entity_full @@ Resource_id.of_untagged type_ id
-
-let () = Madge_client.initialise_batch_route Endpoints.Api.(route_full Batch)
 
 let dispatch ~preloaded_api_payload =
   let dispatch : type a r. (a, Page.t Lwt.t, r) Endpoints.Page.t -> a = function

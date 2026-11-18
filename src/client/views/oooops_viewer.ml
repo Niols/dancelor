@@ -1,8 +1,6 @@
 open Nes
-open Js_of_ocaml
 open Html
-
-let get_uri () = Uri.of_string @@ Js.to_string Dom_html.window##.location##.href
+open Utils
 
 let create status =
   Page.make'
