@@ -21,6 +21,9 @@ val with_request :
     the resulting value. For instance, {!uri} is simply [process route (fun
     (module _) {uri; _} -> uri)]. *)
 
+val route_result_to_yojson : ('a, 'w, 'r) Route.t -> 'r -> Yojson.Safe.t
+val route_result_of_yojson : ('a, 'w, 'r) Route.t -> Yojson.Safe.t -> ('r, string) result
+
 (** {2 from request to route} *)
 
 val apply' :

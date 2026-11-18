@@ -2,6 +2,7 @@ open Js_of_ocaml
 open Nes
 open Html
 open Utils
+open Dancelor_common
 
 type t = {
   parent_title: string;
@@ -17,12 +18,8 @@ type t = {
 
 let full_title p =
   S.map
-    (function
-      | "" -> p.parent_title
-      | title ->
-        match p.parent_title with
-        | "" -> title
-        | _ -> title ^ " | " ^ p.parent_title
+    (fun title ->
+      Endpoints.Page.full_title ~title ~parent: p.parent_title
     )
     (S.from_lwt "" p.title)
 

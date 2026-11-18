@@ -41,6 +41,115 @@ let canonical_url_and_robots_content uri =
   | None -> default_canonical_url_and_robots_content uri
   | Some canonical_url_and_robots_content -> canonical_url_and_robots_content
 
+type preloaded_api = {
+  title: string; (** a title for the HTML page *)
+  parent_title: string; (** eg. "Tune" or "Dance" *)
+  payload: Yojson.Safe.t; (** a payload to hand over to the client *)
+}
+
+let no_preloaded_api =
+  {title = ""; parent_title = ""; payload = `Null}
+
+let return_preloaded_api ?(title = "") ?(parent_title = "") endpoint value =
+  lwt_some {
+    title;
+    parent_title;
+    payload = Madge.route_result_to_yojson (Endpoints.Api.route endpoint) value;
+  }
+
+(** Given a URI and an environment, preload the API point that would be called
+    by the client when loading the page. *)
+(* FIXME: We are duplicating work with the client here. Some version of this
+   function should or could be shared. *)
+let preload_api env uri =
+  let dispatch : type a r. (a, preloaded_api option Lwt.t, r) Endpoints.Page.t -> a = function
+    | Entity ->
+      (fun id ->
+        let endpoint : _ Endpoints.Api.t = Entity Resource_type in
+        let%lwt type_ = Controller.dispatch env endpoint id in
+        return_preloaded_api endpoint type_
+      )
+    | Book View ->
+      (fun _in_search book_id ->
+        let endpoint : _ Endpoints.Api.t = Book Get_view in
+        let%lwt book = Controller.dispatch env endpoint book_id in
+        return_preloaded_api ~title: book.name ~parent_title: "Book" endpoint book
+      )
+    | Book Preview ->
+      (fun book_id _pageno ->
+        let endpoint : _ Endpoints.Api.t = Book Get_view in
+        let%lwt book = Controller.dispatch env endpoint book_id in
+        return_preloaded_api ~title: book.name ~parent_title: "Book" endpoint book
+      )
+    | Dance View ->
+      (fun _in_search dance_id ->
+        let endpoint : _ Endpoints.Api.t = Dance Get_view in
+        let%lwt dance = Controller.dispatch env endpoint dance_id in
+        return_preloaded_api ~title: dance.name ~parent_title: "Dance" endpoint dance
+      )
+    | Person View ->
+      (fun _in_search person_id ->
+        let endpoint : _ Endpoints.Api.t = Person Get_view in
+        let%lwt person = Controller.dispatch env endpoint person_id in
+        return_preloaded_api ~title: person.name ~parent_title: "Person" endpoint person
+      )
+    | Version View ->
+      (fun _in_search _in_set version_id ->
+        let endpoint : _ Endpoints.Api.t = Version Get_view in
+        let%lwt version = Controller.dispatch env endpoint version_id in
+        return_preloaded_api ~title: version.tune.name ~parent_title: "Tune" endpoint version
+      )
+    | Tune View ->
+      (fun _in_search tune_id ->
+        let endpoint : _ Endpoints.Api.t = Version Get_view_for_tune in
+        let%lwt version = Controller.dispatch env endpoint tune_id in
+        let title =
+          match version with
+          | Found version -> version.tune.name
+          | Fallback tune -> tune.name
+        in
+        return_preloaded_api ~title ~parent_title: "Tune" endpoint version
+      )
+    | Set View ->
+      (fun _in_search set_id ->
+        let endpoint : _ Endpoints.Api.t = Set Get_view in
+        let%lwt set = Controller.dispatch env endpoint set_id in
+        return_preloaded_api ~title: set.name ~parent_title: "Set" endpoint set
+      )
+    | Source View ->
+      (fun _in_search source_id ->
+        let endpoint : _ Endpoints.Api.t = Source Get_view in
+        let%lwt source = Controller.dispatch env endpoint source_id in
+        return_preloaded_api ~title: source.name ~parent_title: "Source" endpoint source
+      )
+    | User View ->
+      (fun user_id ->
+        let endpoint : _ Endpoints.Api.t = User Get_view in
+        let%lwt user = Controller.dispatch env endpoint user_id in
+        let title = Username.to_string user.username in
+        return_preloaded_api ~title ~parent_title: "User" endpoint user
+      )
+    | Group View ->
+      (fun group_id ->
+        let endpoint : _ Endpoints.Api.t = Group Get_view in
+        let%lwt group = Controller.dispatch env endpoint group_id in
+        return_preloaded_api ~title: group.name ~parent_title: "Group" endpoint group
+      )
+    | endpoint -> Endpoints.Page.consume ~return: lwt_none endpoint
+  in
+  try%lwt
+    let%lwt preload_result =
+      Endpoints.Page.match_ {route = Endpoints.Page.route; no_route = const lwt_none; dispatch} (Madge.Request.make ~meth: GET ~uri ~body: "")
+    in
+    lwt @@ Option.value preload_result ~default: no_preloaded_api
+  with
+    | Madge_server.Shortcut _ ->
+      Log.info (fun m -> m "Madge shortcut while preloading API; skipping.");
+      lwt no_preloaded_api
+    | exn ->
+      Log.err (fun m -> m "Exception while preloading API: %s" (Printexc.to_string exn));
+      lwt no_preloaded_api
+
 let make_index_head =
   (* NOTE: We add the hash of static files to their URL to invalidate
      cache (in particular `client.js`). Otherwise, we cache them for
@@ -52,8 +161,8 @@ let make_index_head =
   let site_webmanifest_href = Lazy.from_fun @@ fun () -> href_with_hash "site.webmanifest" in
   let client_js_href = Lazy.from_fun @@ fun () -> href_with_hash "client.js" in
   let bootstrap_bundle_min_js_href = Lazy.from_fun @@ fun () -> href_with_hash "bootstrap.bundle.min.js" in
-  fun path query ->
-    let {canonical_url; robots_content} = canonical_url_and_robots_content (Uri.make ~path ~query ()) in
+  fun path query preloaded_api ->
+    let {canonical_url; robots_content} = canonical_url_and_robots_content @@ Uri.make ~path ~query () in
     [
       meta ~a: [a_charset "utf-8"] ();
       link ~rel: [`Canonical] ~href: (Uri.to_string canonical_url) ();
@@ -73,7 +182,15 @@ let make_index_head =
       script ~a: [a_src "https://analytics.ahrefs.com/analytics.js"; a_user_data "key" "HmcihempNgdCWYAHGvIYsg"; a_async ()] (txt "");
       (* Dancelor *)
       script ~a: [a_defer (); a_src (Lazy.force client_js_href)] (txt "");
-      script (Unsafe.data {| window.addEventListener("DOMContentLoaded", () => dancelorClient.run()); |});
+      script (
+        Unsafe.data @@
+          spf
+            {| window.addEventListener("DOMContentLoaded", () => dancelorClient.run(%s)); |}
+            (
+              (* NOTE: one Yojson call to serialise the output to JSON, one second one to serialise the resulting string to a JS string with escaping and all *)
+              Yojson.Safe.to_string @@ `String (Yojson.Safe.to_string preloaded_api)
+            )
+      );
     ]
 
 let nav_item_explore =
@@ -218,17 +335,34 @@ let footer =
     ]
 
 let serve_index env path query =
+  let%lwt preloaded_api = preload_api env @@ Uri.make ~path ~query () in
   let index =
     Format.asprintf "%a" (pp ()) @@
       html
         ~a: [a_lang "en"]
-        (head (title (txt "Dancelor")) (make_index_head path query))
+        (
+          head
+            (title (txt @@ Endpoints.Page.full_title ~title: preloaded_api.title ~parent: preloaded_api.parent_title))
+            (make_index_head path query preloaded_api.payload)
+        )
         (
           body ~a: [a_class ["placeholder-glow"]] [
             header env;
             div ~a: [a_id Main_page_ids.main_container_id] [
               div ~a: [a_class ["container-md"]] [
-                txt "Dancelor is loading...";
+                txt @@
+                  spf
+                    "Dancelor is loading%s%s..."
+                    (
+                      match preloaded_api.parent_title with
+                      | "" -> ""
+                      | parent -> spf " the %s" (String.lowercase_ascii parent)
+                    )
+                    (
+                      match preloaded_api.title with
+                      | "" -> ""
+                      | title -> spf " “%s”" title
+                    );
               ];
             ];
             footer;

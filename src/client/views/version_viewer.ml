@@ -50,15 +50,15 @@ let add_to_set_dialog =
       Api.call_exn (Set Add_version_to_contents) set.id version.id
     )
 
-let madge_call_tune_or_version tune_or_version_id f =
+let madge_call_tune_or_version ~preloaded_api_payload tune_or_version_id f =
   match tune_or_version_id with
   | `Tune id ->
-    Main_page.madge_call_or_404 (Version Get_view_for_tune) id (function
+    Main_page.madge_call_or_404 ~preloaded_api_payload (Version Get_view_for_tune) id (function
       | Found version -> f version.tune (Some version)
       | Fallback tune -> f tune None
     )
   | `Version id ->
-    Main_page.madge_call_or_404 (Version Get_view) id (fun version -> f version.tune (Some version))
+    Main_page.madge_call_or_404 ~preloaded_api_payload (Version Get_view) id (fun version -> f version.tune (Some version))
 
 let subtitles (tune : Tune_view.t) =
   [span (Formatters.Tune.description tune)]

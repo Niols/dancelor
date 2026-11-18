@@ -33,7 +33,7 @@ class TestUserAndPermissions():
 
   def sign_in(self, remember_me=False):
     ## Find the “Sign in” button in the header.
-    self.driver.find_element(By.XPATH, "//*[contains(text(), 'Sign in')]").click()
+    self.driver.find_element(By.XPATH, "//button[text()[contains(., 'Sign in')]]").click()
     ## Fill the form and submit.
     self.driver.find_element(By.XPATH, "//input[@placeholder = 'JeanMilligan']").send_keys("Niols")
     self.driver.find_element(By.XPATH, "//input[@placeholder = '1234567']").send_keys("test")
@@ -48,8 +48,8 @@ class TestUserAndPermissions():
     time.sleep(1)
 
   def sign_out(self):
-    self.driver.find_element(By.XPATH, "//*[contains(text(), 'Niols')]").click()
-    self.driver.find_element(By.XPATH, "//*[contains(text(), 'Sign out')]").click()
+    self.driver.find_element(By.XPATH, "//button[text()[contains(., 'Niols')]]").click()
+    self.driver.find_element(By.XPATH, "//button[text()[contains(., 'Sign out')]]").click()
 
   def test_sign_in_permissions_sign_out(self):
     ## Load the page and check that we are not signed in.

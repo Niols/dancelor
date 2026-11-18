@@ -4,12 +4,9 @@ open Js_of_ocaml
 open Html
 open Utils
 
-let set_title title =
-  Dom_html.document##.title :=
-    Js.string @@
-      match title with
-      | "" -> "Dancelor"
-      | title -> title ^ " | Dancelor"
+module Log = (val Logs.src_log @@ Logs.Src.create "client.views.main-page": Logs.LOG)
+
+let set_title title = Dom_html.document##.title := Js.string title
 
 let get_uri () = Uri.of_string (Js.to_string Dom_html.window##.location##.href)
 
@@ -121,11 +118,29 @@ let load page_promise =
   page_on_load ();
   lwt_unit
 
-let madge_call_or_404 endpoint arg f =
-  try%lwt
-    f =<< Api.call_exn endpoint arg
-  with
-    | Madge_client.(Error (Http {status; _})) -> Oooops_viewer.create status
+let madge_call_or_404 ~preloaded_api_payload endpoint arg f =
+  let preloaded_value =
+    try
+      match Yojson.Safe.from_string preloaded_api_payload with
+      | `Null -> None
+      | preloaded_api_payload_json ->
+        match Api.result_of_yojson endpoint preloaded_api_payload_json with
+        | Error _ ->
+          Log.warn (fun m -> m "Could not unserialise preloaded API payload: %s" preloaded_api_payload);
+          None
+        | Ok r -> Some r
+    with
+      | exn ->
+        Log.warn (fun m -> m "Encountered exception while unserialising preloaded API payload: %s %s" (Printexc.to_string exn) preloaded_api_payload);
+        None
+  in
+  match preloaded_value with
+  | Some v -> f v
+  | None ->
+    try%lwt
+      f =<< Api.call_exn endpoint arg
+    with
+      | Madge_client.(Error (Http {status; _})) -> Oooops_viewer.create status
 
 let assert_can_create_public f =
   match%lwt Environment.actor with

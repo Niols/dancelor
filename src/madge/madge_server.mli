@@ -6,6 +6,9 @@ include module type of Madge
 
 (** {2 Normal behaviour} *)
 
+(** Exception to shortcut execution and return something else immediately. *)
+exception Shortcut of (Cohttp.Response.t * Cohttp_lwt.Body.t)
+
 (** The main function of this module. Given a route, a controller and a request,
     attempt to match the request to the route, and, if it succeeds, apply the
     controller. The result of the controller is serialised as the route commands

@@ -285,3 +285,10 @@ module Make_describe (Entity_id_to_name : Entity_id_to_name) = struct
     in
     match_ {route; no_route = const lwt_none; dispatch} (Request.make ~meth: GET ~uri ~body: "")
 end
+
+let full_title ~title ~parent =
+  match title, parent with
+  | "", "" -> "Dancelor"
+  | "", _ -> parent ^ " | Dancelor"
+  | _, "" -> title ^ " | Dancelor"
+  | _, _ -> title ^ " | " ^ parent ^ " | Dancelor"
