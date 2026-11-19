@@ -130,12 +130,12 @@ module Tune = struct
   let name_row ?link ?in_search (tune : Tune_row.t) = name ?link ?in_search {id = tune.id; name = tune.name}
 
   let description (tune : Tune_view.t) =
-    let kind = Kind.Base.to_long_string ~capitalised: false tune.kind in
+    let kind = Kind.Base.to_long_string tune.kind in
     match tune.composers with
-    | [] -> [txt @@ String.capitalize_ascii kind]
-    | [composer] when composer.name = "Traditional" -> [txtf "Traditional %s" kind]
+    | [] -> [txt @@ kind ~capitalised: true]
+    | [composer] when composer.name = "Traditional" -> [txtf "Traditional %s" @@ kind ~capitalised: false]
     | composers ->
-      (txtf "%s by " @@ String.capitalize_ascii kind) :: Person.names_with_details composers
+      (txtf "%s by " @@ kind ~capitalised: true) :: Person.names_with_details composers
 end
 
 module Version = struct

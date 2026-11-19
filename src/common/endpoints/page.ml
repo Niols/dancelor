@@ -292,3 +292,10 @@ let full_title ~title ~parent =
   | "", _ -> parent ^ " | Dancelor"
   | _, "" -> title ^ " | Dancelor"
   | _, _ -> title ^ " | " ^ parent ^ " | Dancelor"
+
+let full_title_no_dancelor ~title ~parent =
+  match title, parent with
+  | "", "" -> "Dancelor"
+  | "", _ -> parent
+  | _, "" -> title
+  | _, _ -> title ^ " | " ^ parent
