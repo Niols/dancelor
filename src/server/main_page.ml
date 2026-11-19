@@ -41,63 +41,62 @@ let canonical_url_and_robots_content uri =
   | None -> default_canonical_url_and_robots_content uri
   | Some canonical_url_and_robots_content -> canonical_url_and_robots_content
 
-type preloaded_api = {
+type page_info = {
   title: string; (** a title for the HTML page *)
   parent_title: string; (** eg. "Tune" or "Dance" *)
-  payload: Yojson.Safe.t; (** a payload to hand over to the client *)
+  api_payload: Yojson.Safe.t; (** the major API point of this page, preloaded, as a payload to hand over to the client *)
 }
 
-let no_preloaded_api =
-  {title = ""; parent_title = ""; payload = `Null}
+let make_page_info ?(title = "") ?(parent_title = "") api_payload = {
+  title;
+  parent_title;
+  api_payload;
+}
 
-let return_preloaded_api ?(title = "") ?(parent_title = "") endpoint value =
-  lwt_some {
-    title;
-    parent_title;
-    payload = Madge.route_result_to_yojson (Endpoints.Api.route endpoint) value;
-  }
+let return_page_info ?title ?parent_title endpoint value =
+  lwt_some @@ make_page_info ?title ?parent_title @@ Madge.route_result_to_yojson (Endpoints.Api.route endpoint) value
 
 (** Given a URI and an environment, preload the API point that would be called
     by the client when loading the page. *)
 (* FIXME: We are duplicating work with the client here. Some version of this
    function should or could be shared. *)
-let preload_api env uri =
-  let dispatch : type a r. (a, preloaded_api option Lwt.t, r) Endpoints.Page.t -> a = function
+let get_page_info env uri =
+  let dispatch : type a r. (a, page_info option Lwt.t, r) Endpoints.Page.t -> a = function
     | Entity ->
       (fun id ->
         let endpoint : _ Endpoints.Api.t = Entity Resource_type in
         let%lwt type_ = Controller.dispatch env endpoint id in
-        return_preloaded_api endpoint type_
+        return_page_info endpoint type_
       )
     | Book View ->
       (fun _in_search book_id ->
         let endpoint : _ Endpoints.Api.t = Book Get_view in
         let%lwt book = Controller.dispatch env endpoint book_id in
-        return_preloaded_api ~title: book.name ~parent_title: "Book" endpoint book
+        return_page_info ~title: book.name ~parent_title: "Book" endpoint book
       )
     | Book Preview ->
       (fun book_id _pageno ->
         let endpoint : _ Endpoints.Api.t = Book Get_view in
         let%lwt book = Controller.dispatch env endpoint book_id in
-        return_preloaded_api ~title: book.name ~parent_title: "Book" endpoint book
+        return_page_info ~title: book.name ~parent_title: "Book" endpoint book
       )
     | Dance View ->
       (fun _in_search dance_id ->
         let endpoint : _ Endpoints.Api.t = Dance Get_view in
         let%lwt dance = Controller.dispatch env endpoint dance_id in
-        return_preloaded_api ~title: dance.name ~parent_title: "Dance" endpoint dance
+        return_page_info ~title: dance.name ~parent_title: "Dance" endpoint dance
       )
     | Person View ->
       (fun _in_search person_id ->
         let endpoint : _ Endpoints.Api.t = Person Get_view in
         let%lwt person = Controller.dispatch env endpoint person_id in
-        return_preloaded_api ~title: person.name ~parent_title: "Person" endpoint person
+        return_page_info ~title: person.name ~parent_title: "Person" endpoint person
       )
     | Version View ->
       (fun _in_search _in_set version_id ->
         let endpoint : _ Endpoints.Api.t = Version Get_view in
         let%lwt version = Controller.dispatch env endpoint version_id in
-        return_preloaded_api ~title: version.tune.name ~parent_title: "Tune" endpoint version
+        return_page_info ~title: version.tune.name ~parent_title: "Tune" endpoint version
       )
     | Tune View ->
       (fun _in_search tune_id ->
@@ -108,47 +107,47 @@ let preload_api env uri =
           | Found version -> version.tune.name
           | Fallback tune -> tune.name
         in
-        return_preloaded_api ~title ~parent_title: "Tune" endpoint version
+        return_page_info ~title ~parent_title: "Tune" endpoint version
       )
     | Set View ->
       (fun _in_search set_id ->
         let endpoint : _ Endpoints.Api.t = Set Get_view in
         let%lwt set = Controller.dispatch env endpoint set_id in
-        return_preloaded_api ~title: set.name ~parent_title: "Set" endpoint set
+        return_page_info ~title: set.name ~parent_title: "Set" endpoint set
       )
     | Source View ->
       (fun _in_search source_id ->
         let endpoint : _ Endpoints.Api.t = Source Get_view in
         let%lwt source = Controller.dispatch env endpoint source_id in
-        return_preloaded_api ~title: source.name ~parent_title: "Source" endpoint source
+        return_page_info ~title: source.name ~parent_title: "Source" endpoint source
       )
     | User View ->
       (fun user_id ->
         let endpoint : _ Endpoints.Api.t = User Get_view in
         let%lwt user = Controller.dispatch env endpoint user_id in
         let title = Username.to_string user.username in
-        return_preloaded_api ~title ~parent_title: "User" endpoint user
+        return_page_info ~title ~parent_title: "User" endpoint user
       )
     | Group View ->
       (fun group_id ->
         let endpoint : _ Endpoints.Api.t = Group Get_view in
         let%lwt group = Controller.dispatch env endpoint group_id in
-        return_preloaded_api ~title: group.name ~parent_title: "Group" endpoint group
+        return_page_info ~title: group.name ~parent_title: "Group" endpoint group
       )
     | endpoint -> Endpoints.Page.consume ~return: lwt_none endpoint
   in
   try%lwt
-    let%lwt preload_result =
+    let%lwt page_info =
       Endpoints.Page.match_ {route = Endpoints.Page.route; no_route = const lwt_none; dispatch} (Madge.Request.make ~meth: GET ~uri ~body: "")
     in
-    lwt @@ Option.value preload_result ~default: no_preloaded_api
+    lwt @@ Option.value page_info ~default: (make_page_info `Null)
   with
     | Madge_server.Shortcut _ ->
-      Log.info (fun m -> m "Madge shortcut while preloading API; skipping.");
-      lwt no_preloaded_api
+      Log.info (fun m -> m "Madge shortcut while getting page info; skipping.");
+      lwt (make_page_info `Null)
     | exn ->
-      Log.err (fun m -> m "Exception while preloading API: %s" (Printexc.to_string exn));
-      lwt no_preloaded_api
+      Log.err (fun m -> m "Exception while getting page info: %s" (Printexc.to_string exn));
+      lwt (make_page_info `Null)
 
 let make_index_head =
   (* NOTE: We add the hash of static files to their URL to invalidate
@@ -335,15 +334,15 @@ let footer =
     ]
 
 let serve_index env path query =
-  let%lwt preloaded_api = preload_api env @@ Uri.make ~path ~query () in
+  let%lwt page_info = get_page_info env @@ Uri.make ~path ~query () in
   let index =
     Format.asprintf "%a" (pp ()) @@
       html
         ~a: [a_lang "en"]
         (
           head
-            (title (txt @@ Endpoints.Page.full_title ~title: preloaded_api.title ~parent: preloaded_api.parent_title))
-            (make_index_head path query preloaded_api.payload)
+            (title (txt @@ Endpoints.Page.full_title ~title: page_info.title ~parent: page_info.parent_title))
+            (make_index_head path query page_info.api_payload)
         )
         (
           body ~a: [a_class ["placeholder-glow"]] [
@@ -354,12 +353,12 @@ let serve_index env path query =
                   spf
                     "Dancelor is loading%s%s..."
                     (
-                      match preloaded_api.parent_title with
+                      match page_info.parent_title with
                       | "" -> ""
                       | parent -> spf " the %s" (String.lowercase_ascii parent)
                     )
                     (
-                      match preloaded_api.title with
+                      match page_info.title with
                       | "" -> ""
                       | title -> spf " “%s”" title
                     );
