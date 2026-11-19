@@ -67,3 +67,7 @@ let href_entity_for_sharing entity =
   let current = Uri.of_string (Js.to_string Dom_html.window##.location##.href) in
   let path = Endpoints.Page.(href Entity) @@ Entity_id.to_untagged entity in
   Uri.to_string @@ Uri.with_query (Uri.with_path current (Uri.path path)) []
+
+let get_uri () = Uri.of_string @@ Js.to_string Dom_html.window##.location##.href
+
+let set_title title = Dom_html.document##.title := Js.string title

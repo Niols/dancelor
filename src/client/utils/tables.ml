@@ -22,7 +22,7 @@ let block_details content = p ~a: [a_class ["mb-0"; "opacity-50"; "lh-sm"]] [sma
 (* FIXME: add a tooltip explaining what a forbidden value is *)
 let format_forbidden f = function
   | Allowed set -> f set
-  | Forbidden -> span ~a: [a_class ["badge"; "text-bg-secondary"; "pe-none"]] [Icon.html (Other Forbidden); txt " Private"]
+  | Forbidden -> span ~a: [a_class ["badge"; "text-bg-secondary"; "pe-none"]] [Icon.html ~i ~a_class ~a_title (Other Forbidden); txt " Private"]
 
 let part_row ?classes ?onclick ?(prefix = []) ?(suffix = []) title =
   row ?classes ?onclick (prefix @ [td ~a: [a_colspan 3] [txt title]] @ suffix)
@@ -261,7 +261,7 @@ let entity_row ?classes ?onclick ?(prefix = []) ?(permission_suffix = true) ?(su
           a_style "width: 1%;";
         ]
         [
-          Icon.(html (Entity icon));
+          Icon.html ~i ~a_class ~a_title (Entity icon);
           span ~a: [a_class ["d-none"; "d-sm-inline"]] [txt " "; txt type_];
         ]
     ]
@@ -290,7 +290,7 @@ let entity_row ?classes ?onclick ?(prefix = []) ?(permission_suffix = true) ?(su
               | `Group _ -> None
             in
             match permission with
-            | None -> Icon.html Icon.(Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"]
+            | None -> Icon.html ~i ~a_class ~a_title (Access Everyone) ~tooltip: "You can see this entry because it is an always-public entry (eg. a person or a tune)" ~classes: ["opacity-25"]
             | Some permission ->
               let (icon, tooltip, classes) =
                 match Permission.view_reason permission with
@@ -301,7 +301,7 @@ let entity_row ?classes ?onclick ?(prefix = []) ?(permission_suffix = true) ?(su
                 | Owner Via_group group -> (Icon.(Access Owner), spf "You can see this entry because your group “%s” is (one of) its owners." group.name, [])
                 | Omniscient_administrator -> (Icon.(Access Omniscient_administrator), "You can see this entry because you are an administrator, with omniscience enabled. You would not be able to access it without that.", [])
               in
-              Icon.html icon ~tooltip ~classes
+              Icon.html ~i ~a_class ~a_title icon ~tooltip ~classes
           ]
       ]
     else []

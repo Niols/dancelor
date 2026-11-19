@@ -13,7 +13,7 @@ type (_, _, _) t =
   | Search_resources_context_5_10 : (Resource_query.t -> Resource_id.t -> 'w, 'w, Resource_id.t Search_context_result.t) t
   | Get_permissions : (Untagged.t Id.t -> 'w, 'w, Permissions_form.t) t
   | Set_permissions : (Untagged.t Id.t -> Permissions_form.t -> 'w, 'w, unit) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in

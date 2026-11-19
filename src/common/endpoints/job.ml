@@ -24,7 +24,7 @@ end
 type (_, _, _) t =
   | Status : (Job_id.t -> 'w, 'w, Status.t) t
   | File : (Job_id.t -> NesSlug.t -> 'w, 'w, Void.t) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 module Registration_response
     (Payload : Madge.JSONABLE)

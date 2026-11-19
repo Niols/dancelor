@@ -14,7 +14,7 @@ type (_, _, _) t =
   | Add_version_to_contents : (Set_id.t -> Version_id.t -> 'w, 'w, unit) t
   | Delete : (Set_id.t -> 'w, 'w, unit) t
   | Build_pdf : (Set_id.t -> Set_parameters.t -> Rendering_parameters.t -> 'w, 'w, Job_id.t Job.registration_response) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in

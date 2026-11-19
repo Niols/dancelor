@@ -11,7 +11,7 @@ type (_, _, _) t =
   | Create : (Person_form.t -> 'w, 'w, Person_id.t) t
   | Update : (Person_id.t -> Person_form.t -> 'w, 'w, unit) t
   | Delete : (Person_id.t -> 'w, 'w, unit) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in

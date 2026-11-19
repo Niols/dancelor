@@ -1,3 +1,4 @@
+open Dancelor_common
 open Html
 
 val make :

@@ -47,7 +47,7 @@ type (_, _, _) t =
   | Build_snippets : (Version_id.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Snippet_ids.t Job.registration_response copyright_response) t
   | Build_pdf : (Version_id.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Job_id.t Job.registration_response copyright_response) t
   | Build_snippets' : (Version_form.t -> Version_parameters.t -> Rendering_parameters.t -> 'w, 'w, Snippet_ids.t Job.registration_response) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 module Copyright_response
     (Payload : Madge.JSONABLE)

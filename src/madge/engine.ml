@@ -70,6 +70,20 @@ let with_request
 let uri : type a r. (a, Uri.t, r) Route.t -> a = fun route ->
   with_request route (fun (module _) request -> Request.uri request)
 
+let rec serialiser : type a w r. (a, w, r) Route.t -> (module JSONABLE with type t = r) = function
+  | Return {serialiser; _} -> serialiser
+  | Literal {rest; _} -> serialiser rest
+  | Variable {rest; _} -> serialiser rest
+  | Query_or_body {rest; _} -> serialiser rest
+
+let route_result_to_yojson : type a w r. (a, w, r) Route.t -> r -> Yojson.Safe.t = fun route result ->
+  let (module S) = serialiser route in
+  S.to_yojson result
+
+let route_result_of_yojson : type a w r. (a, w, r) Route.t -> Yojson.Safe.t -> (r, string) result = fun route json ->
+  let (module S) = serialiser route in
+  S.of_yojson json
+
 (* request -> route *)
 
 (* NOTE: The [controller] is in a thunk to avoid it being ran halfway as we find

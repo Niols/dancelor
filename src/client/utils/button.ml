@@ -1,4 +1,5 @@
 open Nes
+open Dancelor_common
 open Js_of_ocaml
 open Html
 
@@ -32,7 +33,7 @@ let make_content
           Option.flip_map icon @@ fun icon ->
           [
             span ~a: [R.a_class (S.map (function true -> ["d-none"] | _ -> []) processing)] [
-              Icon.html icon ~classes: [(if label <> "" then "me-2" else "me-0")];
+              Icon.html ~i ~a_class ~a_title icon ~classes: [(if label <> "" then "me-2" else "me-0")];
             ];
           ]
         );
@@ -163,7 +164,7 @@ let make_a
 let make_icon ?(classes = []) icon =
   button
     ~a: [a_button_type `Button; a_class (["btn"; "disabled"] @ classes); a_tabindex (-1)]
-    [Icon.html icon]
+    [Icon.html ~i ~a_class ~a_title icon]
 
 let save ?label ?label_processing ?disabled ~onclick () =
   make

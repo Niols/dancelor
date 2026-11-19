@@ -11,7 +11,7 @@ type (_, _, _) t =
   | Create : (Dance_form.t -> 'w, 'w, Dance_id.t) t
   | Update : (Dance_id.t -> Dance_form.t -> 'w, 'w, unit) t
   | Delete : (Dance_id.t -> 'w, 'w, unit) t
-[@@deriving madge_wrapped_endpoints]
+[@@deriving madge]
 
 let route : type a w r. (a, w, r) t -> (a, w, r) route =
   let open Route in

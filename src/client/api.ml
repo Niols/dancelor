@@ -4,6 +4,9 @@ open Dancelor_common
 let call endpoint = Madge_client.call (Endpoints.Api.route endpoint)
 let call_exn endpoint = Madge_client.call_exn (Endpoints.Api.route endpoint)
 
+let result_of_yojson endpoint json =
+  Madge.route_result_of_yojson (Endpoints.Api.route endpoint) json
+
 (** Like {!call} but returns an option; [Some] on success, [None] on 404 not
     found, other errors are exceptions. *)
 let call_or_option endpoint id =
