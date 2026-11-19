@@ -7,54 +7,26 @@ module Log = (val Logs.src_log @@ Logs.Src.create "server.main-page": Logs.LOG)
 let href_with_hash path =
   spf "/%s?%s" path @@ Digest.BLAKE256.(to_hex % file) @@ Static.file_path path
 
-type canonical_url_and_robots_content = {
-  canonical_url: Uri.t;
-  robots_content: string;
-}
-
-let no_query_canonical_url uri = Uri.with_path Static.base_url (Uri.path uri)
-let full_canonical_url uri = Uri.with_uri Static.base_url ~path: (Some (Uri.path uri)) ~query: (Some (Uri.query uri))
-
-let default_canonical_url_and_robots_content uri = {
-  canonical_url = no_query_canonical_url uri;
-  robots_content = "index, follow";
-}
-
-(** For all pages but the explorer, we strip the query part from the canonical
-    URL. Those pages should be indexed. For the explorer, all pages are
-    self-canonical, but we distinguish on whether there is a `?q` argument in
-    the query: if there isn't, then the page should be indexed; if there is,
-    then it is a refined query and it shouldn't be indexed. All pages should be
-    followed. *)
-let canonical_url_and_robots_content uri =
-  let dispatch : type a r. (a, canonical_url_and_robots_content option, r) Endpoints.Page.t -> a = function
-    | Explore ->
-      (fun query _page ->
-        Some {
-          canonical_url = full_canonical_url uri;
-          robots_content = if query = "" then "index, follow" else "noindex, follow";
-        }
-      )
-    | page -> Endpoints.Page.consume page ~return: None
-  in
-  match Endpoints.Page.match_ {route = Endpoints.Page.route; no_route = const None; dispatch} (Madge.Request.make ~meth: GET ~uri ~body: "") with
-  | None -> default_canonical_url_and_robots_content uri
-  | Some canonical_url_and_robots_content -> canonical_url_and_robots_content
-
 type page_info = {
   title: string; (** a title for the HTML page *)
   parent_title: string; (** eg. "Tune" or "Dance" *)
   api_payload: Yojson.Safe.t; (** the major API point of this page, preloaded, as a payload to hand over to the client *)
+  canonical_url: Uri.t; (** canonical URL for this page *)
+  robots_content: string; (** content of the robots meta for this page *)
 }
 
-let make_page_info ?(title = "") ?(parent_title = "") api_payload = {
-  title;
-  parent_title;
-  api_payload;
-}
+let make_canonical_url endpoint =
+  Madge.uri (Endpoints.Page.route endpoint)
 
-let return_page_info ?title ?parent_title endpoint value =
-  lwt_some @@ make_page_info ?title ?parent_title @@ Madge.route_result_to_yojson (Endpoints.Api.route endpoint) value
+let no_query_canonical_url uri = Uri.with_path Static.base_url (Uri.path uri)
+
+let make_page_info ?(title = "") ?(parent_title = "") ?(robots_content = "index, follow") ~canonical_url api_payload =
+  {title; parent_title; api_payload; canonical_url; robots_content}
+
+let no_page_info uri = make_page_info ~canonical_url: (no_query_canonical_url uri) `Null
+
+let return_page_info ?title ?parent_title ~canonical_url endpoint value =
+  lwt_some @@ make_page_info ?title ?parent_title ~canonical_url @@ Madge.route_result_to_yojson (Endpoints.Api.route endpoint) value
 
 (** Given a URI and an environment, preload the API point that would be called
     by the client when loading the page. *)
@@ -62,44 +34,59 @@ let return_page_info ?title ?parent_title endpoint value =
    function should or could be shared. *)
 let get_page_info env uri =
   let dispatch : type a r. (a, page_info option Lwt.t, r) Endpoints.Page.t -> a = function
+    | Explore ->
+      (fun query _page ->
+        let robots_content = if query = "" then "index, follow" else "noindex, follow" in
+        let canonical_url = Uri.with_uri Static.base_url ~path: (Some (Uri.path uri)) ~query: (Some (Uri.query uri)) in
+        lwt_some @@ make_page_info ~title: "Explore" ~robots_content ~canonical_url `Null
+      )
     | Entity ->
       (fun id ->
+        (* FIXME: run the whole redirection directly in there, returning the
+           right type to the client, the right canonical URL, etc. *)
+        let canonical_url = make_canonical_url Entity id in
         let endpoint : _ Endpoints.Api.t = Entity Resource_type in
         let%lwt type_ = Controller.dispatch env endpoint id in
-        return_page_info endpoint type_
+        return_page_info endpoint ~canonical_url type_
       )
     | Book View ->
       (fun _in_search book_id ->
+        let canonical_url = make_canonical_url (Book View) None book_id in
         let endpoint : _ Endpoints.Api.t = Book Get_view in
         let%lwt book = Controller.dispatch env endpoint book_id in
-        return_page_info ~title: book.name ~parent_title: "Book" endpoint book
+        return_page_info ~title: book.name ~parent_title: "Book" ~canonical_url endpoint book
       )
     | Book Preview ->
-      (fun book_id _pageno ->
+      (fun book_id pageno ->
+        let canonical_url = make_canonical_url (Book Preview) book_id pageno in
         let endpoint : _ Endpoints.Api.t = Book Get_view in
         let%lwt book = Controller.dispatch env endpoint book_id in
-        return_page_info ~title: book.name ~parent_title: "Book" endpoint book
+        return_page_info ~title: book.name ~parent_title: "Book" ~canonical_url endpoint book
       )
     | Dance View ->
       (fun _in_search dance_id ->
+        let canonical_url = make_canonical_url (Dance View) None dance_id in
         let endpoint : _ Endpoints.Api.t = Dance Get_view in
         let%lwt dance = Controller.dispatch env endpoint dance_id in
-        return_page_info ~title: dance.name ~parent_title: "Dance" endpoint dance
+        return_page_info ~title: dance.name ~parent_title: "Dance" ~canonical_url endpoint dance
       )
     | Person View ->
       (fun _in_search person_id ->
+        let canonical_url = make_canonical_url (Person View) None person_id in
         let endpoint : _ Endpoints.Api.t = Person Get_view in
         let%lwt person = Controller.dispatch env endpoint person_id in
-        return_page_info ~title: person.name ~parent_title: "Person" endpoint person
+        return_page_info ~title: person.name ~parent_title: "Person" ~canonical_url endpoint person
       )
     | Version View ->
       (fun _in_search _in_set version_id ->
+        let canonical_url = make_canonical_url (Version View) None None version_id in
         let endpoint : _ Endpoints.Api.t = Version Get_view in
         let%lwt version = Controller.dispatch env endpoint version_id in
-        return_page_info ~title: version.tune.name ~parent_title: "Tune" endpoint version
+        return_page_info ~title: version.tune.name ~parent_title: "Tune" ~canonical_url endpoint version
       )
     | Tune View ->
       (fun _in_search tune_id ->
+        let canonical_url = make_canonical_url (Tune View) None tune_id in
         let endpoint : _ Endpoints.Api.t = Version Get_view_for_tune in
         let%lwt version = Controller.dispatch env endpoint tune_id in
         let title =
@@ -107,32 +94,36 @@ let get_page_info env uri =
           | Found version -> version.tune.name
           | Fallback tune -> tune.name
         in
-        return_page_info ~title ~parent_title: "Tune" endpoint version
+        return_page_info ~title ~parent_title: "Tune" ~canonical_url endpoint version
       )
     | Set View ->
       (fun _in_search set_id ->
+        let canonical_url = make_canonical_url (Set View) None set_id in
         let endpoint : _ Endpoints.Api.t = Set Get_view in
         let%lwt set = Controller.dispatch env endpoint set_id in
-        return_page_info ~title: set.name ~parent_title: "Set" endpoint set
+        return_page_info ~title: set.name ~parent_title: "Set" ~canonical_url endpoint set
       )
     | Source View ->
       (fun _in_search source_id ->
+        let canonical_url = make_canonical_url (Source View) None source_id in
         let endpoint : _ Endpoints.Api.t = Source Get_view in
         let%lwt source = Controller.dispatch env endpoint source_id in
-        return_page_info ~title: source.name ~parent_title: "Source" endpoint source
+        return_page_info ~title: source.name ~parent_title: "Source" ~canonical_url endpoint source
       )
     | User View ->
       (fun user_id ->
+        let canonical_url = make_canonical_url (User View) user_id in
         let endpoint : _ Endpoints.Api.t = User Get_view in
         let%lwt user = Controller.dispatch env endpoint user_id in
         let title = Username.to_string user.username in
-        return_page_info ~title ~parent_title: "User" endpoint user
+        return_page_info ~title ~parent_title: "User" ~canonical_url endpoint user
       )
     | Group View ->
       (fun group_id ->
+        let canonical_url = make_canonical_url (Group View) group_id in
         let endpoint : _ Endpoints.Api.t = Group Get_view in
         let%lwt group = Controller.dispatch env endpoint group_id in
-        return_page_info ~title: group.name ~parent_title: "Group" endpoint group
+        return_page_info ~title: group.name ~parent_title: "Group" ~canonical_url endpoint group
       )
     | endpoint -> Endpoints.Page.consume ~return: lwt_none endpoint
   in
@@ -140,14 +131,14 @@ let get_page_info env uri =
     let%lwt page_info =
       Endpoints.Page.match_ {route = Endpoints.Page.route; no_route = const lwt_none; dispatch} (Madge.Request.make ~meth: GET ~uri ~body: "")
     in
-    lwt @@ Option.value page_info ~default: (make_page_info `Null)
+    lwt @@ Option.value page_info ~default: (no_page_info uri)
   with
     | Madge_server.Shortcut _ ->
       Log.info (fun m -> m "Madge shortcut while getting page info; skipping.");
-      lwt (make_page_info `Null)
+      lwt (no_page_info uri)
     | exn ->
       Log.err (fun m -> m "Exception while getting page info: %s" (Printexc.to_string exn));
-      lwt (make_page_info `Null)
+      lwt (no_page_info uri)
 
 let make_index_head =
   (* NOTE: We add the hash of static files to their URL to invalidate
@@ -160,12 +151,11 @@ let make_index_head =
   let site_webmanifest_href = Lazy.from_fun @@ fun () -> href_with_hash "site.webmanifest" in
   let client_js_href = Lazy.from_fun @@ fun () -> href_with_hash "client.js" in
   let bootstrap_bundle_min_js_href = Lazy.from_fun @@ fun () -> href_with_hash "bootstrap.bundle.min.js" in
-  fun path query preloaded_api ->
-    let {canonical_url; robots_content} = canonical_url_and_robots_content @@ Uri.make ~path ~query () in
+  fun page_info ->
     [
       meta ~a: [a_charset "utf-8"] ();
-      link ~rel: [`Canonical] ~href: (Uri.to_string canonical_url) ();
-      meta ~a: [a_name "robots"; a_content robots_content] ();
+      link ~rel: [`Canonical] ~href: (Uri.to_string page_info.canonical_url) ();
+      meta ~a: [a_name "robots"; a_content page_info.robots_content] ();
       (* Style *)
       meta ~a: [a_name "viewport"; a_content "width=device-width, initial-scale=1, maximum-scale=1"] ();
       meta ~a: [a_name "description"; a_content "Dancelor — A community-edited database of Scottish country dance music. Search for tunes, assemble sets and books, and export to PDF, ready to print and bring to the dance."] ();
@@ -187,7 +177,7 @@ let make_index_head =
             {| window.addEventListener("DOMContentLoaded", () => dancelorClient.run(%s)); |}
             (
               (* NOTE: one Yojson call to serialise the output to JSON, one second one to serialise the resulting string to a JS string with escaping and all *)
-              Yojson.Safe.to_string @@ `String (Yojson.Safe.to_string preloaded_api)
+              Yojson.Safe.to_string @@ `String (Yojson.Safe.to_string page_info.api_payload)
             )
       );
     ]
@@ -342,7 +332,7 @@ let serve_index env path query =
         (
           head
             (title (txt @@ Endpoints.Page.full_title ~title: page_info.title ~parent: page_info.parent_title))
-            (make_index_head path query page_info.api_payload)
+            (make_index_head page_info)
         )
         (
           body ~a: [a_class ["placeholder-glow"]] [
