@@ -77,7 +77,6 @@ INSERT INTO "book_sources" (
 -- @get_contents
 SELECT
     "index",
-    "page_type",
     "part_title",
     "dance_id",
     "set_id",
@@ -99,7 +98,6 @@ ORDER BY "index";
 SELECT
     "book_id",
     "index",
-    "page_type",
     "part_title",
     "dance_id",
     "set_id",
@@ -124,7 +122,6 @@ WHERE "book_id" = @book_id;
 INSERT INTO "book_content_pages" (
     "book_id",
     "index",
-    "page_type",
     "part_title",
     "dance_id",
     "set_id",
@@ -141,7 +138,6 @@ INSERT INTO "book_content_pages" (
 ) VALUES (
     @book_id,
     @index,
-    @page_type,
     @part_title,
     @dance_id,
     @set_id,
@@ -327,7 +323,6 @@ WHERE @book_ids { One_of { "book_id" IN @book_ids } | All { TRUE } };
 WITH "set_permissions" AS &viewable_entities
 SELECT
     "book_id",
-    "page_type",
     "index",
     -- part
     "part_title",

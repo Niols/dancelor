@@ -195,10 +195,13 @@ let page_to_renderer_page ~actor_id (page : Book_form.page) book_params : (Rende
   match page with
   | Part title ->
     lwt (Renderer.Part (part_to_renderer_part title), {Renderer.title = NEString.to_string title; authors = []; subjects = []})
-  | Dance (dance, dance_page) ->
-    (
-      let%lwt (dance : Dance_form.t) = Option.get <$> Database.Dance.get_form dance.id in
-      let%lwt dance_params =
+  | Regular page ->
+    let (dance, versions_or_set) = Book_form.dance_and_versions_or_set_to_pair page in
+    let%lwt dance_params =
+      match dance with
+      | None -> lwt Set_parameters.none
+      | Some dance ->
+        let%lwt (dance : Dance_form.t) = Option.get <$> Database.Dance.get_form dance.id in
         let display_name = NEList.hd dance.names in
         let display_conceptor =
           NEString.of_string_exn @@
@@ -216,44 +219,26 @@ let page_to_renderer_page ~actor_id (page : Book_form.page) book_params : (Rende
           )
         in
         lwt @@ Set_parameters.make ~display_name ~display_conceptor ~display_kind ()
-      in
-      let dance_params =
-        Set_parameters.compose every_set_params dance_params
-      in
-      match dance_page with
-      | Dance_only ->
-        Pair.map_fst Renderer.set <$> dance_to_renderer_set dance_params
-      | Dance_versions versions_and_params ->
-        let%lwt versions_and_params =
-          Monadise_lwt.lift_1_1
-            NEList.map
-            (fun (version, params) ->
-              let%lwt version = Option.get <$> Database.Version.get_form version.Version_row.id in
-              lwt (version, params)
-            )
-            versions_and_params
-        in
-        lwt @@ Pair.map_fst Renderer.set @@ versions_to_renderer_set versions_and_params dance_params
-      | Dance_set (set, set_params) ->
-        let%lwt set = Option.get <$> Database.Set.get_form ~actor_id set.Set_row.id in
-        let set_params = Set_parameters.compose set_params dance_params in
-        Pair.map_fst Renderer.set <$> set_to_renderer_set set set_params
-    )
-  | Versions versions_and_params ->
-    let%lwt versions_and_params =
-      Monadise_lwt.lift_1_1
-        NEList.map
-        (fun (version, params) ->
-          let%lwt version = Option.get <$> Database.Version.get_form version.Version_row.id in
-          lwt (version, params)
-        )
-        versions_and_params
     in
-    lwt @@ Pair.map_fst Renderer.set @@ versions_to_renderer_set versions_and_params every_set_params
-  | Set (set, set_params) ->
-    let%lwt set = Option.get <$> Database.Set.get_form ~actor_id set.Set_row.id in
-    let set_params = Set_parameters.compose set_params every_set_params in
-    Pair.map_fst Renderer.set <$> set_to_renderer_set set set_params
+    let dance_params = Set_parameters.compose every_set_params dance_params in
+    match versions_or_set with
+    | None ->
+      Pair.map_fst Renderer.set <$> dance_to_renderer_set dance_params
+    | Some Versions versions_and_params ->
+      let%lwt versions_and_params =
+        Monadise_lwt.lift_1_1
+          NEList.map
+          (fun (version, params) ->
+            let%lwt version = Option.get <$> Database.Version.get_form version.Version_row.id in
+            lwt (version, params)
+          )
+          versions_and_params
+      in
+      lwt @@ Pair.map_fst Renderer.set @@ versions_to_renderer_set versions_and_params dance_params
+    | Some Set (set, set_params) ->
+      let%lwt set = Option.get <$> Database.Set.get_form ~actor_id set.Set_row.id in
+      let set_params = Set_parameters.compose set_params dance_params in
+      Pair.map_fst Renderer.set <$> set_to_renderer_set set set_params
 
 let book_to_renderer_book ~actor_id (book : Book_form.t) book_params : (Renderer.book * Renderer.pdf_metadata) Lwt.t =
   let name = NEString.to_string book.name in
