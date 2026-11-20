@@ -4,8 +4,8 @@ open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.main-page": Logs.LOG)
 
-let href_with_hash path =
-  spf "/%s?%s" path (Digest.BLAKE256.(to_hex % file) @@ Static.file_path path)
+let href_with_hash ?(absolute = false) path =
+  spf "%s/%s?%s" (if absolute then Uri.to_string Static.base_url else "") path (Digest.BLAKE256.(to_hex % file) @@ Static.file_path path)
 
 type page_info = {
   title: string; (** a title for the HTML page *)
@@ -247,7 +247,7 @@ let make_index_head =
      as long as possible. *)
   let fonts_css_href = Lazy.from_fun @@ fun () -> href_with_hash "fonts.css" in
   let style_css_href = Lazy.from_fun @@ fun () -> href_with_hash "style.css" in
-  let logo_1200x630_png_href = Lazy.from_fun @@ fun () -> href_with_hash "logo-1200x630.png" in
+  let logo_1200x630_png_href_absolute = Lazy.from_fun @@ fun () -> href_with_hash ~absolute: true "logo-1200x630.png" in
   let favicon_svg_href = Lazy.from_fun @@ fun () -> href_with_hash "favicon.svg" in
   let favicon_16x16_png_href = Lazy.from_fun @@ fun () -> href_with_hash "favicon-16x16.png" in
   let favicon_32x32_png_href = Lazy.from_fun @@ fun () -> href_with_hash "favicon-32x32.png" in
@@ -273,7 +273,7 @@ let make_index_head =
       meta ~a: [a_property "og:site_name"; a_content "Dancelor"] ();
       meta ~a: [a_property "og:title"; a_content (Endpoints.Page.full_title_no_dancelor ~title: page_info.title ~parent: page_info.parent_title)] ();
       meta ~a: [a_property "og:description"; a_content page_info.description] ();
-      meta ~a: [a_property "og:image"; a_content (Lazy.force logo_1200x630_png_href)] ();
+      meta ~a: [a_property "og:image"; a_content (Lazy.force logo_1200x630_png_href_absolute)] ();
       meta ~a: [a_property "og:image:type"; a_content "image/png"] ();
       meta ~a: [a_property "og:image:width"; a_content "1200"] ();
       meta ~a: [a_property "og:image:height"; a_content "630"] ();
