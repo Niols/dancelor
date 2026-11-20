@@ -1,4 +1,3 @@
-val base_url : Uri.t
 val file_path : string -> string
 
 val serve :

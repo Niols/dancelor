@@ -12,6 +12,10 @@
       services.dancelor = {
         enable = true;
         testMode = true;
+        settings = {
+          base_url = "http://localhost:8080";
+          port = 8080;
+        };
       };
 
       services.postgresql.package = pkgs.postgresql_15;

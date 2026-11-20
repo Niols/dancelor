@@ -3,8 +3,6 @@ open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.static": Logs.LOG)
 
-let base_url = Uri.of_string "https://dancelor.org"
-
 let file_path path = Filename.concat (Config.get ()).share path
 
 let serve_static_file path =
@@ -23,7 +21,7 @@ let static_pages = List.map Uri.of_string ["/"; "/explore"]
 let serve_sitemap env =
   let%lwt resources = Search_result.items <$> Controller.Entity.search_resources env Slice.everything (Entity_query.empty) in
   let urls = static_pages @ List.map (Endpoints.Page.href_entity_full % Resource_row.to_id) resources in
-  let urls = List.map (fun url -> Uri.with_path base_url (Uri.path url)) urls in
+  let urls = List.map (fun url -> Uri.with_path (Lazy.force Config.base_url) (Uri.path url)) urls in
   let%lwt sitemap =
     let buf = Buffer.create 10240 in
     let fmt = Format.formatter_of_buffer buf in
@@ -47,7 +45,7 @@ let serve_sitemap env =
   <$> Cohttp_lwt_unix.Server.respond_string ~headers ~status: `OK ~body: sitemap ()
 
 let serve_robots_txt () =
-  let robots_txt = spf "Sitemap: %s/sitemap.xml\nUser-agent: *\nAllow: /\n" (Uri.to_string base_url) in
+  let robots_txt = spf "Sitemap: %s/sitemap.xml\nUser-agent: *\nAllow: /\n" (Lazy.force Config.base_url_str) in
   let headers =
     Cohttp.Header.of_list [
       ("Content-Type", "text/plain");
