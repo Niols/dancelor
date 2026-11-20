@@ -5,7 +5,7 @@ open Dancelor_common
 module Log = (val Logs.src_log @@ Logs.Src.create "server.main-page": Logs.LOG)
 
 let href_with_hash ?(absolute = false) path =
-  spf "%s/%s?%s" (if absolute then Uri.to_string Static.base_url else "") path (Digest.BLAKE256.(to_hex % file) @@ Static.file_path path)
+  spf "%s/%s?%s" (if absolute then Lazy.force Config.base_url_str else "") path (Digest.BLAKE256.(to_hex % file) @@ Static.file_path path)
 
 type page_info = {
   title: string; (** a title for the HTML page *)
@@ -19,10 +19,10 @@ type page_info = {
 let make_canonical_url endpoint =
   Madge.with_request (Endpoints.Page.route endpoint) (fun (module _) request ->
     let uri = Madge.Request.uri request in
-    Uri.with_uri Static.base_url ~path: (some @@ Uri.path uri) ~query: (some @@ Uri.query uri)
+    Uri.with_uri (Lazy.force Config.base_url) ~path: (some @@ Uri.path uri) ~query: (some @@ Uri.query uri)
   )
 
-let no_query_canonical_url uri = Uri.with_path Static.base_url (Uri.path uri)
+let no_query_canonical_url uri = Uri.with_path (Lazy.force Config.base_url) (Uri.path uri)
 
 let make_page_info ?(title = "") ?(parent_title = "") ~description ?(robots_content = "index, follow") ~canonical_url api_payload =
   {title; parent_title; description; api_payload; canonical_url; robots_content}

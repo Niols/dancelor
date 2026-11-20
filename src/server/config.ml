@@ -45,7 +45,8 @@ type test = {
 [@@deriving make, show {with_path = false}, yojson]
 
 type t = {
-  port: int; [@default 6872]
+  base_url: Uri.t; (** Schema + base_url + external port, to be prepended to paths. *)
+  port: int; [@default 6872] (** Listening port. *)
   database: database;
   nixpkgs: string;
   share: string;
@@ -98,3 +99,6 @@ let parse_cmd_line () =
   | [|_; fname|] -> read_from_file fname >>= load
   | [|_|] -> failwith "No config file specified. Please provide a config file as a command-line argument."
   | _ -> failwith "Too many command-line arguments. Expected exactly one: the config file."
+
+let base_url = Lazy.from_fun (fun () -> (get ()).base_url)
+let base_url_str = Lazy.from_fun (fun () -> Uri.to_string (get ()).base_url)

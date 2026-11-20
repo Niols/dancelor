@@ -11,6 +11,7 @@
         enable = true;
         testMode = true;
         settings = {
+          base_url = "http://localhost:8080";
           port = 8080; # assumed by pytest tests
           test.forbid_migrations = true;
         };
