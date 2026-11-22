@@ -202,9 +202,18 @@ let make_add_nix_log_line clean_stderr =
     if add_line then
       clean_stderr := !clean_stderr @ [clean_nix_log_line line]
 
+(** An exponential histogram with 17 buckets ranging from 10ms to 100s. 17 buckets mean:
+    0 - 10ms - 18ms - 32ms - 56ms - 100ms
+    - 178ms - 316ms - 562ms - 1s
+    - 1.8s - 3.2s - 5.6s - 10s
+    - 18s - 32s - 56s - 100s - infinity *)
+module Exponential_10ms_100s_histogram = Prometheus.Histogram(struct
+  let spec = Prometheus.Histogram_spec.of_exponential 0.01 (10. ** 0.25) 17
+end)
+
 let job_duration_seconds =
   let family =
-    Prometheus.DefaultHistogram.v_labels
+    Exponential_10ms_100s_histogram.v_labels
       ~namespace
       ~help: "Duration of each stage of a job in seconds"
       "duration_seconds"
@@ -212,7 +221,7 @@ let job_duration_seconds =
   in
   fun ~kind ~state ->
     let state = match state with `Pending -> "pending" | `Running -> "running" in
-    Prometheus.DefaultHistogram.labels family [kind; state]
+    Exponential_10ms_100s_histogram.labels family [kind; state]
 
 let run_job job =
   match !(job.state) with
@@ -223,7 +232,7 @@ let run_job job =
     let start_time = Datetime.now () in
     let pending_duration = Datetime.diff start_time since in
     Log.debug (fun m -> m "Running job starting at %a, pending for %.2fs" Datetime.pp start_time pending_duration);
-    Prometheus.DefaultHistogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) pending_duration;
+    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) pending_duration;
     let%lwt path = Nix_gc_root.make_path () in
     let command = [|"nix-build"; "--impure"; "--out-link"; path; "--expr"; expr_val job.expr|] in
     let process = Lwt_process.open_process_full ("", command) in
@@ -262,7 +271,7 @@ let run_job job =
     );
     let running_duration = Datetime.(diff (now ())) start_time in
     Log.debug (fun m -> m "Dune running job in %f.2s, started at %a" running_duration Datetime.pp start_time);
-    Prometheus.DefaultHistogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) running_duration;
+    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) running_duration;
     lwt_unit
 
 let get id =
