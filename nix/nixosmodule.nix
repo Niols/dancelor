@@ -52,7 +52,7 @@
           type = types.bool;
           description = ''
             Whether to set up Dancelor for testing. In particular, this enables
-            [settings.test.die_on_exn] and lowers default loglevel to [info].
+            [settings.test.die_on_exn].
           '';
           default = false;
         };
@@ -82,7 +82,7 @@
           nixpkgs = inputs.nixpkgs;
           share = "${self.packages.${system}.dancelor}/share/dancelor";
           test.die_on_exn = cfg.testMode;
-          loglevel.default = if cfg.testMode then "info" else "debug";
+          loglevel.default = "info";
         };
 
         ## User and group `dancelor:dancelor`.
