@@ -15,7 +15,7 @@ let all_versions =
     | Some start_time ->
       let duration = Datetime.(diff (now ()) start_time) in
       Log.info (fun m -> m "Done crawling all versions for pre-rendering in %.0fs" duration);
-      if duration < 2. *. float_of_int Controller.Job.lifetime_memory_cache then
+      if duration >= 2. *. float_of_int Controller.Job.lifetime_memory_cache then
         Log.warn (fun m -> m "The pre-rendering crawl takes too long compared to the in-memory cache's lifetime for comfort. Duration: %.0fs; cache's lifetime: %ds" duration Controller.Job.lifetime_memory_cache)
   );
   Lwt_unix.sleep 600.;%lwt
