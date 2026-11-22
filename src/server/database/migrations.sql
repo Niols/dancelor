@@ -2116,3 +2116,43 @@ WHERE "person_id" IS NOT NULL;
 
 -- @m088_2026_10_break_dependency_from_user_to_person__drop_column_person_id
 ALTER TABLE "users" DROP COLUMN "person_id";
+
+-- @m089_2026_11_books_as_sources__add_columns
+ALTER TABLE "books"
+  ADD COLUMN "short_name" VARCHAR(64),
+  ADD COLUMN "description" TEXT,
+  ADD COLUMN "is_source" BOOLEAN;
+
+-- @m089_2026_11_books_as_sources__set_is_source_false
+UPDATE "books"
+SET "is_source" = FALSE;
+
+-- @m089_2026_11_books_as_sources__fill_from_sources
+UPDATE "books"
+SET
+    "is_source" = TRUE,
+    "short_name" = "sources"."short_name",
+    "description" = "sources"."description"
+FROM "book_sources"
+JOIN "sources" ON "sources"."id" = "book_sources"."source_id"
+WHERE "book_sources"."book_id" = "books"."id";
+
+-- @m089_2026_11_books_as_sources__set_not_null_is_source
+ALTER TABLE "books"
+  ALTER COLUMN "is_source" SET NOT NULL;
+
+-- @m089_2026_11_books_as_sources__create_covers_table
+CREATE TABLE "book_covers" (
+    "book_id" VARCHAR(14) NOT NULL,
+    "cover" BYTEA NOT NULL,
+    CONSTRAINT "fk_book_covers_book_id" FOREIGN KEY ("book_id") REFERENCES "books" ("id")
+);
+
+-- @m089_2026_11_books_as_sources__fill_covers_table
+INSERT INTO "book_covers"
+SELECT
+    "book_id",
+    "cover"
+FROM "book_sources"
+JOIN "sources" ON "sources"."id" = "book_sources"."source_id"
+WHERE "sources"."cover" IS NOT NULL;

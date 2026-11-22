@@ -4,8 +4,8 @@
 
 \restrict ybiQOqa6jiLe8LvxFznU4q8n34iwf9VXgUBS2e7j5NMdWOEHU3ms2YSbcIZ871W
 
--- Dumped from database version 15.19
--- Dumped by pg_dump version 15.19
+-- Dumped from database version 15.20
+-- Dumped by pg_dump version 15.20
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -213,6 +213,16 @@ CREATE TABLE "dancelor"."book_content_pages" (
 
 
 --
+-- Name: book_covers; Type: TABLE; Schema: dancelor; Owner: -
+--
+
+CREATE TABLE "dancelor"."book_covers" (
+    "book_id" character varying(14) NOT NULL,
+    "cover" "bytea" NOT NULL
+);
+
+
+--
 -- Name: book_sources; Type: TABLE; Schema: dancelor; Owner: -
 --
 
@@ -232,7 +242,10 @@ CREATE TABLE "dancelor"."books" (
     "date" character varying,
     "remark" character varying,
     "scddb_id" integer,
-    "name_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("name")::"text")) STORED
+    "name_search" "text" GENERATED ALWAYS AS ("dancelor"."make_name_search"(("name")::"text")) STORED,
+    "short_name" character varying(64),
+    "description" "text",
+    "is_source" boolean NOT NULL
 );
 
 
@@ -601,6 +614,12 @@ INSERT INTO "dancelor"."book_content_pages" ("book_id", "index", "part_title", "
 
 
 --
+-- Data for Name: book_covers; Type: TABLE DATA; Schema: dancelor; Owner: -
+--
+
+
+
+--
 -- Data for Name: book_sources; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
@@ -612,7 +631,7 @@ INSERT INTO "dancelor"."book_sources" ("book_id", "source_id") VALUES ('0fi3-1io
 -- Data for Name: books; Type: TABLE DATA; Schema: dancelor; Owner: -
 --
 
-INSERT INTO "dancelor"."books" ("id", "name", "date", "remark", "scddb_id") VALUES ('0fi3-1iot-6tbq', 'The Tam Lin Book', NULL, 'this is a remark', 298374872);
+INSERT INTO "dancelor"."books" ("id", "name", "date", "remark", "scddb_id", "short_name", "description", "is_source") VALUES ('0fi3-1iot-6tbq', 'The Tam Lin Book', NULL, 'this is a remark', 298374872, 'TaLiBo', 'sdk', true);
 
 
 --
@@ -790,6 +809,7 @@ INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m085_2026_10
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m086_2026_10_fix_primary_key_constraint_names', '2026-10-18 15:27:16.544137+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m087_2026_10_rename_tables_to_plural', '2026-10-18 15:35:01.752365+00');
 INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m088_2026_10_break_dependency_from_user_to_person', '2026-10-19 06:28:18.322751+00');
+INSERT INTO "dancelor"."migrations" ("name", "applied_at") VALUES ('m089_2026_11_books_as_sources', '2026-11-22 09:58:18.777255+00');
 
 
 --
@@ -1645,6 +1665,14 @@ ALTER TABLE ONLY "dancelor"."book_content_pages"
 
 
 --
+-- Name: book_covers fk_book_covers_book_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
+--
+
+ALTER TABLE ONLY "dancelor"."book_covers"
+    ADD CONSTRAINT "fk_book_covers_book_id" FOREIGN KEY ("book_id") REFERENCES "dancelor"."books"("id");
+
+
+--
 -- Name: book_sources fk_book_sources_book_id; Type: FK CONSTRAINT; Schema: dancelor; Owner: -
 --
 
@@ -1961,4 +1989,3 @@ ALTER TABLE ONLY "dancelor"."versions"
 --
 
 \unrestrict ybiQOqa6jiLe8LvxFznU4q8n34iwf9VXgUBS2e7j5NMdWOEHU3ms2YSbcIZ871W
-

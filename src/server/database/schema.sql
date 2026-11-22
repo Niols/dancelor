@@ -405,12 +405,21 @@ CREATE TABLE "books" (
     "remark" VARCHAR,
     "scddb_id" INT,
     "name_search" TEXT GENERATED ALWAYS AS (make_name_search("name")) STORED,
+    "short_name" VARCHAR(64),
+    "description" TEXT,
+    "is_source" BOOLEAN,
     CONSTRAINT "pk_books" PRIMARY KEY ("id"),
     CONSTRAINT "fk_books_id" FOREIGN KEY ("id") REFERENCES "entities" ("id")
 );
 
 CREATE INDEX "idx_books_name" ON "books" USING GIN ("name" "public"."gin_trgm_ops");
 CREATE INDEX "idx_books_name_search" ON "books" USING GIN ("name_search" "public"."gin_trgm_ops");
+
+CREATE TABLE "book_covers" (
+    "book_id" VARCHAR(14) NOT NULL,
+    "cover" BYTEA NOT NULL,
+    CONSTRAINT "fk_book_covers_book_id" FOREIGN KEY ("book_id") REFERENCES "books" ("id")
+);
 
 CREATE TABLE "book_authors" (
     -- [sqlgg] module=Sql_types.Book_id_conv

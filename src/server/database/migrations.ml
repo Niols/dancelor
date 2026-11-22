@@ -1215,6 +1215,14 @@ let migrations : migration list = [
     bypass {|DROP INDEX "idx_users_person_id";|};
     Migrations_sql.m088_2026_10_break_dependency_from_user_to_person__drop_column_person_id;
   ];
+  make_ddls "m089_2026_11_books_as_sources" [
+    Migrations_sql.m089_2026_11_books_as_sources__add_columns;
+    Migrations_sql.m089_2026_11_books_as_sources__set_is_source_false;
+    Migrations_sql.m089_2026_11_books_as_sources__fill_from_sources;
+    Migrations_sql.m089_2026_11_books_as_sources__set_not_null_is_source;
+    Migrations_sql.m089_2026_11_books_as_sources__create_covers_table;
+    Migrations_sql.m089_2026_11_books_as_sources__fill_covers_table;
+  ];
 ]
 
 exception Migration_failed of string * exn
