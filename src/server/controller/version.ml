@@ -87,7 +87,7 @@ let build_pdf env id version_params rendering_params =
   let%lwt version_form = Option.get <$> Database.Version.get_form version.id in
   let set = Model_to_renderer.versions_to_renderer_set (NEList.singleton (version_form, version_params)) set_params in
   let set_pdf_arg = Model_to_renderer.renderer_set_to_renderer_set_pdf_arg set rendering_params in
-  uncurry Job.register_job_and_file <$> Renderer.make_set_pdf set_pdf_arg
+  uncurry (Job.register_job_and_file ~kind: "version-pdf") <$> Renderer.make_set_pdf set_pdf_arg
 
 (** For use in {!Routine}. *)
 let render_snippets ?version_params version =
@@ -98,7 +98,10 @@ let register_snippets_job_gen renderer_tune =
   let%lwt svg_job = Renderer.make_tune_svg renderer_tune in
   let%lwt ogg_job = Renderer.make_tune_ogg renderer_tune in
   lwt @@
-    match (uncurry Job.register_job_and_file svg_job, uncurry Job.register_job_and_file ogg_job) with
+    match (
+      uncurry (Job.register_job_and_file ~kind: "version-snippets") svg_job,
+      uncurry (Job.register_job_and_file ~kind: "version-snippets") ogg_job
+    ) with
     | Already_succeeded svg_job_id, Already_succeeded ogg_job_id -> Endpoints.Job.Already_succeeded {Endpoints.Version.Snippet_ids.svg_job_id; ogg_job_id}
     | Registered svg_job_id, Already_succeeded ogg_job_id -> Registered {svg_job_id; ogg_job_id}
     | Already_succeeded svg_job_id, Registered ogg_job_id -> Registered {svg_job_id; ogg_job_id}

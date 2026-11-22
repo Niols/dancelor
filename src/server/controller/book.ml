@@ -174,7 +174,7 @@ let build_pdf env id book_params rendering_params =
   let actor_id = Environment.actor_id env in
   let%lwt book = Model_to_renderer.book_to_renderer_book ~actor_id book book_params in
   let book_pdf_arg = Model_to_renderer.renderer_book_to_renderer_book_pdf_arg book rendering_params in
-  uncurry Job.register_job_and_file <$> Renderer.make_book_pdf book_pdf_arg
+  uncurry (Job.register_job_and_file ~kind: "book-pdf") <$> Renderer.make_book_pdf book_pdf_arg
 
 let build_zip env id book_params rendering_params =
   get_form env id >>= fun book ->
@@ -190,7 +190,7 @@ let build_zip env id book_params rendering_params =
   in
   let sets = NEList.of_list_exn sets in
   let sets_zip_arg = Model_to_renderer.renderer_sets_to_renderer_sets_zip_arg sets rendering_params in
-  uncurry Job.register_job_and_file <$> Renderer.make_sets_zip sets_zip_arg
+  uncurry (Job.register_job_and_file ~kind: "book-zip") <$> Renderer.make_sets_zip sets_zip_arg
 
 (* Dispatch *)
 

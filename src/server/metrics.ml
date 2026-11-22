@@ -33,5 +33,5 @@ let open_file_descriptors =
 let () =
   Prometheus.CollectorRegistry.(register_pre_collect default) (fun () ->
     Prometheus.Gauge.set open_file_descriptors @@
-      float_of_int (try Array.length (Sys.readdir "/proc/self/fd") - 2 with Sys_error _ -> 0)
+      float_of_int (try Array.length (Sys.readdir "/proc/self/fd") with Sys_error _ -> 0)
   )

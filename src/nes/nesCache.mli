@@ -37,3 +37,8 @@ val cleanup :
   unit
 (** Remove from the cache any value that is past its lifetime. Regular cleanup
     also happens automatically on normal use. *)
+
+val size :
+  cache: ('key, 'value) t ->
+  int
+(** The number of elements in the cache. *)

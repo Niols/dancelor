@@ -6,10 +6,18 @@ module Log = (val Logs.src_log @@ Logs.Src.create "server.routine": Logs.LOG)
 (** A stream containing all the versions of the database. It never ends, and
     instead returns all the versions again, after a delay of 10 minutes. *)
 let all_versions =
+  let start_time = ref None in
   Lwt_stream.concat @@
   Lwt_stream.from @@ fun () ->
+  (
+    match !start_time with
+    | None -> ()
+    | Some start_time -> Log.info (fun m -> m "Done crawling all versions for pre-rendering in %.0fs" Datetime.(diff (now ()) start_time))
+  );
   Lwt_unix.sleep 600.;%lwt
-  Log.debug (fun m -> m "Generating the list of all versions for pre-rendering");
+  let now = Datetime.now () in
+  start_time := Some now;
+  Log.info (fun m -> m "Starting to crawl all versions for pre-rendering at %a" Datetime.pp now);
   (some % Lwt_stream.of_list) <$> Database.Version.get_all_forms ()
 
 (** A stream of prerendering jobs for versions in the database. This
@@ -22,11 +30,11 @@ let all_versions_prerendering_job =
       | No_content -> lwt_none
       | _ ->
         let%lwt job =
-          Controller.Job.register_job ~add_pending: false
+          Controller.Job.register_job ~kind: "version-snippets" ~add_pending: false
           <$> Controller.Version.render_snippets version
         in
         match !(job.state) with
-        | Failed _ | Pending -> lwt_some job
+        | Failed _ | Pending _ -> lwt_some job
         | _ -> lwt_none
     )
     all_versions
@@ -57,10 +65,13 @@ let initialiase_job_runners ~threads =
   )
 
 let rec clean_nix_gc_roots () =
-  Log.debug (fun m -> m "Starting cleanup of Nix GC roots");
+  let number_before = Controller.Job.Nix_gc_root.number_of_roots () in
+  Log.info (fun m -> m "Starting cleanup of Nix GC roots; %d roots before" number_before);
   Controller.Job.Nix_gc_root.clean ~older_than_sec: Controller.Job.lifetime_nix_gc_roots;%lwt
-  Log.debug (fun m -> m "Done with cleanup of Nix GC roots; waiting one hour");
-  Lwt_unix.sleep 3600.;%lwt
+  let number_after = Controller.Job.Nix_gc_root.number_of_roots () in
+  let period = Controller.Job.lifetime_nix_gc_roots / 10 in
+  Log.info (fun m -> m "Done with cleanup of Nix GC roots (%d -> %d); waiting %ds" number_before number_after period);
+  Lwt_unix.sleep (float_of_int period);%lwt
   clean_nix_gc_roots ()
 
 let initialise_nix_gc_roots_cleanup () =
