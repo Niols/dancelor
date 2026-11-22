@@ -125,6 +125,7 @@ let registered_jobs_total =
     Prometheus.Counter.labels family [kind; (match cache with `Hit -> "hit" | `Miss -> "miss")]
 
 let register_job ~kind ~add_pending (expr : expr) : job =
+  Log.debug (fun m -> m "register_job ~kind:%s ~add_pending:%b <expr>@\n  expr: %s" kind add_pending (expr_val expr));
   match Cache.get ~cache: job_of_expr ~key: expr with
   | Some job when not (is_failed !(job.state)) ->
     (*  if there is a job for the same expression, but not necessarily the
@@ -143,7 +144,6 @@ let register_job ~kind ~add_pending (expr : expr) : job =
     job
 
 let register_job_and_file ~kind (expr : expr) (file : string) : Job_id.t Endpoints.Job.registration_response =
-  Log.debug (fun m -> m "register_job");
   let job = register_job ~kind ~add_pending: true expr in
   let job_and_file = {id = Job_id.create (); job; file} in
   Cache.set ~cache: job_and_file_of_id ~key: job_and_file.id ~value: job_and_file;
@@ -221,7 +221,9 @@ let run_job job =
   | Succeeded _ -> invalid_arg "run_job: cannot start a job that has already succeeded"
   | Pending {since} ->
     let start_time = Datetime.now () in
-    Prometheus.DefaultHistogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) (Datetime.diff start_time since);
+    let pending_duration = Datetime.diff start_time since in
+    Log.debug (fun m -> m "Running job starting at %a, pending for %.2fs" Datetime.pp start_time pending_duration);
+    Prometheus.DefaultHistogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) pending_duration;
     let%lwt path = Nix_gc_root.make_path () in
     let command = [|"nix-build"; "--impure"; "--out-link"; path; "--expr"; expr_val job.expr|] in
     let process = Lwt_process.open_process_full ("", command) in
@@ -258,7 +260,9 @@ let run_job job =
         | WEXITED 0 -> Succeeded {path}
         | _ -> Failed {status; logs = !clean_stderr}
     );
-    Prometheus.DefaultHistogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) (Datetime.(diff (now ())) start_time);
+    let running_duration = Datetime.(diff (now ())) start_time in
+    Log.debug (fun m -> m "Dune running job in %f.2s, started at %a" running_duration Datetime.pp start_time);
+    Prometheus.DefaultHistogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) running_duration;
     lwt_unit
 
 let get id =
