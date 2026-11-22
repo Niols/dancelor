@@ -62,3 +62,5 @@ let get ~cache ~key =
 
 let set ~cache ~key ~value =
   set' ~cache ~key ~value ~now: (now ())
+
+let size ~cache = Hashtbl.length cache.entries

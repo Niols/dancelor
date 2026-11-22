@@ -22,11 +22,11 @@ let all_versions_prerendering_job =
       | No_content -> lwt_none
       | _ ->
         let%lwt job =
-          Controller.Job.register_job ~add_pending: false
+          Controller.Job.register_job ~kind: "version-snippets" ~add_pending: false
           <$> Controller.Version.render_snippets version
         in
         match !(job.state) with
-        | Failed _ | Pending -> lwt_some job
+        | Failed _ | Pending _ -> lwt_some job
         | _ -> lwt_none
     )
     all_versions

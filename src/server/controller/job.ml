@@ -2,6 +2,7 @@ open Nes_unix
 open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.job": Logs.LOG)
+let namespace = "dancelor_job"
 
 let lifetime_memory_cache = 3600 (* one hour *)
 let lifetime_nix_gc_roots = 24 * 3600 (* one day *)
@@ -43,10 +44,13 @@ module Nix_gc_root = struct
           | Unix.Unix_error (Unix.ENOENT, _, _) -> lwt_unit
       )
       (Sys.readdir dir)
+
+  let number_of_roots () =
+    try Array.length (Sys.readdir dir) with Sys_error _ -> 0
 end
 
 type state =
-  | Pending
+  | Pending of {since: Datetime.t}
   | Running of {process: Lwt_process.process_full; stderr: string list ref}
   | Failed of {status: Unix.process_status; logs: string list}
   | Succeeded of {path: string}
@@ -67,6 +71,7 @@ let expr_val (Expr s) = s
     several things at the same time, while still giving a simple “one job = one
     file” interface to the client. *)
 type job = {
+  kind: string; (** for metrics *)
   expr: expr;
   state: state ref;
 }
@@ -87,26 +92,59 @@ type job_and_file = {
     registered in {!job_of_expr}. *)
 let job_and_file_of_id : (Job_id.t, job_and_file) Cache.t = Cache.create ~lifetime: lifetime_memory_cache ()
 
-let register_job ~add_pending (expr : expr) : job =
+let cache_size =
+  let family =
+    Prometheus.Gauge.v_labels
+      ~namespace
+      ~help: "Number of registered jobs"
+      "cache_size"
+      ~label_names: ["cache"]
+  in
+  fun ~cache ->
+    Prometheus.Gauge.labels family [cache]
+
+let () =
+  let set_cache_size cache value =
+    Prometheus.Gauge.set (cache_size ~cache) (float_of_int value)
+  in
+  Prometheus.CollectorRegistry.(register_pre_collect default) (fun () ->
+    set_cache_size "Nix GC roots" (Nix_gc_root.number_of_roots ());
+    set_cache_size "job_of_expr" (Cache.size ~cache: job_of_expr);
+    set_cache_size "job_and_file_of_id" (Cache.size ~cache: job_and_file_of_id);
+  )
+
+let registered_jobs_total =
+  let family =
+    Prometheus.Counter.v_labels
+      ~namespace
+      ~help: "Number of registered jobs"
+      "registered_jobs_total"
+      ~label_names: ["kind"; "cache_hit"]
+  in
+  fun ~kind ~cache ->
+    Prometheus.Counter.labels family [kind; (match cache with `Hit -> "hit" | `Miss -> "miss")]
+
+let register_job ~kind ~add_pending (expr : expr) : job =
   match Cache.get ~cache: job_of_expr ~key: expr with
   | Some job when not (is_failed !(job.state)) ->
     (*  if there is a job for the same expression, but not necessarily the
         same file, we can just return without starting an actual job; we do
         not do so for failed job in case the failure was transient *)
     Log.debug (fun m -> m "Found existing and non-failed job");
+    Prometheus.Counter.inc_one (registered_jobs_total ~kind ~cache: `Hit);
     job
   | _ ->
     (* otherwise, we really do have to register a new job *)
-    let job = {expr; state = ref Pending} in
-    (* NOTE: we use {!Hashtbl.replace} because {!Hashtbl.add} might keep failed jobs *)
+    let job = {kind; expr; state = ref (Pending {since = Datetime.now ()})} in
     Cache.set ~cache: job_of_expr ~key: expr ~value: job;
     if add_pending then add_pending_job (Some job);
     Log.debug (fun m -> m "Registered new job: %s" (expr_val expr));
+    Prometheus.Counter.inc_one (registered_jobs_total ~kind ~cache: `Miss);
     job
 
-let register_job_and_file (expr : expr) (file : string) : Job_id.t Endpoints.Job.registration_response =
+let register_job_and_file ~kind (expr : expr) (file : string) : Job_id.t Endpoints.Job.registration_response =
   Log.debug (fun m -> m "register_job");
-  let job = register_job ~add_pending: true expr in
+  let job = register_job ~kind ~add_pending: true expr in
   let job_and_file = {id = Job_id.create (); job; file} in
   Cache.set ~cache: job_and_file_of_id ~key: job_and_file.id ~value: job_and_file;
   (* shortcut for when the job is already successful. this is not possible with
@@ -164,12 +202,26 @@ let make_add_nix_log_line clean_stderr =
     if add_line then
       clean_stderr := !clean_stderr @ [clean_nix_log_line line]
 
+let job_duration_seconds =
+  let family =
+    Prometheus.DefaultHistogram.v_labels
+      ~namespace
+      ~help: "Duration of each stage of a job in seconds"
+      "duration_seconds"
+      ~label_names: ["kind"; "state"]
+  in
+  fun ~kind ~state ->
+    let state = match state with `Pending -> "pending" | `Running -> "running" in
+    Prometheus.DefaultHistogram.labels family [kind; state]
+
 let run_job job =
   match !(job.state) with
   | Running _ -> invalid_arg "run_job: cannot start a job that is already started"
   | Failed _ -> invalid_arg "run_job: cannot start a job that has already failed"
   | Succeeded _ -> invalid_arg "run_job: cannot start a job that has already succeeded"
-  | Pending ->
+  | Pending {since} ->
+    let start_time = Datetime.now () in
+    Prometheus.DefaultHistogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) (Datetime.diff start_time since);
     let%lwt path = Nix_gc_root.make_path () in
     let command = [|"nix-build"; "--impure"; "--out-link"; path; "--expr"; expr_val job.expr|] in
     let process = Lwt_process.open_process_full ("", command) in
@@ -206,9 +258,8 @@ let run_job job =
         | WEXITED 0 -> Succeeded {path}
         | _ -> Failed {status; logs = !clean_stderr}
     );
+    Prometheus.DefaultHistogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) (Datetime.(diff (now ())) start_time);
     lwt_unit
-
-let make expr = lwt {expr; state = ref Pending}
 
 let get id =
   match Cache.get ~cache: job_and_file_of_id ~key: id with
@@ -221,7 +272,7 @@ let status id =
   get id >>= fun {job; _} ->
   lwt @@
     match !(job.state) with
-    | Pending -> Endpoints.Job.Status.Pending
+    | Pending _ -> Endpoints.Job.Status.Pending
     | Running {stderr; _} -> Running !stderr
     | Failed {logs; _} -> Failed logs
     | Succeeded _ -> Succeeded
@@ -230,7 +281,7 @@ let file id slug =
   Log.debug (fun m -> m "file %s %s" (Job_id.to_string id) (NesSlug.to_string slug));
   get id >>= fun {job; file; _} ->
   match !(job.state) with
-  | Pending -> Madge_server.shortcut_bad_request "This job is not running yet, you cannot query the file."
+  | Pending _ -> Madge_server.shortcut_bad_request "This job is not running yet, you cannot query the file."
   | Running _ -> Madge_server.shortcut_bad_request "This job is still running, you cannot query the file."
   | Failed _ -> Madge_server.shortcut_bad_request "This job failed, you cannot query the file."
   | Succeeded {path} -> Madge_server.respond_file ~fname: (Filename.concat path file)

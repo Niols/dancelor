@@ -25,7 +25,7 @@ let build_pdf env id set_params rendering_params =
   get_form env id >>= fun set ->
   let%lwt set = Model_to_renderer.set_to_renderer_set set set_params in
   let set_pdf_arg = Model_to_renderer.renderer_set_to_renderer_set_pdf_arg set rendering_params in
-  uncurry Job.register_job_and_file <$> Renderer.make_set_pdf set_pdf_arg
+  uncurry (Job.register_job_and_file ~kind: "set-pdf") <$> Renderer.make_set_pdf set_pdf_arg
 
 (* Dispatch *)
 
