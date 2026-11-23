@@ -109,12 +109,22 @@ let full_initialisation ~reporter loglevel =
 
 let bracket ?(level_before = Debug) ?(level_after = Info) (module Log : Logs.LOG) msg f =
   Log.msg level_before (fun m -> m "%s" (String.capitalize_ascii msg));
-  let v = f () in
-  Log.msg level_after (fun m -> m "Done %s" msg);
-  v
+  try
+    let v = f () in
+    Log.msg level_after (fun m -> m "Done %s" msg);
+    v
+  with
+    | exn ->
+      Log.msg level_after (fun m -> m "Exception while %s: %s" msg (Printexc.to_string exn));
+      raise exn
 
 let bracket_lwt ?(level_before = Debug) ?(level_after = Info) (module Log : Logs.LOG) msg f =
   Log.msg level_before (fun m -> m "%s" (String.capitalize_ascii msg));
-  let%lwt v = f () in
-  Log.msg level_after (fun m -> m "Done %s" msg);
-  lwt v
+  try%lwt
+    let%lwt v = f () in
+    Log.msg level_after (fun m -> m "Done %s" msg);
+    lwt v
+  with
+    | exn ->
+      Log.msg level_after (fun m -> m "Exception while %s: %s" msg (Printexc.to_string exn));
+      Lwt.reraise exn
