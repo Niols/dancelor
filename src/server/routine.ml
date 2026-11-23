@@ -25,16 +25,31 @@ let all_versions =
   Log.info (fun m -> m "Starting to crawl all %d versions for pre-rendering at %a" (List.length all_versions) Datetime.pp now);
   lwt_some @@ Lwt_stream.of_list all_versions
 
+let jobs_ran_total =
+  let family =
+    Prometheus.Counter.v_labels
+      ~namespace: Controller.Job.namespace
+      ~help: "Number of jobs ran since the beginning"
+      "jobs_ran_total"
+      ~label_names: ["queue"; "result"]
+  in
+  fun queue result ->
+    Prometheus.Counter.labels family [queue; (match result with `Success -> "success" | `Error -> "error" | `Skipped reason -> "skipped " ^ reason)]
+
+let prerender_queue_name = "prerender"
+
 (** A stream of prerendering jobs for versions in the database. This
     contains only pending and failed jobs, the others do not need to
     run again. *)
-let all_versions_prerendering_job =
+let all_versions_prerendering_jobs =
+  let name = "all_versions_prerendering_jobs" in
   Lwt_stream.filter_map_s
     (fun (version : Version_form.t) ->
       try%lwt
         match version.content with
         | No_content ->
-          Log.debug (fun m -> m "all_versions_prerendering_job: skipping version because no content");
+          Log.debug (fun m -> m "%s: skipping version because no content" name);
+          Prometheus.Counter.inc_one (jobs_ran_total prerender_queue_name (`Skipped "content"));
           lwt_none
         | _ ->
           let%lwt job =
@@ -43,28 +58,19 @@ let all_versions_prerendering_job =
           in
           match !(job.state) with
           | (Failed _ | Pending _) as state ->
-            Log.debug (fun m -> m "all_versions_prerendering_job: keeping version because state is %a" Controller.Job.pp_state state);
+            Log.debug (fun m -> m "%s: keeping version because state is %a" name Controller.Job.pp_state state);
             lwt_some job
           | state ->
-            Log.debug (fun m -> m "all_versions_prerendering_job: skipping version because state is %a" Controller.Job.pp_state state);
+            Log.debug (fun m -> m "%s: skipping version because state is %a" name Controller.Job.pp_state state);
+            Prometheus.Counter.inc_one (jobs_ran_total prerender_queue_name (`Skipped "state"));
             lwt_none
       with
         | exn ->
-          Logger.log_exn (module Log) "all_versions_prerendering_job: skipping version because of exception" exn;
+          Logger.log_exn (module Log) (spf "%s: skipping version because of exception" name) exn;
+          Prometheus.Counter.inc_one (jobs_ran_total prerender_queue_name (`Skipped "exn"));
           lwt_none
     )
     all_versions
-
-let jobs_ran =
-  let family =
-    Prometheus.Counter.v_labels
-      ~namespace: Controller.Job.namespace
-      ~help: "Number of jobs ran since the beginning"
-      "jobs_ran_total"
-      ~label_names: ["queue"; "result"]
-  in
-  fun ~queue ~result ->
-    Prometheus.Counter.labels family [queue; (match result with `Success -> "success" | `Error -> "error")]
 
 let run_jobs_from ~queue_name ~max_concurrency stream =
   Lwt_stream.iter_n
@@ -74,11 +80,11 @@ let run_jobs_from ~queue_name ~max_concurrency stream =
         Logger.bracket_lwt ~level_after: Debug (module Log) (spf "running job in queue %s: %s" queue_name Controller.Job.(expr_val job.expr)) (fun () ->
           Controller.Job.run_job job
         );%lwt
-        Prometheus.Counter.inc_one (jobs_ran ~queue: queue_name ~result: `Success);
+        Prometheus.Counter.inc_one (jobs_ran_total queue_name `Success);
         lwt_unit
       with
         | exn ->
-          Prometheus.Counter.inc_one (jobs_ran ~queue: queue_name ~result: `Error);
+          Prometheus.Counter.inc_one (jobs_ran_total queue_name `Error);
           !(Lwt.async_exception_hook) exn;
           lwt_unit
     )
@@ -95,7 +101,7 @@ let rec initialiase_job_runners ~threads =
      it produces is not worth the trouble. *)
   Lwt.async (fun () ->
     Lwt.pick [
-      run_jobs_from ~queue_name: "prerender" ~max_concurrency: 1 all_versions_prerendering_job;
+      run_jobs_from ~queue_name: prerender_queue_name ~max_concurrency: 1 all_versions_prerendering_jobs;
       run_jobs_from ~queue_name: "pending" ~max_concurrency: threads Controller.Job.pending_jobs;
     ];%lwt
     Log.err (fun m -> m "Some rendering runner died. Restarting.");
