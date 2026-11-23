@@ -51,9 +51,16 @@ end
 
 type state =
   | Pending of {since: Datetime.t}
-  | Running of {process: Lwt_process.process_full; stderr: string list ref}
-  | Failed of {status: Unix.process_status; logs: string list}
+  | Running of {
+      process: Lwt_process.process_full; [@opaque]
+      stderr: string list ref; [@opaque]
+    }
+  | Failed of {
+      status: Unix.process_status; [@opaque]
+      logs: string list; [@opaque]
+    }
   | Succeeded of {path: string}
+[@@deriving show]
 
 let is_failed = function Failed _ -> true | _ -> false
 

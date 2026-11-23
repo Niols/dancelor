@@ -32,15 +32,21 @@ let all_versions_prerendering_job =
   Lwt_stream.filter_map_s
     (fun (version : Version_form.t) ->
       match version.content with
-      | No_content -> lwt_none
+      | No_content ->
+        Log.debug (fun m -> m "all_versions_prerendering_job: skipping version because no content");
+        lwt_none
       | _ ->
         let%lwt job =
           Controller.Job.register_job ~kind: "version-snippets" ~add_pending: false
           <$> Controller.Version.render_snippets version
         in
         match !(job.state) with
-        | Failed _ | Pending _ -> lwt_some job
-        | _ -> lwt_none
+        | (Failed _ | Pending _) as state ->
+          Log.debug (fun m -> m "all_versions_prerendering_job: keeping version because state is %a" Controller.Job.pp_state state);
+          lwt_some job
+        | state ->
+          Log.debug (fun m -> m "all_versions_prerendering_job: skipping version because state is %a" Controller.Job.pp_state state);
+          lwt_none
     )
     all_versions
 
@@ -55,7 +61,7 @@ let jobs_ran =
   fun ~queue ~result ->
     Prometheus.Counter.labels family [queue; (match result with `Success -> "success" | `Error -> "error")]
 
-let run_jobs_from ~queue_name ~max_concurrency =
+let run_jobs_from ~queue_name ~max_concurrency stream =
   Lwt_stream.iter_n
     ~max_concurrency
     (fun job ->
@@ -71,6 +77,9 @@ let run_jobs_from ~queue_name ~max_concurrency =
           !(Lwt.async_exception_hook) exn;
           lwt_unit
     )
+    stream;%lwt
+  Log.err (fun m -> m "Runner for queue %s is done" queue_name);
+  assert false
 
 let initialiase_job_runners ~threads =
   (* NOTE: There used to be something fancy where we had exactly
