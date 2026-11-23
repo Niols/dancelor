@@ -107,14 +107,14 @@ let full_initialisation ~reporter loglevel =
   initialise loglevel;
   Log.info (fun m -> m "Full initialisation of logging done")
 
-let bracket (module Log : Logs.LOG) msg f =
-  Log.debug (fun m -> m "%s" (String.capitalize_ascii msg));
+let bracket ?(level_before = Debug) ?(level_after = Info) (module Log : Logs.LOG) msg f =
+  Log.msg level_before (fun m -> m "%s" (String.capitalize_ascii msg));
   let v = f () in
-  Log.info (fun m -> m "Done %s" msg);
+  Log.msg level_after (fun m -> m "Done %s" msg);
   v
 
-let bracket_lwt (module Log : Logs.LOG) msg f =
-  Log.debug (fun m -> m "%s" (String.capitalize_ascii msg));
+let bracket_lwt ?(level_before = Debug) ?(level_after = Info) (module Log : Logs.LOG) msg f =
+  Log.msg level_before (fun m -> m "%s" (String.capitalize_ascii msg));
   let%lwt v = f () in
-  Log.info (fun m -> m "Done %s" msg);
+  Log.msg level_after (fun m -> m "Done %s" msg);
   lwt v
