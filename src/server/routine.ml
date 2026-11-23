@@ -21,8 +21,9 @@ let all_versions =
   Lwt_unix.sleep 600.;%lwt
   let now = Datetime.now () in
   start_time := Some now;
-  Log.info (fun m -> m "Starting to crawl all versions for pre-rendering at %a" Datetime.pp now);
-  (some % Lwt_stream.of_list) <$> Database.Version.get_all_forms ()
+  let%lwt all_versions = Database.Version.get_all_forms () in
+  Log.info (fun m -> m "Starting to crawl all %d versions for pre-rendering at %a" (List.length all_versions) Datetime.pp now);
+  lwt_some @@ Lwt_stream.of_list all_versions
 
 (** A stream of prerendering jobs for versions in the database. This
     contains only pending and failed jobs, the others do not need to
@@ -43,15 +44,32 @@ let all_versions_prerendering_job =
     )
     all_versions
 
-let run_jobs_from ~tag ~max_concurrency =
+let jobs_ran =
+  let family =
+    Prometheus.Counter.v_labels
+      ~namespace: Controller.Job.namespace
+      ~help: "Number of jobs ran since the beginning"
+      "jobs_ran_total"
+      ~label_names: ["queue"; "result"]
+  in
+  fun ~queue ~result ->
+    Prometheus.Counter.labels family [queue; (match result with `Success -> "success" | `Error -> "error")]
+
+let run_jobs_from ~queue_name ~max_concurrency =
   Lwt_stream.iter_n
     ~max_concurrency
     (fun job ->
       try%lwt
-        Log.debug (fun m -> m "run_jobs_from %s: %s" tag Controller.Job.(expr_val job.expr));
-        Controller.Job.run_job job
+        Logger.bracket_lwt ~level_after: Debug (module Log) (spf "running job in queue %s: %s" queue_name Controller.Job.(expr_val job.expr)) (fun () ->
+          Controller.Job.run_job job
+        );%lwt
+        Prometheus.Counter.inc_one (jobs_ran ~queue: queue_name ~result: `Success);
+        lwt_unit
       with
-        | exn -> !(Lwt.async_exception_hook) exn; lwt_unit
+        | exn ->
+          Prometheus.Counter.inc_one (jobs_ran ~queue: queue_name ~result: `Error);
+          !(Lwt.async_exception_hook) exn;
+          lwt_unit
     )
 
 let initialiase_job_runners ~threads =
@@ -63,8 +81,8 @@ let initialiase_job_runners ~threads =
      it produces is not worth the trouble. *)
   Lwt.async (fun () ->
     Lwt.join [
-      run_jobs_from ~tag: "prerender" ~max_concurrency: 1 all_versions_prerendering_job;
-      run_jobs_from ~tag: "pending" ~max_concurrency: threads Controller.Job.pending_jobs;
+      run_jobs_from ~queue_name: "prerender" ~max_concurrency: 1 all_versions_prerendering_job;
+      run_jobs_from ~queue_name: "pending" ~max_concurrency: threads Controller.Job.pending_jobs;
     ]
   )
 
