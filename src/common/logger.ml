@@ -128,3 +128,7 @@ let bracket_lwt ?(level_before = Debug) ?(level_after = Info) (module Log : Logs
     | exn ->
       Log.msg level_after (fun m -> m "Exception while %s: %s" msg (Printexc.to_string exn));
       Lwt.reraise exn
+
+let log_exn (module Log : Logs.LOG) msg exn =
+  Log.err @@ fun m ->
+  m "%a" (Format.pp_multiline_sensible msg) (Printexc.to_string exn ^ "\n" ^ (Printexc.get_backtrace ()))

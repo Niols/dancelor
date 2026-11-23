@@ -1257,7 +1257,7 @@ let apply_migrations ?(on_remaining_migrations = log_remaining_migrations) () =
               Log.err (fun m -> m "%a" (Format.pp_multiline_sensible @@ spf "Could not apply migration %S" migration.name) msg);
               raise (Migration_failed (migration.name, exn))
             | exn ->
-              Log.err (fun m -> m "Could not apply migration %S:\n%s\n%s" migration.name (Printexc.to_string exn) (Printexc.get_backtrace ()));
+              Dancelor_common.Logger.log_exn (module Log) (spf "Could not apply migration %S" migration.name) exn;
               raise (Migration_failed (migration.name, exn))
         );%lwt
         ignore <$> Migrations_sql.register_migration db ~name: migration.name

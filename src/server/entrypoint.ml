@@ -5,10 +5,6 @@ open Dancelor_common
 
 module Log = (val Logs.src_log @@ Logs.Src.create "server": Logs.LOG)
 
-let log_exn ~msg exn =
-  Log.err @@ fun m ->
-  m "%a" (Format.pp_multiline_sensible msg) (Printexc.to_string exn ^ "\n" ^ (Printexc.get_backtrace ()))
-
 include Madge_server.Make_apply_controller(struct
   include Endpoints.Api
   type env = Environment.t
@@ -27,11 +23,11 @@ let catchall ~place ~die fun_ =
         Log.err (fun m -> m "Migration %S failed" name);
         die ()
       | exn ->
-        log_exn ~msg: ("Uncaught Lwt exception in " ^ place) exn;
+        Logger.log_exn (module Log) ("Uncaught Lwt exception in " ^ place) exn;
         die ()
   with
     | exn ->
-      log_exn ~msg: ("Uncaught exception in " ^ place) exn;
+      Logger.log_exn (module Log) ("Uncaught exception in " ^ place) exn;
       die ()
 
 let make_log_die reason () =
@@ -45,7 +41,7 @@ let initialise_async_exception_hook =
     | Unix.Unix_error (Unix.EPIPE, _, _) ->
       Log.warn (fun m -> m "Connection closed by the client")
     | exn ->
-      log_exn ~msg: "Uncaught asynchronous exception" exn
+      Logger.log_exn (module Log) "Uncaught asynchronous exception" exn
   in
   fun ~early ->
     Lwt.async_exception_hook :=

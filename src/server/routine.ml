@@ -31,21 +31,26 @@ let all_versions =
 let all_versions_prerendering_job =
   Lwt_stream.filter_map_s
     (fun (version : Version_form.t) ->
-      match version.content with
-      | No_content ->
-        Log.debug (fun m -> m "all_versions_prerendering_job: skipping version because no content");
-        lwt_none
-      | _ ->
-        let%lwt job =
-          Controller.Job.register_job ~kind: "version-snippets" ~add_pending: false
-          <$> Controller.Version.render_snippets version
-        in
-        match !(job.state) with
-        | (Failed _ | Pending _) as state ->
-          Log.debug (fun m -> m "all_versions_prerendering_job: keeping version because state is %a" Controller.Job.pp_state state);
-          lwt_some job
-        | state ->
-          Log.debug (fun m -> m "all_versions_prerendering_job: skipping version because state is %a" Controller.Job.pp_state state);
+      try%lwt
+        match version.content with
+        | No_content ->
+          Log.debug (fun m -> m "all_versions_prerendering_job: skipping version because no content");
+          lwt_none
+        | _ ->
+          let%lwt job =
+            Controller.Job.register_job ~kind: "version-snippets" ~add_pending: false
+            <$> Controller.Version.render_snippets version
+          in
+          match !(job.state) with
+          | (Failed _ | Pending _) as state ->
+            Log.debug (fun m -> m "all_versions_prerendering_job: keeping version because state is %a" Controller.Job.pp_state state);
+            lwt_some job
+          | state ->
+            Log.debug (fun m -> m "all_versions_prerendering_job: skipping version because state is %a" Controller.Job.pp_state state);
+            lwt_none
+      with
+        | exn ->
+          Logger.log_exn (module Log) "all_versions_prerendering_job: skipping version because of exception" exn;
           lwt_none
     )
     all_versions
@@ -81,7 +86,7 @@ let run_jobs_from ~queue_name ~max_concurrency stream =
   Log.err (fun m -> m "Runner for queue %s is done" queue_name);
   assert false
 
-let initialiase_job_runners ~threads =
+let rec initialiase_job_runners ~threads =
   (* NOTE: There used to be something fancy where we had exactly
      [threads] threads, and one would pick up pre-rendering jobs when
      there was no pending job. As it turns out, reading in several
@@ -89,10 +94,13 @@ let initialiase_job_runners ~threads =
      duplicates. There are ways around it, but the amount of code that
      it produces is not worth the trouble. *)
   Lwt.async (fun () ->
-    Lwt.join [
+    Lwt.pick [
       run_jobs_from ~queue_name: "prerender" ~max_concurrency: 1 all_versions_prerendering_job;
       run_jobs_from ~queue_name: "pending" ~max_concurrency: threads Controller.Job.pending_jobs;
-    ]
+    ];%lwt
+    Log.err (fun m -> m "Some rendering runner died. Restarting.");
+    initialiase_job_runners ~threads;
+    lwt_unit
   )
 
 let rec clean_nix_gc_roots () =
