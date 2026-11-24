@@ -109,18 +109,20 @@ let rec initialiase_job_runners ~threads =
     lwt_unit
   )
 
+let clean_nix_gc_roots_period = Time.mult Controller.Job.lifetime_nix_gc_roots 0.10
+
 let rec clean_nix_gc_roots () =
   let number_before = Controller.Job.Nix_gc_root.number_of_roots () in
   Log.info (fun m -> m "Starting cleanup of Nix GC roots; %d roots before" number_before);
   Controller.Job.Nix_gc_root.clean ~older_than_sec: Controller.Job.lifetime_nix_gc_roots;%lwt
   let number_after = Controller.Job.Nix_gc_root.number_of_roots () in
-  let period = Time.mult Controller.Job.lifetime_nix_gc_roots 0.10 in
-  Log.info (fun m -> m "Done with cleanup of Nix GC roots (%d -> %d); waiting %a" number_before number_after Time.pp_duration_pretty period);
-  Lwt_unix.sleep (Time.duration_to_seconds period);%lwt
+  Log.info (fun m -> m "Done with cleanup of Nix GC roots (%d -> %d); waiting %a" number_before number_after Time.pp_duration_pretty clean_nix_gc_roots_period);
+  Lwt_unix.sleep (Time.duration_to_seconds clean_nix_gc_roots_period);%lwt
   clean_nix_gc_roots ()
 
 let initialise_nix_gc_roots_cleanup () =
   Lwt.async (fun () ->
+    Lwt_unix.sleep (Time.duration_to_seconds clean_nix_gc_roots_period);%lwt
     clean_nix_gc_roots ()
   )
 
