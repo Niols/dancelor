@@ -17,7 +17,7 @@ type session = {
 }
 
 let make_new_session () =
-  lwt {actor = Anonymous; expires = Datetime.make_in_the_future (float_of_int session_max_age)}
+  lwt {actor = Anonymous; expires = Datetime.make_in_the_future (Datetime.duration_of_seconds' session_max_age)}
 
 (** Refresh the session by getting the actor again from the database and bumping
     the expiry date. *)
@@ -27,7 +27,7 @@ let refresh_session session =
     | Anonymous -> lwt Anonymous
     | Signed_in actor -> signed_in % Option.get <$> Database.User.get_actor actor.id
   in
-  let expires = Datetime.make_in_the_future (float_of_int session_max_age) in
+  let expires = Datetime.make_in_the_future (Datetime.duration_of_seconds' session_max_age) in
   lwt {actor; expires}
 
 type t = {
@@ -206,7 +206,7 @@ let sign_in env (actor : Actor.t) ~remember_me =
       let hashed_token = Remember_me_token_hash.make ~clear: token in
       (* the max date stored in database is one more minute than the max age that
          will be sent as cookie, to be sure not to lie to our clients *)
-      let max_date = Datetime.make_in_the_future (float_of_int @@ 60 + remember_me_token_max_age) in
+      let max_date = Datetime.make_in_the_future (Datetime.duration_of_seconds' @@ 60 + remember_me_token_max_age) in
       (* let remember_me_token = Some (hashed_token, max_date) in *)
       Database.User.add_remember_me_token actor.id key hashed_token max_date
     );%lwt

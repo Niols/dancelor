@@ -4,8 +4,8 @@ open Dancelor_common
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.job": Logs.LOG)
 let namespace = "dancelor_job"
 
-let lifetime_memory_cache = 3600 (* one hour *)
-let lifetime_nix_gc_roots = 24 * 3600 (* one day *)
+let lifetime_memory_cache = Datetime.duration_of_hours 1.
+let lifetime_nix_gc_roots = Datetime.duration_of_days 1.
 
 (** Dancelor builds objects with Nix and leaves them in the Nix store, relying
     on the Nix garbage collector to clean them up eventually. However, the Nix
@@ -29,14 +29,14 @@ module Nix_gc_root = struct
       argument. This does not remove anything from the Nix store but releases
       the root on them such that the Nix GC may decide to clean them up. *)
   let clean ~older_than_sec =
-    let cutoff = Unix.time () -. float_of_int older_than_sec in
+    let cutoff = Datetime.make_in_the_past older_than_sec in
     Monadise_lwt.lift_1_1
       Array.iter
       (fun fname ->
         let path = Filename.concat dir fname in
         try%lwt
           let%lwt stat = Lwt_unix.lstat path in
-          if stat.Unix.st_mtime < cutoff then
+          if Datetime.compare (Datetime.of_timestamp stat.Unix.st_mtime) cutoff < 0 then
             Lwt_unix.unlink path
           else
             lwt_unit
@@ -242,8 +242,8 @@ let run_job job =
   | Pending {since} ->
     let start_time = Datetime.now () in
     let pending_duration = Datetime.diff start_time since in
-    Log.debug (fun m -> m "Running job starting at %a, pending for %.2fs" Datetime.pp start_time pending_duration);
-    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) pending_duration;
+    Log.debug (fun m -> m "Running job starting at %a, pending for %a" Datetime.pp start_time Datetime.pp_duration_pretty pending_duration);
+    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) (Datetime.duration_to_seconds pending_duration);
     let%lwt path = Nix_gc_root.make_path () in
     let command = [|"nix-build"; "--impure"; "--out-link"; path; "--expr"; expr_val job.expr|] in
     let process = Lwt_process.open_process_full ("", command) in
@@ -281,8 +281,8 @@ let run_job job =
         | _ -> Failed {status; logs = !clean_stderr}
     );
     let running_duration = Datetime.(diff (now ())) start_time in
-    Log.debug (fun m -> m "Dune running job in %f.2s, started at %a" running_duration Datetime.pp start_time);
-    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) running_duration;
+    Log.debug (fun m -> m "Dune running job in %a, started at %a" Datetime.pp_duration_pretty running_duration Datetime.pp start_time);
+    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) (Datetime.duration_to_seconds running_duration);
     lwt_unit
 
 let get id =

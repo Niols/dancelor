@@ -14,9 +14,9 @@ let all_versions =
     | None -> ()
     | Some start_time ->
       let duration = Datetime.(diff (now ()) start_time) in
-      Log.info (fun m -> m "Done crawling all versions for pre-rendering in %.0fs" duration);
-      if duration >= 2. *. float_of_int Controller.Job.lifetime_memory_cache then
-        Log.warn (fun m -> m "The pre-rendering crawl takes too long compared to the in-memory cache's lifetime for comfort. Duration: %.0fs; cache's lifetime: %ds" duration Controller.Job.lifetime_memory_cache)
+      Log.info (fun m -> m "Done crawling all versions for pre-rendering in %a" Datetime.pp_duration_pretty duration);
+      if Datetime.compare_duration duration (Datetime.mult Controller.Job.lifetime_memory_cache 2.) >= 0 then
+        Log.warn (fun m -> m "The pre-rendering crawl takes too long compared to the in-memory cache's lifetime for comfort. Took %a, while the cache's lifetime is %a" Datetime.pp_duration_pretty duration Datetime.pp_duration_pretty Controller.Job.lifetime_memory_cache)
   );
   Lwt_unix.sleep 600.;%lwt
   let now = Datetime.now () in
@@ -114,9 +114,9 @@ let rec clean_nix_gc_roots () =
   Log.info (fun m -> m "Starting cleanup of Nix GC roots; %d roots before" number_before);
   Controller.Job.Nix_gc_root.clean ~older_than_sec: Controller.Job.lifetime_nix_gc_roots;%lwt
   let number_after = Controller.Job.Nix_gc_root.number_of_roots () in
-  let period = Controller.Job.lifetime_nix_gc_roots / 10 in
-  Log.info (fun m -> m "Done with cleanup of Nix GC roots (%d -> %d); waiting %ds" number_before number_after period);
-  Lwt_unix.sleep (float_of_int period);%lwt
+  let period = Datetime.mult Controller.Job.lifetime_nix_gc_roots 0.10 in
+  Log.info (fun m -> m "Done with cleanup of Nix GC roots (%d -> %d); waiting %a" number_before number_after Datetime.pp_duration_pretty period);
+  Lwt_unix.sleep (Datetime.duration_to_seconds period);%lwt
   clean_nix_gc_roots ()
 
 let initialise_nix_gc_roots_cleanup () =
