@@ -44,11 +44,12 @@ let prerender_queue_name = "prerender"
 let all_versions_prerendering_jobs =
   let name = "all_versions_prerendering_jobs" in
   Lwt_stream.filter_map_s
-    (fun ({id = _; form = version}: (Version_id.t, Version_form.t) With_id.t) ->
+    (fun ({id; form = version}: (Version_id.t, Version_form.t) With_id.t) ->
+      let version_name = spf "%S (%s)" version.tune.name (Id.to_string id) in
       try%lwt
         match version.content with
         | No_content ->
-          Log.debug (fun m -> m "%s: skipping version because no content" name);
+          Log.debug (fun m -> m "%s: skipping %s because no content" name version_name);
           Prometheus.Counter.inc_one (jobs_ran_total prerender_queue_name (`Skipped "content"));
           lwt_none
         | _ ->
@@ -58,15 +59,15 @@ let all_versions_prerendering_jobs =
           in
           match !(job.state) with
           | (Failed _ | Pending _) as state ->
-            Log.debug (fun m -> m "%s: keeping version because state is %a" name Controller.Job.pp_state state);
+            Log.debug (fun m -> m "%s: keeping %s because state is %a" name version_name Controller.Job.pp_state state);
             lwt_some job
           | state ->
-            Log.debug (fun m -> m "%s: skipping version because state is %a" name Controller.Job.pp_state state);
+            Log.debug (fun m -> m "%s: skipping %s because state is %a" name version_name Controller.Job.pp_state state);
             Prometheus.Counter.inc_one (jobs_ran_total prerender_queue_name (`Skipped "state"));
             lwt_none
       with
         | exn ->
-          Logger.log_exn (module Log) (spf "%s: skipping version because of exception" name) exn;
+          Logger.log_exn (module Log) (spf "%s: skipping %s because of exception" name version_name) exn;
           Prometheus.Counter.inc_one (jobs_ran_total prerender_queue_name (`Skipped "exn"));
           lwt_none
     )
