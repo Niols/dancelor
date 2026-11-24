@@ -41,7 +41,7 @@ let update env id (group : Group_form.t) =
   Database.Group.update db id group
 
 let cache : (Environment.cache_key * Group_query.t, (Group_row.t * float) Search_result.t Lwt.t) Cache.t =
-  Cache.create ~lifetime: (Datetime.duration_of_minutes 1.) ()
+  Cache.create ~lifetime: (Time.duration_of_minutes 1.) ()
 
 let search' env query =
   Cache.use ~cache ~key: (Environment.cache_key env, query) @@ fun () ->

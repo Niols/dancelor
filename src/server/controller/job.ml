@@ -4,8 +4,8 @@ open Dancelor_common
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.job": Logs.LOG)
 let namespace = "dancelor_job"
 
-let lifetime_memory_cache = Datetime.duration_of_hours 1.
-let lifetime_nix_gc_roots = Datetime.duration_of_days 1.
+let lifetime_memory_cache = Time.duration_of_hours 1.
+let lifetime_nix_gc_roots = Time.duration_of_days 1.
 
 (** Dancelor builds objects with Nix and leaves them in the Nix store, relying
     on the Nix garbage collector to clean them up eventually. However, the Nix
@@ -29,14 +29,14 @@ module Nix_gc_root = struct
       argument. This does not remove anything from the Nix store but releases
       the root on them such that the Nix GC may decide to clean them up. *)
   let clean ~older_than_sec =
-    let cutoff = Datetime.make_in_the_past older_than_sec in
+    let cutoff = Time.make_in_the_past older_than_sec in
     Monadise_lwt.lift_1_1
       Array.iter
       (fun fname ->
         let path = Filename.concat dir fname in
         try%lwt
           let%lwt stat = Lwt_unix.lstat path in
-          if Datetime.compare (Datetime.of_timestamp stat.Unix.st_mtime) cutoff < 0 then
+          if Time.compare (Time.of_timestamp stat.Unix.st_mtime) cutoff < 0 then
             Lwt_unix.unlink path
           else
             lwt_unit
@@ -50,7 +50,7 @@ module Nix_gc_root = struct
 end
 
 type state =
-  | Pending of {since: Datetime.t}
+  | Pending of {since: Time.t}
   | Running of {
       process: Lwt_process.process_full; [@opaque]
       stderr: string list ref; [@opaque]
@@ -143,7 +143,7 @@ let register_job ~kind ~add_pending (expr : expr) : job =
     job
   | _ ->
     (* otherwise, we really do have to register a new job *)
-    let job = {kind; expr; state = ref (Pending {since = Datetime.now ()})} in
+    let job = {kind; expr; state = ref (Pending {since = Time.now ()})} in
     Cache.set ~cache: job_of_expr ~key: expr ~value: job;
     if add_pending then add_pending_job (Some job);
     Log.debug (fun m -> m "Registered new job: %s" (expr_val expr));
@@ -240,10 +240,10 @@ let run_job job =
   | Failed _ -> invalid_arg "run_job: cannot start a job that has already failed"
   | Succeeded _ -> invalid_arg "run_job: cannot start a job that has already succeeded"
   | Pending {since} ->
-    let start_time = Datetime.now () in
-    let pending_duration = Datetime.diff start_time since in
-    Log.debug (fun m -> m "Running job starting at %a, pending for %a" Datetime.pp start_time Datetime.pp_duration_pretty pending_duration);
-    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) (Datetime.duration_to_seconds pending_duration);
+    let start_time = Time.now () in
+    let pending_duration = Time.diff start_time since in
+    Log.debug (fun m -> m "Running job starting at %a, pending for %a" Time.pp start_time Time.pp_duration_pretty pending_duration);
+    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Pending) (Time.duration_to_seconds pending_duration);
     let%lwt path = Nix_gc_root.make_path () in
     let command = [|"nix-build"; "--impure"; "--out-link"; path; "--expr"; expr_val job.expr|] in
     let process = Lwt_process.open_process_full ("", command) in
@@ -280,9 +280,9 @@ let run_job job =
         | WEXITED 0 -> Succeeded {path}
         | _ -> Failed {status; logs = !clean_stderr}
     );
-    let running_duration = Datetime.(diff (now ())) start_time in
-    Log.debug (fun m -> m "Dune running job in %a, started at %a" Datetime.pp_duration_pretty running_duration Datetime.pp start_time);
-    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) (Datetime.duration_to_seconds running_duration);
+    let running_duration = Time.duration_to_now start_time in
+    Log.debug (fun m -> m "Dune running job in %a, started at %a" Time.pp_duration_pretty running_duration Time.pp start_time);
+    Exponential_10ms_100s_histogram.observe (job_duration_seconds ~kind: job.kind ~state: `Running) (Time.duration_to_seconds running_duration);
     lwt_unit
 
 let get id =

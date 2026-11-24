@@ -13,16 +13,16 @@ let all_versions =
     match !start_time with
     | None -> ()
     | Some start_time ->
-      let duration = Datetime.(diff (now ()) start_time) in
-      Log.info (fun m -> m "Done crawling all versions for pre-rendering in %a" Datetime.pp_duration_pretty duration);
-      if Datetime.compare_duration duration (Datetime.mult Controller.Job.lifetime_memory_cache 2.) >= 0 then
-        Log.warn (fun m -> m "The pre-rendering crawl takes too long compared to the in-memory cache's lifetime for comfort. Took %a, while the cache's lifetime is %a" Datetime.pp_duration_pretty duration Datetime.pp_duration_pretty Controller.Job.lifetime_memory_cache)
+      let duration = Time.duration_to_now start_time in
+      Log.info (fun m -> m "Done crawling all versions for pre-rendering in %a" Time.pp_duration_pretty duration);
+      if Time.compare_duration duration (Time.mult Controller.Job.lifetime_memory_cache 2.) >= 0 then
+        Log.warn (fun m -> m "The pre-rendering crawl takes too long compared to the in-memory cache's lifetime for comfort. Took %a, while the cache's lifetime is %a" Time.pp_duration_pretty duration Time.pp_duration_pretty Controller.Job.lifetime_memory_cache)
   );
   Lwt_unix.sleep 600.;%lwt
-  let now = Datetime.now () in
+  let now = Time.now () in
   start_time := Some now;
   let%lwt all_versions = Database.Version.get_all_forms () in
-  Log.info (fun m -> m "Starting to crawl all %d versions for pre-rendering at %a" (List.length all_versions) Datetime.pp now);
+  Log.info (fun m -> m "Starting to crawl all %d versions for pre-rendering at %a" (List.length all_versions) Time.pp now);
   lwt_some @@ Lwt_stream.of_list all_versions
 
 let jobs_ran_total =
@@ -114,9 +114,9 @@ let rec clean_nix_gc_roots () =
   Log.info (fun m -> m "Starting cleanup of Nix GC roots; %d roots before" number_before);
   Controller.Job.Nix_gc_root.clean ~older_than_sec: Controller.Job.lifetime_nix_gc_roots;%lwt
   let number_after = Controller.Job.Nix_gc_root.number_of_roots () in
-  let period = Datetime.mult Controller.Job.lifetime_nix_gc_roots 0.10 in
-  Log.info (fun m -> m "Done with cleanup of Nix GC roots (%d -> %d); waiting %a" number_before number_after Datetime.pp_duration_pretty period);
-  Lwt_unix.sleep (Datetime.duration_to_seconds period);%lwt
+  let period = Time.mult Controller.Job.lifetime_nix_gc_roots 0.10 in
+  Log.info (fun m -> m "Done with cleanup of Nix GC roots (%d -> %d); waiting %a" number_before number_after Time.pp_duration_pretty period);
+  Lwt_unix.sleep (Time.duration_to_seconds period);%lwt
   clean_nix_gc_roots ()
 
 let initialise_nix_gc_roots_cleanup () =

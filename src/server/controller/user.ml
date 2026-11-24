@@ -35,7 +35,7 @@ let update env id (user : User_form.t) =
   Database.User.update id user
 
 let cache : (Environment.cache_key * User_query.t, (User_row.t * float) Search_result.t Lwt.t) Cache.t =
-  Cache.create ~lifetime: (Datetime.duration_of_minutes 1.) ()
+  Cache.create ~lifetime: (Time.duration_of_minutes 1.) ()
 
 let search' env query =
   Cache.use ~cache ~key: (Environment.cache_key env, query) @@ fun () ->
@@ -86,7 +86,7 @@ let sign_out env =
   | Anonymous -> lwt_unit
   | Signed_in actor -> Environment.sign_out env actor
 
-let three_days = Datetime.duration_of_days 3.
+let three_days = Time.duration_of_days 3.
 
 let create env (user : User_form.t) =
   Shared.assert_can_administrate env @@ fun _admin ->
@@ -94,7 +94,7 @@ let create env (user : User_form.t) =
   (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
      is only available on the server side (NesHashedSecretUnix), not in common code. *)
   let password_reset_token_hash = Password_reset_token_hash.make ~clear: token in
-  let password_reset_token_max_date = Datetime.make_in_the_future three_days in
+  let password_reset_token_max_date = Time.make_in_the_future three_days in
   let%lwt id =
     Database.User.create
       user
@@ -116,7 +116,7 @@ let prepare_reset_password env username =
     (* NOTE: We should use Password_reset_token_hashed.make here, but HashedSecret.make
        is only available on the server side (NesHashedSecretUnix), not in common code. *)
     let hashed_token = Password_reset_token_hash.make ~clear: token in
-    let max_date = Datetime.make_in_the_future three_days in
+    let max_date = Time.make_in_the_future three_days in
     Database.User.set_password_reset_token actor.id hashed_token max_date;%lwt
     Log.info (fun m -> m "Password reset token generated for user `%s`." (Username.to_string username));
     lwt token
@@ -133,7 +133,7 @@ let reset_password username token password =
     | None ->
       Log.info (fun m -> m "Rejecting because of lack of token.");
       Madge_server.shortcut_forbidden_no_leak ()
-    | Some (_, token_date) when Datetime.(compare_duration (duration_to_now token_date) three_days) > 0 ->
+    | Some (_, token_date) when Time.(compare_duration (duration_to_now token_date) three_days) > 0 ->
       Log.info (fun m -> m "Rejecting because token is too old.");
       Madge_server.shortcut_forbidden_no_leak ()
     | Some (hashed_token, _) ->

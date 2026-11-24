@@ -11,6 +11,7 @@ module Action = Action
 module Documentation = Documentation
 module Markdown = Markdown
 module Tables = Tables
+module Time = Time_utils
 
 let write_to_clipboard text =
   (Clipboard.clipboard ())##writeText (Js.string text)

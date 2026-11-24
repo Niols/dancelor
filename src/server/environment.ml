@@ -13,11 +13,11 @@ type actor =
 
 type session = {
   actor: actor;
-  expires: Datetime.t;
+  expires: Time.t;
 }
 
 let make_new_session () =
-  lwt {actor = Anonymous; expires = Datetime.make_in_the_future (Datetime.duration_of_seconds' session_max_age)}
+  lwt {actor = Anonymous; expires = Time.make_in_the_future (Time.duration_of_seconds' session_max_age)}
 
 (** Refresh the session by getting the actor again from the database and bumping
     the expiry date. *)
@@ -27,7 +27,7 @@ let refresh_session session =
     | Anonymous -> lwt Anonymous
     | Signed_in actor -> signed_in % Option.get <$> Database.User.get_actor actor.id
   in
-  let expires = Datetime.make_in_the_future (Datetime.duration_of_seconds' session_max_age) in
+  let expires = Time.make_in_the_future (Time.duration_of_seconds' session_max_age) in
   lwt {actor; expires}
 
 type t = {
@@ -47,7 +47,7 @@ let pp fmt env =
       | Signed_in actor -> Id.to_string actor.id
     )
     env.session_id
-    Datetime.pp
+    Time.pp
     !(env.session).expires
 
 let actor env = (!(env.session)).actor
@@ -108,7 +108,7 @@ let process_remember_me_cookie env remember_me_cookie =
           Log.info (fun m -> m "Rejecting because user does not have the “remember me” key `%a`." Remember_me_key.pp key);
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
           lwt_unit
-        | Some (_, token_max_date) when Datetime.in_the_past token_max_date ->
+        | Some (_, token_max_date) when Time.in_the_past token_max_date ->
           Log.info (fun m -> m "Rejecting because token is too old.");
           Database.User.remove_one_remember_me_token actor.id key;%lwt
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
@@ -142,7 +142,7 @@ let from_request request =
   let%lwt session =
     match Hashtbl.find_opt sessions session_id with
     | None -> Log.debug (fun m -> m "No session: creating a new one."); make_new_session ()
-    | Some session when Datetime.in_the_past session.expires -> Log.debug (fun m -> m "Old session: creating a new one."); make_new_session ()
+    | Some session when Time.in_the_past session.expires -> Log.debug (fun m -> m "Old session: creating a new one."); make_new_session ()
     | Some session -> Log.debug (fun m -> m "Live session: updating."); refresh_session session
   in
   let session = ref session in
@@ -206,7 +206,7 @@ let sign_in env (actor : Actor.t) ~remember_me =
       let hashed_token = Remember_me_token_hash.make ~clear: token in
       (* the max date stored in database is one more minute than the max age that
          will be sent as cookie, to be sure not to lie to our clients *)
-      let max_date = Datetime.make_in_the_future (Datetime.duration_of_seconds' @@ 60 + remember_me_token_max_age) in
+      let max_date = Time.make_in_the_future (Time.duration_of_seconds' @@ 60 + remember_me_token_max_age) in
       (* let remember_me_token = Some (hashed_token, max_date) in *)
       Database.User.add_remember_me_token actor.id key hashed_token max_date
     );%lwt

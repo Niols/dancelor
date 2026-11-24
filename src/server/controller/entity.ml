@@ -200,7 +200,7 @@ module Generic_entity_search = struct
 end
 
 let cache_principals : (Environment.cache_key * Principal_query.t, (Principal_row.t * float) Search_result.t Lwt.t) Cache.t =
-  Cache.create ~lifetime: (Datetime.duration_of_minutes 1.) ()
+  Cache.create ~lifetime: (Time.duration_of_minutes 1.) ()
 
 let search_principals' =
   let search_principals' =
@@ -224,7 +224,7 @@ let search_principals env slice query =
   lwt {Search_result.total; items}
 
 let cache_resources : (Environment.cache_key * Resource_query.t, (Resource_row.t * float) Search_result.t Lwt.t) Cache.t =
-  Cache.create ~lifetime: (Datetime.duration_of_minutes 1.) ()
+  Cache.create ~lifetime: (Time.duration_of_minutes 1.) ()
 
 let search_resources' =
   let search_resources' =

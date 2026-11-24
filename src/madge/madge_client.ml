@@ -128,7 +128,7 @@ let call_batch (request : Request.t) : (Response.t, error) result Lwt.t =
 let do_batch = false
 
 (** A very short-lived cache to avoid performing the exact same request several times in a row. *)
-let cache : (Request.t, (Response.t, error) result Lwt.t) Cache.t = Cache.create ~lifetime: (Datetime.duration_of_seconds 1.) ()
+let cache : (Request.t, (Response.t, error) result Lwt.t) Cache.t = Cache.create ~lifetime: (Time.duration_of_seconds 1.) ()
 
 let call_gen
   : type a r z. ?retry: bool ->
