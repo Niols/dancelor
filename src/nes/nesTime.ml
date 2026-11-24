@@ -124,8 +124,7 @@ let pp_duration_pretty fmt d =
     (if (days <> 0 || hours <> 0 || minutes <> 0) && seconds <> 0. then fpf fmt " ");
     (if seconds = 0. then () else if seconds = 1. then fpf fmt "1 second" else fpf fmt "%.0f seconds" seconds)
 
-let duration_to_string_pretty d =
-  aspf "%a" pp_duration_pretty d
+let duration_to_string_pretty = NesFormat.pp_to_show pp_duration_pretty
 
 let%test _ = duration_to_string_pretty 0. = "0 seconds"
 let%test _ = duration_to_string_pretty 63.5 = "1 minute 4 seconds"

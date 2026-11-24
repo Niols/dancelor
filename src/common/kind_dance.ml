@@ -11,8 +11,7 @@ let rec pp ppf = function
       pp
       kind
 
-let to_string kind =
-  Format.with_formatter_to_string (fun ppf -> pp ppf kind)
+let to_string = Format.pp_to_show pp
 
 let of_string_opt s =
   try
