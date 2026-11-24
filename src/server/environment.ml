@@ -40,11 +40,16 @@ type t = {
 let pp fmt env =
   fpf
     fmt
-    "%s [%s, expires %a]"
+    "%s [%ssession %s, expires on %a]"
     (
       match !(env.session).actor with
       | Anonymous -> "<anynomous>"
       | Signed_in actor -> Id.to_string actor.id
+    )
+    (
+      match !(env.session).actor with
+      | Anonymous -> ""
+      | Signed_in actor -> spf "%s, " (Username.to_string actor.username)
     )
     env.session_id
     Time.pp
@@ -88,9 +93,9 @@ let process_remember_me_cookie env remember_me_cookie =
   match String.split_3_on_char ':' remember_me_cookie with
   | None -> lwt_unit
   | Some (id, key, token) ->
+    Log.info (fun m -> m "Attempt to get remembered: id = %S, key = %S, token = %S." id key token);
     let key = Remember_me_key.inject key in
     let token = Remember_me_token_clear.inject token in
-    Log.info (fun m -> m "Attempt to get remembered with id `%s`." id);
     match Id.of_string id with
     | None ->
       Log.info (fun m -> m "Rejecting because id is not valid.");
@@ -105,7 +110,7 @@ let process_remember_me_cookie env remember_me_cookie =
       | Some actor ->
         match%lwt Database.User.find_remember_me_token actor.id key with
         | None ->
-          Log.info (fun m -> m "Rejecting because user does not have the “remember me” key `%a`." Remember_me_key.pp key);
+          Log.info (fun m -> m "Rejecting because user does not have the “remember me” key %S." (Remember_me_key.show key));
           register_response_cookie env (delete_cookie ~path: "/" "rememberMe");
           lwt_unit
         | Some (_, token_max_date) when Time.in_the_past token_max_date ->
