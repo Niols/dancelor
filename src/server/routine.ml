@@ -103,7 +103,7 @@ let rec initialiase_job_runners ~threads =
   Lwt.async (fun () ->
     Lwt.pick [
       run_jobs_from ~queue_name: prerender_queue_name ~max_concurrency: 1 all_versions_prerendering_jobs;
-      run_jobs_from ~queue_name: "pending" ~max_concurrency: threads Controller.Job.pending_jobs;
+      run_jobs_from ~queue_name: "normal" ~max_concurrency: threads Controller.Job.pending_jobs;
     ];%lwt
     Log.err (fun m -> m "Some rendering runner died. Restarting.");
     initialiase_job_runners ~threads;
@@ -114,10 +114,10 @@ let clean_nix_gc_roots_period = Time.mult Controller.Job.lifetime_nix_gc_roots 0
 
 let rec clean_nix_gc_roots () =
   let number_before = Controller.Job.Nix_gc_root.number_of_roots () in
-  Log.info (fun m -> m "Starting cleanup of Nix GC roots; %d roots before" number_before);
+  Log.info (fun m -> m "Starting cleanup of Nix GC roots; found %d roots before" number_before);
   Controller.Job.Nix_gc_root.clean ~older_than_sec: Controller.Job.lifetime_nix_gc_roots;%lwt
-  let number_after = Controller.Job.Nix_gc_root.number_of_roots () in
-  Log.info (fun m -> m "Done with cleanup of Nix GC roots (%d -> %d); waiting %a" number_before number_after Time.pp_duration_pretty clean_nix_gc_roots_period);
+  let number_removed = Controller.Job.Nix_gc_root.number_of_roots () - number_before in
+  Log.info (fun m -> m "Done with cleanup of Nix GC roots; removed %d out of %d; waiting %a" number_removed number_before Time.pp_duration_pretty clean_nix_gc_roots_period);
   Lwt_unix.sleep (Time.duration_to_seconds clean_nix_gc_roots_period);%lwt
   clean_nix_gc_roots ()
 

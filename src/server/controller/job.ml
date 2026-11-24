@@ -227,11 +227,11 @@ let job_duration_seconds =
       ~label_names: ["kind"; "state"]
   in
   fun ~kind ~state ->
-    let state = match state with `Preparing -> "preparing" | `Pending -> "pending" | `Running -> "running" in
+    let state = match state with `Before -> "before" | `Pending -> "pending" | `Running -> "running" in
     Exponential_10ms_100s_histogram.labels family [kind; state]
 
 let prepare_and_register_job_and_file ~kind make_expr_and_file : Job_id.t Endpoints.Job.registration_response Lwt.t =
-  let%lwt (expr, file) = Exponential_10ms_100s_histogram.time (job_duration_seconds ~kind ~state: `Preparing) Unix.gettimeofday make_expr_and_file in
+  let%lwt (expr, file) = Exponential_10ms_100s_histogram.time (job_duration_seconds ~kind ~state: `Before) Unix.gettimeofday make_expr_and_file in
   lwt @@ register_job_and_file ~kind expr file
 
 let run_job job =
