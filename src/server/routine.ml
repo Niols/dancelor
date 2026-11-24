@@ -44,7 +44,7 @@ let prerender_queue_name = "prerender"
 let all_versions_prerendering_jobs =
   let name = "all_versions_prerendering_jobs" in
   Lwt_stream.filter_map_s
-    (fun (version : Version_form.t) ->
+    (fun ({id = _; form = version}: (Version_id.t, Version_form.t) With_id.t) ->
       try%lwt
         match version.content with
         | No_content ->

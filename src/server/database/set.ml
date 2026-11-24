@@ -114,7 +114,7 @@ let get_form ~actor_id id : Set_form.t option Lwt.t =
     db
     ~actor_id
     ~id
-    (set_sql_to_form ~conceptors ~contents ~k: Fun.id)
+    (set_sql_to_form ~conceptors ~contents ~k: With_id.form)
 
 let search ~actor_id query : (Set_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Set_query.conceptor; contains_version; contains_tune}} = query in

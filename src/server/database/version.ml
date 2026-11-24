@@ -149,10 +149,10 @@ let get_form id : Version_form.t option Lwt.t =
       ~tune_composers: (tune_composers_for tune_id)
       ~destructured_parts
       ~destructured_transitions
-      ~k: Fun.id
+      ~k: With_id.form
   )
 
-let get_all_forms () : Version_form.t list Lwt.t =
+let get_all_forms () : (Version_id.t, Version_form.t) With_id.t list Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt tune_composers_for = get_tune_composers_for db `All in
   let%lwt arrangers_for = get_arrangers_for db `All in

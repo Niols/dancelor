@@ -24,7 +24,7 @@ let get_view id : Source_view.t option Lwt.t =
 let get_form id : Source_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt editors = (fun f -> f id) <$> get_editors_for db (`One_of [id]) in
-  Source_sql.Single.get_form db ~id (source_sql_to_form ~editors ~k: Fun.id)
+  Source_sql.Single.get_form db ~id (source_sql_to_form ~editors ~k: With_id.form)
 
 let search query : (Source_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Source_query.editor}} = query in

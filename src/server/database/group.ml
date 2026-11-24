@@ -25,7 +25,7 @@ let get_view id : Group_view.t option Lwt.t =
 let get_form id : Group_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
   let%lwt members = (fun f -> f id) <$> get_members_for db (`One_of [id]) in
-  Group_sql.Single.get_form db ~id (group_sql_to_form ~id ~members ~k: Fun.id)
+  Group_sql.Single.get_form db ~id (group_sql_to_form ~id ~members ~k: With_id.form)
 
 let search query : (Group_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = ()} = query in
