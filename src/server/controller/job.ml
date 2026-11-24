@@ -103,7 +103,7 @@ let cache_size =
   let family =
     Prometheus.Gauge.v_labels
       ~namespace
-      ~help: "Number of registered jobs"
+      ~help: "Number of job-related artifact in various caches"
       "cache_size"
       ~label_names: ["cache"]
   in
@@ -129,7 +129,7 @@ let registered_jobs_total =
       ~label_names: ["kind"; "cache_hit"]
   in
   fun ~kind ~cache ->
-    Prometheus.Counter.labels family [kind; (match cache with `Hit -> "hit" | `Miss -> "miss")]
+    Prometheus.Counter.labels family [kind; (match cache with `Hit -> "cache_hit" | `Miss -> "cache_miss")]
 
 let register_job ~kind ~add_pending (expr : expr) : job =
   Log.debug (fun m -> m "register_job ~kind:%s ~add_pending:%b <expr>@\n  expr: %s" kind add_pending (expr_val expr));
@@ -227,8 +227,12 @@ let job_duration_seconds =
       ~label_names: ["kind"; "state"]
   in
   fun ~kind ~state ->
-    let state = match state with `Pending -> "pending" | `Running -> "running" in
+    let state = match state with `Preparing -> "preparing" | `Pending -> "pending" | `Running -> "running" in
     Exponential_10ms_100s_histogram.labels family [kind; state]
+
+let prepare_and_register_job_and_file ~kind make_expr_and_file : Job_id.t Endpoints.Job.registration_response Lwt.t =
+  let%lwt (expr, file) = Exponential_10ms_100s_histogram.time (job_duration_seconds ~kind ~state: `Preparing) Unix.gettimeofday make_expr_and_file in
+  lwt @@ register_job_and_file ~kind expr file
 
 let run_job job =
   match !(job.state) with
