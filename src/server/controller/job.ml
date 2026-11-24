@@ -4,8 +4,8 @@ open Dancelor_common
 module Log = (val Logs.src_log @@ Logs.Src.create "server.controller.job": Logs.LOG)
 let namespace = "dancelor_job"
 
-let lifetime_memory_cache = Time.duration_of_hours 1.
-let lifetime_nix_gc_roots = Time.duration_of_days 1.
+let lifetime_memory_cache = Time.duration_of_hours 12.
+let lifetime_nix_gc_roots = Time.duration_of_days 2.
 
 (** Dancelor builds objects with Nix and leaves them in the Nix store, relying
     on the Nix garbage collector to clean them up eventually. However, the Nix
