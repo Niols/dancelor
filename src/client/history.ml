@@ -10,7 +10,7 @@ let madge_call_or_option endpoint id =
     | Error (Madge_client.Http {status = `Not_found; _}) -> None
     | Error e -> raise (Madge_client.Error e)
 
-type history = (Datetime.t * Uri.t) list [@@deriving yojson]
+type history = (Time.t * Uri.t) list [@@deriving yojson]
 
 let empty_history : history = []
 
@@ -36,7 +36,7 @@ let set history =
 let update f = set @@ f @@ get ()
 
 let add (uri : Uri.t) : unit =
-  update (fun history -> (Datetime.now (), uri) :: List.take (limit - 1) history)
+  update (fun history -> (Time.now (), uri) :: List.take (limit - 1) history)
 
 (** Returns all the resources whose page is present in the history. *)
 let get_resource_ids () : Resource_id.t list =

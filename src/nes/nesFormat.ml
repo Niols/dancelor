@@ -1,14 +1,12 @@
 include Format
 
-let with_formatter_to_string_gen (f : formatter -> 'a) : (string * 'a) =
-  let buf = Buffer.create 1024 in
-  let fmt = formatter_of_buffer buf in
-  let v = f fmt in
-  pp_print_flush fmt ();
-  (Buffer.contents buf, v)
-
-let with_formatter_to_string (f : formatter -> unit) : string =
-  fst (with_formatter_to_string_gen f)
+let pp_to_show pp x =
+  let buf = Buffer.create 128 in
+  let fmt = Format.formatter_of_buffer buf in
+  pp_set_margin fmt (1 lsl 28);
+  pp_set_max_indent fmt (1 lsl 24);
+  fprintf fmt "%a@?" pp x;
+  Buffer.contents buf
 
 let pp_multiline_sensible name fmt s =
   let rec remove_empty_first_lines = function

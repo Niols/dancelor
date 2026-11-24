@@ -7,15 +7,15 @@ module Migrations_sql = Migrations_sql.Sqlgg(Sqlgg_postgresql)
 type m026_2026_04_split_user_json_into_fields__user_value = {
   username: string;
   password: string option; [@default None]
-  password_reset_token: (string * Datetime.t) option; [@default None] [@key "password-reset-token"]
+  password_reset_token: (string * Time.t) option; [@default None] [@key "password-reset-token"]
   remember_me_tokens: Yojson.Safe.t; [@default `Assoc []] [@key "remember-me-token"] [@of_yojson Result.ok]
   role: Yojson.Safe.t; [@default `List [`String "Normal_user"]] [@of_yojson Result.ok]
 }
 [@@deriving of_yojson]
 
 type m026_m036_2026_04_05_split_jsons_into_fields__meta = {
-  created_at: Datetime.t; [@key "created-at"]
-  modified_at: Datetime.t; [@key "modified-at"]
+  created_at: Time.t; [@key "created-at"]
+  modified_at: Time.t; [@key "modified-at"]
 }
 [@@deriving of_yojson]
 
@@ -1257,7 +1257,7 @@ let apply_migrations ?(on_remaining_migrations = log_remaining_migrations) () =
               Log.err (fun m -> m "%a" (Format.pp_multiline_sensible @@ spf "Could not apply migration %S" migration.name) msg);
               raise (Migration_failed (migration.name, exn))
             | exn ->
-              Log.err (fun m -> m "Could not apply migration %S:\n%s\n%s" migration.name (Printexc.to_string exn) (Printexc.get_backtrace ()));
+              Dancelor_common.Logger.log_exn (module Log) (spf "Could not apply migration %S" migration.name) exn;
               raise (Migration_failed (migration.name, exn))
         );%lwt
         ignore <$> Migrations_sql.register_migration db ~name: migration.name

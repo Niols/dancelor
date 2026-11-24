@@ -2,44 +2,56 @@ open Nes
 open Dancelor_common
 open Sql_to_row
 
-let person_sql_to_form ~id: _ ~name ~copyright_name ~scddb_id ~(k : Person_form.t -> 'w) : 'w =
+let person_sql_to_form ~id ~name ~copyright_name ~scddb_id ~(k : (Person_id.t, Person_form.t) With_id.t -> 'w) : 'w =
   k {
-    name = NEString.of_string_exn name;
-    copyright_name = Option.map NEString.of_string_exn copyright_name;
-    scddb_id = Option.map Int64.to_int scddb_id;
+    id;
+    form = {
+      name = NEString.of_string_exn name;
+      copyright_name = Option.map NEString.of_string_exn copyright_name;
+      scddb_id = Option.map Int64.to_int scddb_id;
+    };
   }
 
-let source_sql_to_form ~id: _ ~name ~short_name ~editors ~scddb_id ~description ~date ~(k : Source_form.t -> 'w) : 'w =
+let source_sql_to_form ~id ~name ~short_name ~editors ~scddb_id ~description ~date ~(k : (Source_id.t, Source_form.t) With_id.t -> 'w) : 'w =
   k {
-    name = NEString.of_string_exn name;
-    short_name = Option.map NEString.of_string_exn short_name;
-    editors;
-    scddb_id = Option.map Int64.to_int scddb_id;
-    description;
-    date = Option.map (Option.get % Partial_date.from_string) date;
+    id;
+    form = {
+      name = NEString.of_string_exn name;
+      short_name = Option.map NEString.of_string_exn short_name;
+      editors;
+      scddb_id = Option.map Int64.to_int scddb_id;
+      description;
+      date = Option.map (Option.get % Partial_date.from_string) date;
+    };
   }
 
-let dance_sql_to_form ~id: _ ~name ~extra_names ~kind ~devisers ~tunes ~scddb_id ~disambiguation ~date ~two_chords ~(k : Dance_form.t -> 'w) : 'w =
+let dance_sql_to_form ~id ~name ~extra_names ~kind ~devisers ~tunes ~scddb_id ~disambiguation ~date ~two_chords ~(k : (Dance_id.t, Dance_form.t) With_id.t -> 'w) : 'w =
   k {
-    names = NEList.map NEString.of_string_exn (NEList.cons name extra_names);
-    kind = Kind.Dance.of_string kind;
-    devisers;
-    tunes;
-    scddb_id = Option.map Int64.to_int scddb_id;
-    disambiguation = Option.map NEString.of_string_exn disambiguation;
-    date = Option.map (Option.get % Partial_date.from_string) date;
-    two_chords;
+    id;
+    form = {
+      names = NEList.map NEString.of_string_exn (NEList.cons name extra_names);
+      kind = Kind.Dance.of_string kind;
+      devisers;
+      tunes;
+      scddb_id = Option.map Int64.to_int scddb_id;
+      disambiguation = Option.map NEString.of_string_exn disambiguation;
+      date = Option.map (Option.get % Partial_date.from_string) date;
+      two_chords;
+    };
   }
 
-let tune_sql_to_form ~id: _ ~name ~extra_names ~kind ~composers ~dances ~remark ~scddb_id ~date ~(k : Tune_form.t -> 'w) : 'w =
+let tune_sql_to_form ~id ~name ~extra_names ~kind ~composers ~dances ~remark ~scddb_id ~date ~(k : (Tune_id.t, Tune_form.t) With_id.t -> 'w) : 'w =
   k {
-    names = NEList.map NEString.of_string_exn (NEList.cons name extra_names);
-    kind;
-    composers;
-    dances;
-    remark = Option.map NEString.of_string_exn remark;
-    scddb_id = Option.map Int64.to_int scddb_id;
-    date = Option.map (Option.get % Partial_date.from_string) date;
+    id;
+    form = {
+      names = NEList.map NEString.of_string_exn (NEList.cons name extra_names);
+      kind;
+      composers;
+      dances;
+      remark = Option.map NEString.of_string_exn remark;
+      scddb_id = Option.map Int64.to_int scddb_id;
+      date = Option.map (Option.get % Partial_date.from_string) date;
+    };
   }
 
 let version_sql_to_form_source
@@ -59,7 +71,7 @@ let version_sql_to_form_source
   }
 
 let version_sql_to_form
-    ~id: _
+    ~id
     ~tune_id
     ~disambiguation
     ~key
@@ -75,7 +87,7 @@ let version_sql_to_form
     ~tune_name
     ~tune_kind
     ~tune_composers
-    ~(k : Version_form.t -> 'w)
+    ~(k : (Version_id.t, Version_form.t) With_id.t -> 'w)
     : 'w
   =
   let content : Version_content.t =
@@ -98,41 +110,47 @@ let version_sql_to_form
     | _ -> assert false
   in
   k {
-    tune =
-    tune_sql_to_row
-      ~id: tune_id
-      ~name: tune_name
-      ~kind: tune_kind
-      ~composers: tune_composers
-      ~k: Fun.id;
-    key = Music.Key.of_string key;
-    sources;
-    remark = Option.map NEString.of_string_exn remark;
-    disambiguation = Option.map NEString.of_string_exn disambiguation;
-    arrangers;
-    content;
+    id;
+    form = {
+      tune =
+      tune_sql_to_row
+        ~id: tune_id
+        ~name: tune_name
+        ~kind: tune_kind
+        ~composers: tune_composers
+        ~k: Fun.id;
+      key = Music.Key.of_string key;
+      sources;
+      remark = Option.map NEString.of_string_exn remark;
+      disambiguation = Option.map NEString.of_string_exn disambiguation;
+      arrangers;
+      content;
+    };
   }
 
 let set_sql_to_form
-    ~id: _
+    ~id
     ~name
     ~kind
     ~conceptors
     ~contents
     ~order
-    ~(k : Set_form.t -> 'w)
+    ~(k : (Set_id.t, Set_form.t) With_id.t -> 'w)
     : 'w
   =
   k {
-    name = NEString.of_string_exn name;
-    kind = Kind.Dance.of_string kind;
-    conceptors;
-    contents;
-    order = Set_order.of_string order;
+    id;
+    form = {
+      name = NEString.of_string_exn name;
+      kind = Kind.Dance.of_string kind;
+      conceptors;
+      contents;
+      order = Set_order.of_string order;
+    };
   }
 
 let book_sql_to_form
-    ~id: _
+    ~id
     ~name
     ~date
     ~authors
@@ -140,43 +158,52 @@ let book_sql_to_form
     ~remark
     ~sources
     ~scddb_id
-    ~(k : Book_form.t -> 'w)
+    ~(k : (Book_id.t, Book_form.t) With_id.t -> 'w)
     : 'w
   =
   k {
-    name = NEString.of_string_exn name;
-    date = Option.map (Option.get % Partial_date.from_string) date;
-    authors;
-    contents;
-    remark = Option.map NEString.of_string_exn remark;
-    sources;
-    scddb_id = Option.map Int64.to_int scddb_id;
+    id;
+    form = {
+      name = NEString.of_string_exn name;
+      date = Option.map (Option.get % Partial_date.from_string) date;
+      authors;
+      contents;
+      remark = Option.map NEString.of_string_exn remark;
+      sources;
+      scddb_id = Option.map Int64.to_int scddb_id;
+    };
   }
 
 let user_sql_to_form
-    ~id: _
+    ~id
     ~username
     ~full_name
     ~email
-    ~(k : User_form.t -> 'w)
+    ~(k : (User_id.t, User_form.t) With_id.t -> 'w)
     : 'w
   =
   k {
-    username = Username.of_string_exn username;
-    full_name = Option.map NEString.of_string_exn full_name;
-    email;
+    id;
+    form = {
+      username = Username.of_string_exn username;
+      full_name = Option.map NEString.of_string_exn full_name;
+      email;
+    };
   }
 
 let group_sql_to_form
-    ~id: _
+    ~id
     ~name
     ~description
     ~members
-    ~(k : Group_form.t -> 'w)
+    ~(k : (Group_id.t, Group_form.t) With_id.t -> 'w)
     : 'w
   =
   k {
-    name = NEString.of_string_exn name;
-    description = Option.map NEString.of_string_exn description;
-    members;
+    id;
+    form = {
+      name = NEString.of_string_exn name;
+      description = Option.map NEString.of_string_exn description;
+      members;
+    };
   }

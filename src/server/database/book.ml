@@ -337,7 +337,7 @@ let get_form ~actor_id id : Book_form.t option Lwt.t =
     db
     ~actor_id
     ~id
-    (book_sql_to_form ~authors ~sources ~contents ~k: Fun.id)
+    (book_sql_to_form ~authors ~sources ~contents ~k: With_id.form)
 
 let search ~actor_id query : (Book_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Book_query.author; contains_version; contains_tune; contains_set}} = query in

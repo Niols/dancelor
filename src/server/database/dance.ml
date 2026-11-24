@@ -35,7 +35,7 @@ let get_form id : Dance_form.t option Lwt.t =
   let%lwt extra_names = (fun f -> f id) <$> get_extra_names_for db (`One_of [id]) in
   let%lwt devisers = (fun f -> f id) <$> get_devisers_for db (`One_of [id]) in
   let%lwt tunes = (fun f -> f id) <$> get_tunes_for db (`One_of [id]) in
-  Dance_sql.Single.get_form db ~id (dance_sql_to_form ~extra_names ~devisers ~tunes ~k: Fun.id)
+  Dance_sql.Single.get_form db ~id (dance_sql_to_form ~extra_names ~devisers ~tunes ~k: With_id.form)
 
 let search query : (Dance_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Dance_query.deviser}} = query in

@@ -58,7 +58,7 @@ let get_form id : Tune_form.t option Lwt.t =
   let%lwt extra_names = (fun f -> f id) <$> get_extra_names_for db (`One_of [id]) in
   let%lwt dances = (fun f -> f id) <$> get_dances_for db (`One_of [id]) in
   let%lwt composers = (fun f -> f id) <$> get_composers_with_details_for' db (`One_of [id]) in
-  Tune_sql.Single.get_form db ~id (tune_sql_to_form ~extra_names ~dances ~composers ~k: Fun.id)
+  Tune_sql.Single.get_form db ~id (tune_sql_to_form ~extra_names ~dances ~composers ~k: With_id.form)
 
 let search query : (Tune_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = {Tune_query.kind; composer}} = query in

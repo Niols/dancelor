@@ -26,7 +26,7 @@ let open_ ?(type_ = Short) ~title ?(buttons = []) content =
             ~a: [a_class ["toast-header"]]
             [
               h6 ~a: [a_class ["me-auto"; "my-0"]] [txt title];
-              small [R.txt (Time.ago_s start)];
+              small [R.txt (Time_utils.ago_s start)];
               button ~a: [a_button_type `Button; a_class ["btn-close"]; a_user_data "bs-dismiss" "toast"; a_aria "label" ["Close"]] [];
             ];
           div ~a: [a_class ["toast-body"]] (

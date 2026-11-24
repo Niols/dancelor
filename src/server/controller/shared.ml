@@ -146,7 +146,7 @@ module Make_private (Db : Db_private) = struct
     | Some form -> lwt form
 
   let cache : (Environment.cache_key * Db.query, (Db.row * float) Search_result.t Lwt.t) Cache.t =
-    Cache.create ~lifetime: 60 ()
+    Cache.create ~lifetime: (Time.duration_of_minutes 1.) ()
 
   let search' env query =
     Cache.use ~cache ~key: (Environment.cache_key env, query) @@ fun () ->

@@ -17,7 +17,7 @@ let get_view id : Person_view.t option Lwt.t =
 
 let get_form id : Person_form.t option Lwt.t =
   Connection.with_ @@ fun db ->
-  Person_sql.Single.get_form db ~id (person_sql_to_form ~k: Fun.id)
+  Person_sql.Single.get_form db ~id (person_sql_to_form ~k: With_id.form)
 
 let search query : (Person_row.t * float) list Lwt.t =
   let {Query.common = {terms}; specific = ()} = query in

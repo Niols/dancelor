@@ -23,7 +23,7 @@ module Uri = NesUri
 (* New modules *)
 
 module Cache = NesCache
-module Datetime = NesDatetime
+module Time = NesTime
 module Depart = NesDepart
 module Email = NesEmail
 module Partial_date = NesPartial_date

@@ -81,35 +81,41 @@ let build_pdf env id version_params rendering_params =
   get_view env id >>= fun version ->
   with_copyright_check env version @@ fun () ->
   (* never show the headers for a simple version *)
+  Job.prepare_and_register_job_and_file ~kind: "version-pdf" @@ fun () ->
   let rendering_params = Rendering_parameters.update ~show_headers: (const (some false)) rendering_params in
   let set_params = Set_parameters.make ?display_name: (Version_parameters.display_name version_params) () in
   let version_params = Version_parameters.set_display_name (NEString.of_string_exn " ") version_params in
   let%lwt version_form = Option.get <$> Database.Version.get_form version.id in
   let set = Model_to_renderer.versions_to_renderer_set (NEList.singleton (version_form, version_params)) set_params in
   let set_pdf_arg = Model_to_renderer.renderer_set_to_renderer_set_pdf_arg set rendering_params in
-  uncurry (Job.register_job_and_file ~kind: "version-pdf") <$> Renderer.make_set_pdf set_pdf_arg
+  Renderer.make_set_pdf set_pdf_arg
 
 (** For use in {!Routine}. *)
 let render_snippets ?version_params version =
   let tune = Model_to_renderer.version_to_renderer_tune ?version_params version in
   Renderer.make_tune_snippets tune
 
-let register_snippets_job_gen renderer_tune =
-  let%lwt svg_job = Renderer.make_tune_svg renderer_tune in
-  let%lwt ogg_job = Renderer.make_tune_ogg renderer_tune in
+let register_snippets_job_gen make_renderer_tune =
+  let%lwt svg_job_resp =
+    Job.prepare_and_register_job_and_file ~kind: "version-snippets" (fun () ->
+      Renderer.make_tune_svg (make_renderer_tune ())
+    )
+  in
+  let%lwt ogg_job_resp =
+    Job.prepare_and_register_job_and_file ~kind: "version-snippets" (fun () ->
+      Renderer.make_tune_ogg (make_renderer_tune ())
+    )
+  in
   lwt @@
-    match (
-      uncurry (Job.register_job_and_file ~kind: "version-snippets") svg_job,
-      uncurry (Job.register_job_and_file ~kind: "version-snippets") ogg_job
-    ) with
+    match svg_job_resp, ogg_job_resp with
     | Already_succeeded svg_job_id, Already_succeeded ogg_job_id -> Endpoints.Job.Already_succeeded {Endpoints.Version.Snippet_ids.svg_job_id; ogg_job_id}
     | Registered svg_job_id, Already_succeeded ogg_job_id -> Registered {svg_job_id; ogg_job_id}
     | Already_succeeded svg_job_id, Registered ogg_job_id -> Registered {svg_job_id; ogg_job_id}
     | Registered svg_job_id, Registered ogg_job_id -> Registered {svg_job_id; ogg_job_id}
 
 let register_snippets_job ?version_params version =
-  let tune = Model_to_renderer.version_to_renderer_tune ?version_params version in
-  register_snippets_job_gen tune
+  register_snippets_job_gen @@ fun () ->
+  Model_to_renderer.version_to_renderer_tune ?version_params version
 
 let build_snippets env id version_params _rendering_params =
   Log.debug (fun m -> m "build_snippets %a" Id.pp' id);

@@ -127,7 +127,9 @@ let setup_async_exception_hook () =
         )
     )
 
-let run (preloaded_api_payload : string) =
+(* NOTE: Giving the type [string] here would work, but some things would get
+   lost in the UTF-16 character conversion. *)
+let run (preloaded_api_payload : Js.js_string Js.t) =
   Logger.bracket (module Log) "starting client" @@ fun () ->
   Random.self_init ();
   setup_offline_detector ();
@@ -135,6 +137,7 @@ let run (preloaded_api_payload : string) =
   Logger.full_initialisation
     ~reporter: (Logs_browser.console_reporter ())
     (Logger.make_loglevel_map ());
+  let preloaded_api_payload = Js.to_string preloaded_api_payload in
   Log.debug (fun m -> m "Payload: %s" preloaded_api_payload);
   let uri = get_uri () in
   History.add uri;
