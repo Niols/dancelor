@@ -32,69 +32,59 @@
 \setromanfont[Numbers=Uppercase]{Source Sans Pro}
 
 %% Headers and footers
+
 \makeatletter
+
+\def\title#1{\gdef\@title{#1}}
+
+\def\@setTitle{}
+\def\setTitle#1{\gdef\@setTitle{#1}}
+
+\def\@specificity{}
+\def\specificity#1{\gdef\@specificity{#1}}
+
 \usepackage{fancyhdr}
-\ifheaders%
-  \fancypagestyle{default}{%
-    \fancyhf{}
-    \ifsimple%
-      \fancyhead[L]{\leftmark}
-      \fancyhead[R]{\rightmark}
+
+\fancypagestyle{default}{%
+  \fancyhf{}
+  \def\headrulewidth{0pt}%
+  \def\footrulewidth{0pt}%
+  \ifShowRunningHeaders
+    \ifsimple
+      \fancyhead[L]{\@setTitle}
+      \fancyhead[R]{\@title}
       \fancyfoot[L]{\@specificity}
       \fancyfoot[R]{\thepage}
-    \else%
-      \fancyhead[LE]{\leftmark}
-      \fancyhead[RO]{\rightmark}
+    \else
+      \fancyhead[LE]{\@setTitle}
+      \fancyhead[RO]{\@title}
       \fancyfoot[RE,LO]{\@specificity}
       \fancyfoot[LE,RO]{\thepage}
-    \fi%
-    \renewcommand{\headrulewidth}{0pt}
-    \renewcommand{\footrulewidth}{0pt}
-  }
-  \fancypagestyle{norightmark}{%
-    \fancyhf{}
-    \ifsimple%
-      \fancyhead[L]{\leftmark}
-      \fancyfoot[L]{\@specificity}
-      \fancyfoot[R]{\thepage}
-    \else%
-      \fancyhead[LE]{\leftmark}
-      \fancyfoot[RE,LO]{\@specificity}
-      \fancyfoot[LE,RO]{\thepage}
-    \fi%
-    \renewcommand{\headrulewidth}{0pt}
-    \renewcommand{\footrulewidth}{0pt}
-  }
-  \fancypagestyle{norightmarknospecificity}{%
-    \fancyhf{}
-    \ifsimple%
-      \fancyhead[L]{\leftmark}
-      \fancyfoot[R]{\thepage}
-    \else%
-      \fancyhead[LE]{\leftmark}
-      \fancyfoot[LE,RO]{\thepage}
-    \fi%
-    \renewcommand{\headrulewidth}{0pt}
-    \renewcommand{\footrulewidth}{0pt}
-  }
-\else
-  \fancypagestyle{default}{
-    \fancyhf{}
-    \renewcommand{\headrulewidth}{0pt}
-    \renewcommand{\footrulewidth}{0pt}
-  }
-  \fancypagestyle{norightmark}{
-    \fancyhf{}
-    \renewcommand{\headrulewidth}{0pt}
-    \renewcommand{\footrulewidth}{0pt}
-  }
-  \fancypagestyle{norightmarknospecificity}{
-    \fancyhf{}
-    \renewcommand{\headrulewidth}{0pt}
-    \renewcommand{\footrulewidth}{0pt}
-  }
-\fi
+    \fi
+  \fi
+}
+
+\fancypagestyle{setTitleAlsoOnOddPage}[default]{%
+  \ifShowRunningHeaders
+    \fancyhead[LO]{\@setTitle}
+  \fi
+}
+
+\fancypagestyle{noSetTitle}[default]{%
+  \fancyhead[L]{}%
+}
+
+\fancypagestyle{noSetTitleOrSpecificity}[default]{%
+  \fancyhead[L]{}%
+  \ifsimple
+    \fancyfoot[L]{}
+  \else
+    \fancyfoot[RE,LO]{}
+  \fi
+}
+
 \pagestyle{default}
+
 \makeatother
 
 \setlength\parskip{1em}

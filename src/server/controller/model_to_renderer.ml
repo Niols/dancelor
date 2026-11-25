@@ -278,17 +278,18 @@ let grab_renderer_book_pdf_args rendering_params =
           Option.to_list (Rendering_parameters.clef rendering_params);
         ]
   in
-  let headers = Option.value ~default: true @@ Rendering_parameters.show_headers rendering_params in
-    (specificity, headers)
+  let show_set_titles = Option.value ~default: true @@ Rendering_parameters.show_set_titles rendering_params in
+  let show_running_headers = Option.value ~default: true @@ Rendering_parameters.show_running_headers rendering_params in
+    (specificity, show_set_titles, show_running_headers)
 
 let renderer_book_to_renderer_book_pdf_arg ((book : Renderer.book), pdf_metadata) rendering_params =
-  let (specificity, headers) = grab_renderer_book_pdf_args rendering_params in
-    ({book; specificity; headers; pdf_metadata}: Renderer.book_pdf_arg)
+  let (specificity, show_set_titles, show_running_headers) = grab_renderer_book_pdf_args rendering_params in
+    ({book; specificity; show_set_titles; show_running_headers; pdf_metadata}: Renderer.book_pdf_arg)
 
 let renderer_set_to_renderer_set_pdf_arg ((set : Renderer.set), pdf_metadata) rendering_params =
-  let (specificity, headers) = grab_renderer_book_pdf_args rendering_params in
-    ({set; specificity; headers; pdf_metadata}: Renderer.set_pdf_arg)
+  let (specificity, show_set_titles, show_running_headers) = grab_renderer_book_pdf_args rendering_params in
+    ({set; specificity; show_set_titles; show_running_headers; pdf_metadata}: Renderer.set_pdf_arg)
 
 let renderer_sets_to_renderer_sets_zip_arg (sets : Renderer.sets_zip_arg_set NEList.t) rendering_params =
-  let (specificity, headers) = grab_renderer_book_pdf_args rendering_params in
-    ({sets; specificity; headers}: Renderer.sets_zip_arg)
+  let (specificity, show_set_titles, show_running_headers) = grab_renderer_book_pdf_args rendering_params in
+    ({sets; specificity; show_set_titles; show_running_headers}: Renderer.sets_zip_arg)

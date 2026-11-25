@@ -39,7 +39,8 @@ let
       contents = [ ];
     };
     specificity = "none";
-    headers = true;
+    show_set_titles = true;
+    show_running_headers = true;
     pdf_metadata = {
       title = "Test PDF Title";
       authors = [
@@ -62,7 +63,8 @@ let
       simple = false;
     };
     specificity = "none";
-    headers = true;
+    show_set_titles = true;
+    show_running_headers = true;
     pdf_metadata = {
       title = "Test PDF Title";
       authors = [
@@ -100,7 +102,8 @@ let
       }
     ];
     specificity = "none";
-    headers = true;
+    show_set_titles = true;
+    show_running_headers = true;
   };
 
 in

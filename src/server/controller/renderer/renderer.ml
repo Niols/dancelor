@@ -117,7 +117,8 @@ type pdf_metadata = {
 type set_pdf_arg = {
   set: set;
   specificity: string;
-  headers: bool;
+  show_set_titles: bool;
+  show_running_headers: bool;
   pdf_metadata: pdf_metadata;
 }
 [@@deriving yojson]
@@ -128,7 +129,8 @@ let make_set_pdf arg =
 type book_pdf_arg = {
   book: book;
   specificity: string;
-  headers: bool;
+  show_set_titles: bool;
+  show_running_headers: bool;
   pdf_metadata: pdf_metadata;
 }
 [@@deriving yojson]
@@ -145,7 +147,8 @@ type sets_zip_arg_set = {
 type sets_zip_arg = {
   sets: sets_zip_arg_set NEList.t;
   specificity: string;
-  headers: bool;
+  show_set_titles: bool;
+  show_running_headers: bool;
 }
 [@@deriving yojson]
 
