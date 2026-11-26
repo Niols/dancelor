@@ -128,8 +128,12 @@ let
         description = "Specificity of this particular book, eg. Bb instruments or bass clef.";
         type = types.str;
       };
-      headers = mkOption {
-        description = "Whether the book should contain headers and footers.";
+      show_set_titles = mkOption {
+        description = "Whether the book should contain set titles.";
+        type = types.bool;
+      };
+      show_running_headers = mkOption {
+        description = "Whether the book should contain running headers and footers.";
         type = types.bool;
       };
       pdf_metadata = mkOption {
@@ -144,14 +148,17 @@ let
     {
       book,
       specificity,
-      headers,
+      show_set_titles,
+      show_running_headers,
       pdf_metadata,
     }:
     writeText "${type}-${book.slug}.tex" ''
       \newif\ifsimple
       \simple${if book.simple then "true" else "false"}
-      \newif\ifheaders
-      \headers${if headers then "true" else "false"}
+      \newif\ifShowSetTitles
+      \ShowSetTitles${if show_set_titles then "true" else "false"}
+      \newif\ifShowRunningHeaders
+      \ShowRunningHeaders${if show_running_headers then "true" else "false"}
       \input{preamble}
       \usepackage[
         pdftitle={${escapeLatexString pdf_metadata.title}},
@@ -159,10 +166,10 @@ let
         pdfsubject={${concatMapStringsSep "; " escapeLatexString pdf_metadata.subjects}},
         pdfcreator={Dancelor},
       ]{hyperref}
-      \begin{document}
       \title{${escapeLatexString book.name}}
       \author{${escapeLatexString book.editor}}
       \specificity{${escapeLatexString specificity}}
+      \begin{document}
       ${optionalString (!book.simple) "\\maketitle\n"}
       ${forConcat book.contents (
         page:
@@ -217,8 +224,12 @@ let
         description = "Specificity of this particular set, eg. Bb instruments or bass clef.";
         type = types.str;
       };
-      headers = mkOption {
-        description = "Whether the set should contain headers and footers.";
+      show_set_titles = mkOption {
+        description = "Whether the set should contain a title.";
+        type = types.bool;
+      };
+      show_running_headers = mkOption {
+        description = "Whether the set should contain running headers and footers.";
         type = types.bool;
       };
       pdf_metadata = mkOption {
@@ -238,7 +249,12 @@ let
         editor = "";
         simple = true;
       };
-      inherit (set) specificity headers pdf_metadata;
+      inherit (set)
+        specificity
+        show_set_titles
+        show_running_headers
+        pdf_metadata
+        ;
     }
   );
 
@@ -259,8 +275,12 @@ let
         description = "Specificity of these particular sets, eg. Bb instruments or bass clef.";
         type = types.str;
       };
-      headers = mkOption {
-        description = "Whether the sets should contain headers and footers.";
+      show_set_titles = mkOption {
+        description = "Whether the sets should contain titles.";
+        type = types.bool;
+      };
+      show_running_headers = mkOption {
+        description = "Whether the sets should contain running headers and footers.";
         type = types.bool;
       };
     };
@@ -280,7 +300,7 @@ let
           let
             pdf = makeSetPdf {
               inherit set pdf_metadata;
-              inherit (sets) specificity headers;
+              inherit (sets) specificity show_set_titles show_running_headers;
             };
           in
           ''

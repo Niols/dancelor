@@ -15,24 +15,40 @@ let lift_version_parameters every_version =
 
 let create () =
   let%lwt version_dialog = Version_download_dialog.create () in
-  let%lwt headers_choices =
+  let%lwt page_titles_choices =
     Components.Choices.(
       make_radios
-        ~label: "Show headers and footers"
+        ~label: "Show set titles"
         [
           choice' [txt "Yes"] ~checked: true;
           choice'
             [txt "No"]
             ~value: (
               Set_parameters.none,
-              Rendering_parameters.make ~show_headers: false ()
+              Rendering_parameters.make ~show_set_titles: false ()
+            );
+        ]
+    )
+  in
+  let%lwt running_headers_choices =
+    Components.Choices.(
+      make_radios
+        ~label: "Show running headers and footers"
+        [
+          choice' [txt "Yes"] ~checked: true;
+          choice'
+            [txt "No"]
+            ~value: (
+              Set_parameters.none,
+              Rendering_parameters.make ~show_running_headers: false ()
             );
         ]
     )
   in
   lwt {
     choice_rows = version_dialog.choice_rows @ [
-      Components.Component.html headers_choices
+      Components.Component.html page_titles_choices;
+      Components.Component.html running_headers_choices;
     ];
     parameters_signal =
     let no_parameters = (Set_parameters.none, Rendering_parameters.none) in
@@ -41,7 +57,8 @@ let create () =
       no_parameters
       [
         S.map (Pair.map_fst lift_version_parameters) version_dialog.parameters_signal;
-        S.map (Option.value ~default: no_parameters % Option.join % Result.to_option) (Components.Component.signal headers_choices);
+        S.map (Option.value ~default: no_parameters % Option.join % Result.to_option) (Components.Component.signal page_titles_choices);
+        S.map (Option.value ~default: no_parameters % Option.join % Result.to_option) (Components.Component.signal running_headers_choices);
       ];
   }
 
